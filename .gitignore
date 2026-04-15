@@ -1,0 +1,100 @@
+# ============================================================
+# .NET
+# ============================================================
+bin/
+obj/
+out/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+*.swp
+*.swo
+artifacts/
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+project.lock.json
+project.fragment.lock.json
+.dotnet/
+.nuget/
+*.nupkg
+*.snupkg
+# Build output
+publish/
+PublishProfiles/
+
+# ============================================================
+# Node / Frontend (client/)
+# ============================================================
+node_modules/
+dist/
+.vite/
+.next/
+.turbo/
+.parcel-cache/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.yarn/cache
+.yarn/install-state.gz
+.yarn/build-state.yml
+.yarn/unplugged
+
+# ============================================================
+# Test / Coverage
+# ============================================================
+coverage/
+*.lcov
+.nyc_output/
+playwright-report/
+playwright/.cache/
+test-results/
+
+# ============================================================
+# Environment / Secrets
+# ============================================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+secrets.json
+appsettings.Development.local.json
+appsettings.Production.json
+*.pfx
+*.pem
+*.key
+
+# ============================================================
+# IDE / OS
+# ============================================================
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.bak
+*.tmp
+
+# ============================================================
+# Docker
+# ============================================================
+*.pid
+docker-compose.override.yml
+
+# ============================================================
+# Logs / Local runtime
+# ============================================================
+logs/
+*.log
+local/
+.local/

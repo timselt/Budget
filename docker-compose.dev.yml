@@ -1,0 +1,50 @@
+name: budgettracker-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: budgettracker-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: budgettracker
+      POSTGRES_USER: budgettracker
+      POSTGRES_PASSWORD: budgettracker_dev_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+      TZ: Europe/Istanbul
+      PGTZ: Europe/Istanbul
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U budgettracker -d budgettracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "log_statement=ddl"
+
+  seq:
+    image: datalust/seq:latest
+    container_name: budgettracker-seq-dev
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+
+volumes:
+  postgres_data:
+    name: budgettracker_postgres_data_dev
+  seq_data:
+    name: budgettracker_seq_data_dev
