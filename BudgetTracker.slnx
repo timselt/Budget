@@ -5,4 +5,8 @@
     <Project Path="src/BudgetTracker.Core/BudgetTracker.Core.csproj" />
     <Project Path="src/BudgetTracker.Infrastructure/BudgetTracker.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BudgetTracker.UnitTests/BudgetTracker.UnitTests.csproj" />
+    <Project Path="tests/BudgetTracker.IntegrationTests/BudgetTracker.IntegrationTests.csproj" />
+  </Folder>
 </Solution>

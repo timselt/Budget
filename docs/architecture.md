@@ -168,6 +168,212 @@ Bu ADR'nin değişimi yeni bir ADR ile yapılır. Etkilenebilecek alanlar:
 
 ---
 
+## ADR-0002 — EF Core 10 Persistans Katmanı, Multi-Tenancy ve RLS Stratejisi
+
+**Tarih:** 2026-04-15
+**Statü:** Kabul edildi
+**Karar Sahibi:** Timur Selçuk Turan
+**İlgili Belgeler:**
+- ADR-0001 (stack)
+- Master spec: `docs/BUTCE_TAKIP_YAZILIMI.md` §6 (veri modeli), §11 (KVKK / audit)
+
+### 1. Bağlam
+
+S2 sprintinde Day-1 multi-tenant şema (8 entity), audit log partition, tenant izolasyon (EF filter + Postgres RLS), bütçe versiyon tekilliği constraint'i ve bunları doğrulayan bir test pipeline'ı kurulmalıydı. EF Core 10 + Npgsql 10.0.1 + RLS kombinasyonunun pek çok iyi-bilinmeyen tuzağı var; ADR-0001 sadece "RLS kullanılacak" diyordu, somut yaklaşım netleşmemişti.
+
+### 2. Karar
+
+#### 2.1. Paket sürümleri (Central Package Management)
+
+`Directory.Packages.props` ile pinlenen kritik sürümler:
+
+| Paket | Sürüm | Not |
+|---|---|---|
+| Microsoft.EntityFrameworkCore | 10.0.6 | LTS |
+| Npgsql.EntityFrameworkCore.PostgreSQL | 10.0.1 | EF Core 10 ile uyumlu (>= 10.0.4, < 11) |
+| EFCore.NamingConventions | 10.0.1 | snake_case mapping |
+| Testcontainers.PostgreSql | 4.11.0 | gerçek Postgres 16 image |
+| FluentAssertions | **6.12.2** | 8.x Xceed ticari lisansa geçti, 6.12.2 son OSS sürüm — pinlendi |
+| Respawn | 6.2.1 | test data reset |
+
+CPM kullanımı: tüm proje csproj'leri sürüm vermeden `<PackageReference Include="..." />` yazıyor; tek doğru kaynak `Directory.Packages.props`.
+
+#### 2.2. Tenant izolasyon — iki katmanlı
+
+**Katman 1: EF global query filter** — `OnModelCreating` her `TenantEntity` türü için `e => e.CompanyId == _tenantContext.CurrentCompanyId || _tenantContext.BypassFilter` filter ekler. Hızlı ve EF tarafında SQL'e gömülür.
+
+**Katman 2: PostgreSQL Row Level Security** — Defense-in-depth. Bir bug ya da `IgnoreQueryFilters()` yanlış kullanımı RLS'i bypass etmez. Tenant tabloları (`segments`, `expense_categories`, `budget_years`, `budget_versions`):
+
+```sql
+ALTER TABLE budget_years ENABLE ROW LEVEL SECURITY;
+ALTER TABLE budget_years FORCE ROW LEVEL SECURITY;  -- table owner'ı bile bypass etmez
+CREATE POLICY tenant_isolation ON budget_years
+  USING      (company_id = NULLIF(current_setting('app.current_company_id', true), '')::INT)
+  WITH CHECK (company_id = NULLIF(current_setting('app.current_company_id', true), '')::INT);
+```
+
+`NULLIF(...,'')::INT` deseni kritik: `current_setting(..., true)` GUC unset olduğunda `''` döner, doğrudan `::INT` cast 22P02 hatası fırlatır. `NULLIF` empty'yi NULL'a çevirir, `company_id = NULL` UNKNOWN → **default-deny**. (Postgres planner AND clauselarını yeniden sıralayabilir, bu yüzden eski `<> ''` guard'ı yetmez.)
+
+#### 2.3. GUC'u her connection'a basma — `TenantConnectionInterceptor`
+
+EF connection pool → her opened connection için `DbConnectionInterceptor.ConnectionOpenedAsync` tetikleniyor. Burada `SELECT set_config('app.current_company_id', @cid, false)` çalıştırılır. `is_local=false` çünkü pooled connection'lar transaction sınırlarını aşıyor; aksi halde GUC bir sonraki kullanıcıya sızabilirdi.
+
+`AsyncLocal<TenantState>` tabanlı `TenantContext` request-scoped tenant'i takip eder; `BeginScope(companyId)` / `BeginBypassScope()` `IDisposable` döner, `using` ile kapatılır.
+
+#### 2.4. Non-superuser uygulama rolü — `budget_app`
+
+Postgres'te superuser RLS'i bypass eder. Dolayısıyla:
+- Migration `budget_app` rolünü `NOSUPERUSER NOBYPASSRLS LOGIN` ile yaratır.
+- DML grant'leri sadece domain tablolarına; `audit_logs` üzerinde **sadece INSERT + SELECT** (UPDATE/DELETE yok — append-only DB seviyesinde garanti edilir).
+- Production deploy öncesi şifre rotation: `ALTER ROLE budget_app PASSWORD <secret>` ortam değişkeninden alınmalı. Migration'daki sabit `budget_app_dev_password` **sadece dev/test**.
+
+#### 2.5. Audit log — aylık partition
+
+`audit_logs` `PARTITION BY RANGE (created_at)`. Migration 2026-04 ve 2026-05 için iki başlangıç partition yaratır; üretimde `AuditPartitionMaintenanceJob` (Hangfire) her ay yeni partition açar ve 84 ay (7 yıl) öncesini drop eder. Index'ler her partition'a otomatik propagate olur.
+
+EF tarafında `AuditLogEntry` normal `DbSet` olarak görünür; partition routing tamamen Postgres'in işi.
+
+#### 2.6. Bütçe versiyon tekilliği — EXCLUDE constraint
+
+```sql
+ALTER TABLE budget_versions
+  ADD CONSTRAINT uq_budget_versions_active_per_year
+  EXCLUDE USING gist (
+    company_id WITH =,
+    budget_year_id WITH =
+  )
+  WHERE (is_active = true);
+```
+
+Bir `(company_id, budget_year_id)` için en fazla bir aktif versiyon. Application tarafında race condition olsa bile DB seviyesinde 23P01 fırlatır.
+
+#### 2.7. Test stratejisi — Testcontainers + Respawn + iki connection string
+
+- `PostgresContainerFixture` (`ICollectionFixture` — tüm test sınıfları tek container paylaşır, hızlı).
+- Container ayağa kalkınca `dbContext.Database.MigrateAsync()` çalışır → tüm raw SQL (RLS, partition, seed, role) uygulanır.
+- Respawn ile her test öncesi data reset (currencies/companies/segments/expense_categories ignore — seed verisidir).
+- İki connection string açıklanır:
+  - **Superuser** (postgres) → arrangement, RLS bypass eden seed.
+  - **budget_app** → testin "act" fazı; RLS gerçekten enforce edilir.
+- 6 baseline test: schema, seed, EXCLUDE constraint, RLS cross-tenant blok, RLS default-deny (GUC unset), audit partition routing.
+
+### 3. Reddedilen Alternatifler
+
+| Alternatif | Red gerekçesi |
+|---|---|
+| Sadece EF query filter | Bug/kötü niyet RLS olmadan tenant izolasyonu kıramaz; Day-1 ilkesi ihlali |
+| Schema-per-tenant | 5 → N müşteri büyümesi migration cehennemi; cross-tenant raporlama zor |
+| Database-per-tenant | Hangfire/Identity karmaşası; küçük ölçekte gereksiz ops |
+| `current_setting('...', false)` (strict) | GUC unset → exception fırlatır; bypass scope job'larında kullanılamaz |
+| Açık `is_null` + `<> ''` guard'lı policy | Postgres planner AND'i yeniden sıralayabilir, cast hata verir (gerçek bug — 22P02) |
+| In-memory SQLite test | RLS, JSONB, EXCLUDE, partition desteklenmez |
+| Test sınıfı başına container | ~10× yavaş, paralel docker yükü |
+| Testcontainers olmadan dev DB'ye doğrudan test | Test izolasyonu yok, paralel CI çakışır |
+| FluentAssertions 7+ / 8+ | Xceed ticari lisans (BUSL); 6.12.2 son MIT sürüm |
+
+### 4. Sonuçlar
+
+**Olumlu:**
+- Multi-tenant izolasyon iki bağımsız katmanda kanıtlandı; birinin bug'ı diğerini düşürmez.
+- Audit log Day-1'den partitioned; ilk üretim datasından sonra "şimdi partition'a alalım" yeniden yazımı yok.
+- EXCLUDE constraint state machine bug'ını DB'de yakalar.
+- Integration test pipeline 9 saniyede 6 testi gerçek Postgres üzerinde koşturuyor; CI'da kullanılabilir.
+- CPM ile sürüm sürüklenme yok; ileride EF Core 11 yükseltme tek dosyada.
+
+**Olumsuz / Risk:**
+- `TenantConnectionInterceptor` her connection open'da bir extra round-trip → küçük latency; yüksek QPS'de pool tuning gerekebilir.
+- `budget_app` rolü dev şifresi migration'da hardcoded — production deploy script'i ALTER ROLE çalıştırmalı (release checklist'e eklenecek).
+- EF query filter + RLS aynı koşulu iki kez SQL'e gömüyor — planner'ın bunu eleyeceğine güveniyoruz; tersi prove edilirse query filter'lar gevşetilebilir.
+- Testcontainers Docker bağımlılığı CI runner gereksinimi.
+
+### 5. Açık aksiyonlar
+
+- [ ] Production deploy script'i: `ALTER ROLE budget_app PASSWORD '${BUDGET_APP_DB_PASSWORD}'` (env var)
+- [ ] `AuditPartitionMaintenanceJob` (Hangfire) — S6'da
+- [ ] EF query filter + RLS plan analizi (k6 yük testi sırasında — S14)
+- [ ] FluentAssertions OSS fork takibi; gerekirse Shouldly'e geçiş
+- [ ] OpenIddict tabloları için ayrı migration (S3 — Identity) — ✅ ADR-0003
+
+---
+
+## ADR-0003 — Kimlik Doğrulama Katmanı (ASP.NET Identity + OpenIddict)
+
+**Tarih:** 2026-04-15
+**Statü:** Kabul edildi
+**Karar Sahibi:** Timur Selçuk Turan
+
+### 1. Bağlam
+
+S3 sprintinde BudgetTracker'ın kimlik doğrulama + yetkilendirme katmanı kurulur. Gereksinimler:
+
+- 5 rol hiyerarşisi (Admin, CFO, FinanceManager, DepartmentHead, Viewer) — master spec §4
+- Çoklu kiracı: Her kullanıcı 1+ `companies` ile ilişkili; aktif şirket bir claim olarak token'a gömülmeli (tenant middleware bunu okur)
+- OAuth2 + OpenID Connect — gelecek SSO entegrasyonu için
+- Day-1'den SPA (React) + refresh token akışı
+- Ticari lisans yasak: Duende IdentityServer eleniyor → açık kaynak (Apache-2.0) alternatif şart
+
+### 2. Karar
+
+**Identity:** ASP.NET Core Identity + `int` birincil anahtar (`IdentityUser<int>`, `IdentityRole<int>`).
+**OpenIddict 7.4.0** ile OAuth2/OIDC server. Default string-keyed OpenIddict entity'leri kullanılıyor (Identity int, OpenIddict string ayrı tutuldu — karışım karmaşası yok).
+
+**Ayar noktaları:**
+
+| Konu | Karar |
+|------|-------|
+| Hashing | PBKDF2 (default, FIPS-compliant). Argon2id — S13+ yük testi sonrası değerlendirme. |
+| MFA | Ertelendi (S11+). Şu an required değil, alt yapı `TwoFactorEnabled` field'ı ile hazır. |
+| UserCompany | Day-1 many-to-many köprü (`user_companies` snake_case), `IsDefault` flag + `AssignedByUserId` audit. |
+| Şemalar | İki ASP.NET Core auth scheme: **OpenIddict.Server.AspNetCore** (passthrough endpoint'leri için) ve **OpenIddict.Validation.AspNetCore** (genel API). Default = Validation. Cookie scheme sadece gelecek web UI authorization code + PKCE akışı için register edilmiş durumda. |
+| Client seed | Development'ta `budget-tracker-dev` (public client) otomatik seed — `IdentitySeeder.SeedDevOAuthClientAsync`. Production'da migration'dan ayrı bir tool ile yaratılacak. |
+| Dev keys | `AddDevelopmentEncryptionCertificate()` + `AddDevelopmentSigningCertificate()` — **sadece dev**. Production'da X509 sertifika secret store'dan yüklenecek. |
+| Token ömürleri | Access 30 dk, refresh 14 gün. |
+
+**Passthrough modu**, `/connect/token`, `/connect/userinfo`, `/connect/authorize`, `/connect/logout` endpoint'lerini OpenIddict server dispatcher'ın önce işleyip sonra MVC controller'a devretmesini sağlıyor — böylece özel claim + scope ekleme mantığı `AuthController` içinde kalıyor.
+
+**`[Authorize]` şema çözümü:**
+- **Genel API** (`AccountController.Register` gibi): `[Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme, Policy = "Admin")]`.
+- **Userinfo** endpoint'i (passthrough): `[Authorize]` yerine `HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)` ile manuel kimlik doğrulama — server'ın zaten çözmüş olduğu principal doğrudan okunur. Bu pattern OpenIddict'in resmi örneğiyle uyumludur.
+
+**Tenant bağlama:** `CreatePrincipalAsync` içinde `UserCompany.IsDefault` üzerinden default şirket seçilip `company_id` claim'i access + identity token'a basılıyor. `TenantResolutionMiddleware` bu claim'i okuyup `TenantContext.BeginScope` çağırıyor — böylece S2'deki RLS/EF query filter mekanizması değişmeden çalışıyor.
+
+**Migration stratejisi:** OpenIddict + Identity tabloları `InitialSchema`'nın **üstünde** tek migration olarak eklenir (`AddIdentityAndOpenIddict`). Tablolara `budget_app` non-superuser role'ü için GRANT'lar migration sonunda raw SQL olarak çalışıyor.
+
+### 3. Reddedilen Alternatifler
+
+- **Duende IdentityServer:** Ticari lisans (>1M revenue sınırı aşıldı). Lisans riski kabul edilemez.
+- **Auth0 / Azure AD B2C:** Dış bağımlılık, KVKK için veri yerelleştirme zorluğu, ek maliyet. Railway Frankfurt deploymentında self-hosted tercih edildi.
+- **Custom JWT middleware (raw IdentityModel):** Token revoke, refresh rotation, consent akışı, device flow gibi özellikler elle yazılacaktı. Bakım yükü yüksek.
+- **OpenIddict + int-keyed custom entities (`ReplaceDefaultEntities<int>`):** Entity tip çakışması ve migration karmaşası yaşandı (POC). Default string-keyed OpenIddict + int-keyed Identity karışımı daha temiz çıktı.
+- **Argon2id Day-1:** PBKDF2 yeterli güvenlik ve daha az bağımlılık. Argon2 paketleri C interop ve CPU/RAM tuning gerektirir; S13+ yük testi sonrası değerlendirilecek.
+- **MFA Day-1:** Kullanıcı tabanı ~20 kişi, iç ağ + VPN üzerinden erişim. Operasyonel hazır olmayı geciktirirdi; S11+'de TOTP eklenecek.
+
+### 4. Sonuçlar
+
+**Olumlu:**
+- OpenIddict Apache-2.0 — lisans riski yok.
+- Standards-compliant OAuth2 + OIDC → SPA refresh token akışı out-of-the-box.
+- Token revoke + introspection + refresh rotation hazır; audit tarafı DB'de native.
+- Identity password policy (12 karakter, lockout 5/15dk) KVKK için makul baseline.
+- Day-1 UserCompany ilişkisi ileride kullanıcının birden fazla kiracıya atanmasını (ör. CFO birden fazla tüzel kişilik) tek değişiklikle destekliyor.
+
+**Olumsuz / Risk:**
+- Dev sertifikaları ephemeral — her restartta değişir, production'da kalıcı X509 şart. Release checklist'te.
+- `budget-tracker-dev` client seed sadece dev'de çalışır; production client create script henüz yok (S15 release prep).
+- OpenIddict sürümü güncellendiğinde migration path'ini kontrol etmek gerekebilir (5.x → 6.x arasında breaking change deneyimi mevcut).
+- `[Authorize]` şema seçimi bilinçli yapılmalı; default scheme Validation, Server scheme passthrough controller'ları için elle belirtiliyor.
+
+### 5. Açık aksiyonlar
+
+- [ ] Production X509 sertifika (encryption + signing) — Railway secret store'dan yüklenecek (S15)
+- [ ] Production `budget-tracker-spa` client create script (S15)
+- [ ] Argon2id PoC + benchmark (S13 sonrası)
+- [ ] MFA (TOTP) — `/connect/mfa` endpoint'leri (S11+)
+- [ ] `ALTER ROLE budget_app PASSWORD` deploy step artık Identity + OpenIddict tabloları için de GRANT gerektiriyor — migration bunu hallediyor, deploy script'i sadece password rotate
+- [ ] Audit log integration: login/logout/register olayları `AuditLog` tablosuna yazılmalı (S5 — audit partition)
+
+---
+
 ## ADR Şablonu
 
 Yeni ADR eklerken aşağıdaki şablonu kullan:

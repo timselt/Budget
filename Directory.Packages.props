@@ -1,0 +1,43 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- EF Core 10 (LTS) -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.6" />
+
+    <!-- Npgsql provider for EF Core 10 -->
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
+
+    <!-- snake_case naming convention -->
+    <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
+
+    <!-- ASP.NET Core -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.6" />
+
+    <!-- Identity (S3) -->
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.6" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.6" />
+
+    <!-- OpenIddict 7.x — MIT, ASP.NET Core 10 uyumlu -->
+    <PackageVersion Include="OpenIddict.AspNetCore" Version="7.4.0" />
+    <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.4.0" />
+
+    <!-- Test paketleri (S2.7'de kullanılacak) -->
+    <!-- FluentAssertions 8.x Xceed ticari lisansa geçti; 6.12.2 son OSS sürüm. -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="FluentAssertions" Version="6.12.2" />
+    <PackageVersion Include="NSubstitute" Version="5.3.0" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.11.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.6" />
+    <PackageVersion Include="Respawn" Version="6.2.1" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+  </ItemGroup>
+</Project>
