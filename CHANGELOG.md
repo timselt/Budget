@@ -4,6 +4,31 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### S18 — Code Splitting, Dashboard Entegrasyon, E2E Testler (2026-04-16)
+
+#### Eklendi
+
+- **Dashboard grafik entegrasyonu:**
+  - DashboardPage'e 8 Recharts grafik + aylık özet tablo eklendi
+  - Gelir-Hasar trend, Loss Ratio, EBITDA, Segment donut, Gider pie, Kümülatif alan, Combined Ratio, Top 10 müşteri
+
+- **Code splitting (React.lazy):**
+  - Tüm sayfalar lazy import ile ayrı chunk'lara bölündü
+  - Ana bundle: 544kb → 61kb gzipped (ilk yükleme)
+  - Sayfa bazlı chunk'lar ihtiyaç anında yüklenir
+  - Suspense fallback: "Yükleniyor..." loader
+
+- **E2E Testler (Playwright):**
+  - playwright.config.ts — Chromium, screenshot on failure
+  - auth.spec.ts — 5 test (login/logout/redirect)
+  - navigation.spec.ts — 3 test (sidebar, page titles, history)
+  - dashboard.spec.ts — 3 test (KPI cards, values, charts)
+  - budget-entry.spec.ts — 3 test (grid, columns, tabs)
+  - approvals.spec.ts — 3 test (versions, badges, queue)
+  - Toplam: 17 E2E test senaryosu
+
+---
+
 ### S8–S17 — Full Feature Implementation (2026-04-16)
 
 #### S8 — AG-Grid Bütçe Giriş Sayfası
