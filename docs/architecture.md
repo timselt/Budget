@@ -446,6 +446,79 @@ S2'de kurulan altyapının üzerine bütçe domain entity'leri, çift FX sütun 
 
 ---
 
+## ADR-0005 — API Controller Katmanı ve Endpoint Tasarımı
+
+**Tarih:** 2026-04-16
+**Statü:** Kabul edildi
+**Karar Sahibi:** Timur Selçuk Turan
+**İlgili Belgeler:**
+- Master spec: `docs/BUTCE_TAKIP_YAZILIMI.md` (§6 API Endpoint Referansı)
+- ADR-0003 (Authentication), ADR-0004 (Domain + KPI)
+
+### 1. Bağlam
+
+S4'te oluşturulan domain entity'leri, servis katmanı ve KPI motoru için REST API endpoint'leri gerekiyor. Master spec §6'da 15 endpoint grubu tanımlı; bu ADR ilk 6 grubu (Customer, BudgetEntry, Expense, SpecialItem, Dashboard/KPI, BudgetVersion) kapsıyor.
+
+### 2. Karar
+
+#### 2.1. Controller Yapısı
+
+- Her controller `[ApiController]` + `[Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]`
+- Yazma endpoint'leri ek `[Authorize(Policy = "...")]` ile rol bazlı koruma
+- Route yapısı spec §6 ile uyumlu: `/api/v1/` prefix
+- Controller'lar ince tutulur — iş mantığı servis katmanında
+
+#### 2.2. Endpoint Kapsamı (S5)
+
+| Controller | Route | Endpoint Sayısı |
+|---|---|---|
+| `CustomersController` | `/api/v1/customers` | 5 (CRUD) |
+| `BudgetEntriesController` | `/api/v1/budget/versions/{versionId}/entries` | 4 (GET/POST/PUT bulk/DELETE) |
+| `ExpenseEntriesController` | `/api/v1/expenses/{yearId}` | 3 (GET/POST/DELETE) |
+| `SpecialItemsController` | `/api/v1/special-items/{yearId}` | 3 (GET/POST/DELETE) |
+| `DashboardController` | `/api/v1/dashboard/{versionId}` | 2 (KPIs/TopCustomers) |
+| `BudgetVersionsController` | `/api/v1/budget/` | 12 (years CRUD, versions CRUD, submit/approve/reject/archive) |
+
+#### 2.3. Onay Akışı Endpoint'leri
+
+- Submit: `POST /versions/{id}/submit` (Draft → Submitted)
+- Dept Approve: `POST /versions/{id}/approve/dept`
+- Finance Approve: `POST /versions/{id}/approve/finance`
+- CFO Approve: `POST /versions/{id}/approve/cfo`
+- Activate: `POST /versions/{id}/activate`
+- Reject: `POST /versions/{id}/reject` (body: reason zorunlu)
+- Archive: `POST /versions/{id}/archive`
+
+Her adım ilgili role policy ile korunur. State machine doğrulaması domain entity'de yapılır.
+
+#### 2.4. Kullanıcı Kimliği
+
+- `ClaimTypes.NameIdentifier` → `userId` (int)
+- `company_id` custom claim → `companyId` (TenantResolutionMiddleware tarafından scope'a bağlanır)
+
+### 3. Reddedilen Alternatifler
+
+| Alternatif | Reddedilme Nedeni |
+|---|---|
+| MediatR CQRS handler'ları | Mevcut ölçekte (6 controller, ~30 endpoint) overengineering. Servis katmanı yeterli. Controller → Service → DbContext akışı spec KURAL-002 ile uyumlu. |
+| Minimal API | Controller pattern'ı OpenIddict auth scheme yönetimi, Swagger metadata ve route gruplandırma için daha uygun. Minimal API'ye geçiş gerekirse ayrı ADR ile. |
+| Global exception filter | S5'te sadece InvalidOperationException fırlatılıyor. Production'da ProblemDetails middleware eklenecek (S6+). |
+
+### 4. Sonuçlar
+
+**Olumlu:**
+- 29 endpoint, spec §6 ile uyumlu route yapısı
+- Rol bazlı yetkilendirme (Admin, CFO, FinanceManager, DepartmentHead)
+- Onay akışı tam state machine üzerinden işler
+- KPI endpoint'leri segmentId ve monthRange filtresi destekler
+
+**Olumsuz:**
+- ProblemDetails / global exception handling henüz yok — InvalidOperationException 500 döner
+- Validation pipeline (FluentValidation middleware) henüz API'ye bağlanmadı
+- Variance, Scenario, Alert, Report, Import/Export, Admin endpoint'leri sonraki sprint'lere ertelendi
+
+---
+
 ## ADR-XXXX — [Başlık]
 
 **Tarih:** YYYY-MM-DD

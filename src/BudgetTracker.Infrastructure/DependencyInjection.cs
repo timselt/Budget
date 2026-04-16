@@ -1,7 +1,9 @@
 using BudgetTracker.Application.BudgetEntries;
 using BudgetTracker.Application.Common.Abstractions;
 using BudgetTracker.Application.Customers;
+using BudgetTracker.Application.Expenses;
 using BudgetTracker.Application.FxRates;
+using BudgetTracker.Application.SpecialItems;
 using BudgetTracker.Core.Common;
 using BudgetTracker.Infrastructure.Authentication;
 using BudgetTracker.Infrastructure.Common;
@@ -45,6 +47,8 @@ public static class DependencyInjection
         services.AddScoped<IFxConversionService, FxConversionService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IBudgetEntryService, BudgetEntryService>();
+        services.AddScoped<IExpenseEntryService, ExpenseEntryService>();
+        services.AddScoped<ISpecialItemService, SpecialItemService>();
 
         services.AddIdentity<User, Role>(options =>
             {

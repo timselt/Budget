@@ -4,6 +4,36 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### S5 — API Controller'ları: CRUD + Dashboard + Onay Akışı (2026-04-16)
+
+#### Eklendi
+
+- **API Controller'ları (`BudgetTracker.Api/Controllers`):**
+  - `CustomersController` — 5 endpoint: GET list, GET by id, POST, PUT, DELETE
+  - `BudgetEntriesController` — 4 endpoint: GET by version, POST, PUT bulk, DELETE
+  - `ExpenseEntriesController` — 3 endpoint: GET entries, POST, DELETE
+  - `SpecialItemsController` — 3 endpoint: GET, POST, DELETE
+  - `DashboardController` — 2 endpoint: KPI kartları (segmentId + monthRange filtre), Top müşteriler (HHI)
+  - `BudgetVersionsController` — 12 endpoint: years CRUD, versions CRUD, submit/approve(dept/finance/cfo)/activate/reject/archive
+
+- **Servis implementasyonları (`BudgetTracker.Infrastructure/Services`):**
+  - `ExpenseEntryService` — CRUD, FX dönüşüm, version lock guard
+  - `SpecialItemService` — CRUD, version lock guard
+
+- **DI güncellemeleri:**
+  - Infrastructure: `ExpenseEntryService`, `SpecialItemService` kayıtları
+
+- **Dokümantasyon:**
+  - `docs/architecture.md` — ADR-0005 (API Controller Katmanı ve Endpoint Tasarımı)
+
+#### Toplam Endpoint Sayısı: 29 (mevcut Auth/Account endpoint'leri hariç)
+
+#### Bilinen Kısıtlar
+
+- ProblemDetails / global exception handler henüz bağlanmadı — `InvalidOperationException` 500 döner
+- FluentValidation pipeline API'ye entegre edilmedi — validator'lar DI'da kayıtlı ama middleware yok
+- Variance, Scenario, Alert, Report, Import/Export, Admin endpoint'leri sonraki sprint'lere ertelendi
+
 ### S4 — Domain Entity'ler, Application Katmanı ve KPI Motoru (2026-04-16)
 
 #### Eklendi
