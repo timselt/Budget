@@ -36,6 +36,7 @@ export function App() {
           }
         >
           <Route index element={<DashboardPage />} />
+          <Route path="budget" element={<Navigate to="/budget/planning" replace />} />
           <Route path="budget/planning" element={<BudgetEntryPage />} />
           <Route path="actuals" element={<ActualsPage />} />
           <Route path="forecast" element={<ForecastPage />} />
@@ -45,19 +46,7 @@ export function App() {
           <Route path="consolidation" element={<ConsolidationPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
           <Route path="audit" element={<AuditLogPage />} />
-
-          {/* Eski route'lardan yönlendirmeler */}
-          <Route path="budget" element={<Navigate to="/budget/planning" replace />} />
-          <Route path="budget/versions" element={<Navigate to="/budget/planning" replace />} />
-          <Route path="customers" element={<Navigate to="/" replace />} />
-          <Route path="customers/:id" element={<Navigate to="/" replace />} />
-          <Route path="expenses" element={<Navigate to="/budget/planning" replace />} />
-          <Route path="scenarios" element={<Navigate to="/variance" replace />} />
-          <Route path="fx-rates" element={<Navigate to="/master-data" replace />} />
-          <Route path="tahsilat" element={<Navigate to="/" replace />} />
-          <Route path="tahsilat/*" element={<Navigate to="/" replace />} />
-          <Route path="admin" element={<Navigate to="/master-data" replace />} />
-          <Route path="admin/audit" element={<Navigate to="/audit" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </Suspense>

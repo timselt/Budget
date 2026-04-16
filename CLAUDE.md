@@ -1,8 +1,11 @@
-# CLAUDE.md — Bütçe Takip Yazılımı
+# CLAUDE.md — FinOps Tur
 
-Tur Assist Group için çoklu kiracılı, KVKK-uyumlu bütçe planlama ve performans takip platformu. Excel tabanlı mevcut akışın yerini alır.
+Tur Assist Grubu için çoklu kiracılı, KVKK-uyumlu bütçe planlama ve performans takip platformu. Excel tabanlı mevcut akışın yerini alır.
 
-> **TEK DOĞRU KAYNAK:** `docs/BUTCE_TAKIP_YAZILIMI.md` (master spec). Her modülden önce ilgili bölümü oku. Bu dosya sadece kısayol/hatırlatıcıdır.
+> **Referanslar:**
+> - Teknoloji + mimari genel bakış: `docs/TECH_STACK.md`
+> - ADR geçmişi: `docs/architecture.md`
+> - UI tasarım kaynağı: `docs/FinOpsTur_Prototip.html` (dosya yoksa git history'den)
 
 ---
 
@@ -21,12 +24,11 @@ Tur Assist Group için çoklu kiracılı, KVKK-uyumlu bütçe planlama ve perfor
 | Frontend | React + Vite + TypeScript | 19 / latest |
 | Styling | Tailwind CSS | 4 |
 | State | Zustand (UI) + TanStack Query (server) | latest |
-| Grid | AG-Grid Community (MIT) | latest |
-| Charts | Recharts | latest |
-| Testing | xUnit + NSubstitute + Testcontainers, Vitest, Playwright, k6 | — |
+| Charts | Chart.js + react-chartjs-2 | 4.4 / 5.3 |
+| Testing | xUnit + NSubstitute + Testcontainers (backend); Playwright (frontend, ileride) | — |
 | Hosting | Railway (Frankfurt) | — |
 
-**Asla kullanma:** Redis, SignalR, Python microservice, Azure Blob Storage, in-memory SQLite, MySQL, Drizzle, Express, Manus OAuth, Duende IdentityServer (lisans), Handsontable (lisans).
+**Asla kullanma:** Redis, SignalR, Python microservice, Azure Blob Storage, in-memory SQLite, MySQL, Drizzle, Express, Manus OAuth, Duende IdentityServer (lisans), Handsontable (lisans), AG-Grid (Community range-paste eksiği), Recharts (Chart.js ile değiştirildi).
 
 ---
 
@@ -88,30 +90,26 @@ Her oturumda otomatik yüklenir:
 ## Klasör Yapısı (Hedef)
 
 ```
-budget-tracker/
-├── BudgetTracker.sln
+budget/
+├── BudgetTracker.slnx
+├── Directory.Packages.props
 ├── docker-compose.dev.yml
-├── docker-compose.yml
-├── railway.toml
 ├── .gitignore
 ├── CLAUDE.md                   # bu dosya
-├── README.md
+├── AGENTS.md
 ├── CHANGELOG.md
 ├── docs/
-│   ├── BUTCE_TAKIP_YAZILIMI.md # master spec
+│   ├── TECH_STACK.md           # mimari + teknoloji genel bakış
 │   ├── architecture.md         # ADR-0001, ADR-0002, ...
-│   ├── plans/
 │   └── CODEMAPS/
 ├── src/
 │   ├── BudgetTracker.Api/             # ASP.NET Web API + OpenIddict
 │   ├── BudgetTracker.Application/     # Use cases, DTOs, validators
 │   ├── BudgetTracker.Core/            # Domain entities, value objects, interfaces
-│   ├── BudgetTracker.Infrastructure/  # EF Core, Hangfire, integrations
-│   └── BudgetTracker.Migration/       # Tek seferlik Excel → DB konsolu
+│   └── BudgetTracker.Infrastructure/  # EF Core, integrations
 ├── tests/
 │   ├── BudgetTracker.UnitTests/
-│   ├── BudgetTracker.IntegrationTests/  # Testcontainers + Postgres 16
-│   └── BudgetTracker.E2ETests/          # Playwright
+│   └── BudgetTracker.IntegrationTests/  # Testcontainers + Postgres 16
 └── client/
     ├── package.json
     ├── vite.config.ts
@@ -119,7 +117,6 @@ budget-tracker/
     └── src/
         ├── pages/
         ├── components/
-        ├── hooks/
         ├── lib/
         └── styles/
 ```
@@ -141,9 +138,7 @@ cd client
 pnpm install
 pnpm dev
 pnpm build
-pnpm test
 pnpm lint
-pnpm exec playwright test
 
 # Veritabanı (geliştirme)
 docker compose -f docker-compose.dev.yml up -d
@@ -181,7 +176,7 @@ dotnet test --filter Category=GoldenScenario
 
 ## Açık Doğrulama Bekleyen Maddeler
 
-Sprint başında muhasebe ekibine sorulacak (`docs/plans/2026-04-15-ui-ux-entegrasyon-design.md` §5):
+Sprint başında muhasebe ekibine sorulacak:
 
 1. "Holding Giderleri" sınıfı GENERAL mi EXTRAORDINARY mi
 2. "Amortisman" sınıfı doğrulaması (TECHNICAL atandı)
