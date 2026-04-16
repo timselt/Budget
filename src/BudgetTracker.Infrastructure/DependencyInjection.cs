@@ -1,9 +1,13 @@
+using BudgetTracker.Application.Audit;
 using BudgetTracker.Application.BudgetEntries;
 using BudgetTracker.Application.Common.Abstractions;
 using BudgetTracker.Application.Customers;
 using BudgetTracker.Application.Expenses;
 using BudgetTracker.Application.FxRates;
+using BudgetTracker.Application.Reports;
+using BudgetTracker.Application.Scenarios;
 using BudgetTracker.Application.SpecialItems;
+using BudgetTracker.Application.Variance;
 using BudgetTracker.Core.Common;
 using BudgetTracker.Infrastructure.Authentication;
 using BudgetTracker.Infrastructure.Common;
@@ -11,6 +15,7 @@ using BudgetTracker.Infrastructure.FxRates;
 using BudgetTracker.Infrastructure.Identity;
 using BudgetTracker.Infrastructure.Persistence;
 using BudgetTracker.Infrastructure.Persistence.Interceptors;
+using BudgetTracker.Infrastructure.Reports;
 using BudgetTracker.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -55,6 +60,12 @@ public static class DependencyInjection
         services.AddScoped<IBudgetEntryService, BudgetEntryService>();
         services.AddScoped<IExpenseEntryService, ExpenseEntryService>();
         services.AddScoped<ISpecialItemService, SpecialItemService>();
+        services.AddScoped<IVarianceService, VarianceService>();
+        services.AddScoped<IScenarioService, ScenarioService>();
+        services.AddScoped<IAuditQueryService, AuditQueryService>();
+        services.AddScoped<IExcelExportService, ExcelExportService>();
+        services.AddScoped<IExcelImportService, ExcelImportService>();
+        services.AddScoped<IPdfReportService, PdfReportService>();
 
         services.AddIdentity<User, Role>(options =>
             {

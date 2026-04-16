@@ -4,9 +4,14 @@ import { useAuthStore } from '../../stores/auth'
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '◻' },
   { to: '/budget', label: 'Bütçe', icon: '◻' },
+  { to: '/budget/versions', label: 'Versiyonlar', icon: '◻' },
   { to: '/customers', label: 'Müşteriler', icon: '◻' },
   { to: '/expenses', label: 'Giderler', icon: '◻' },
+  { to: '/variance', label: 'BvA Raporu', icon: '◻' },
+  { to: '/scenarios', label: 'Senaryolar', icon: '◻' },
   { to: '/fx-rates', label: 'Döviz Kurları', icon: '◻' },
+  { to: '/approvals', label: 'Onaylar', icon: '◻' },
+  { to: '/admin', label: 'Ayarlar', icon: '◻' },
 ]
 
 export function Sidebar() {

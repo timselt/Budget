@@ -43,5 +43,11 @@
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.6" />
     <PackageVersion Include="Respawn" Version="6.2.1" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+
+    <!-- Excel export/import -->
+    <PackageVersion Include="ClosedXML" Version="0.104.2" />
+
+    <!-- PDF report generation -->
+    <PackageVersion Include="QuestPDF" Version="2025.1.2" />
   </ItemGroup>
 </Project>

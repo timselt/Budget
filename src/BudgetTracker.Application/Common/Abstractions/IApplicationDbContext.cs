@@ -20,4 +20,5 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<SpecialItem> SpecialItems { get; }
     DbSet<BudgetApproval> BudgetApprovals { get; }
     DbSet<UserSegment> UserSegments { get; }
+    DbSet<Scenario> Scenarios { get; }
 }

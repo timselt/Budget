@@ -4,6 +4,66 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### S8–S17 — Full Feature Implementation (2026-04-16)
+
+#### S8 — AG-Grid Bütçe Giriş Sayfası
+- AG-Grid Community ile spreadsheet UI (müşteri × 12 ay)
+- Segment bazlı gruplama, inline editing, dirty cell vurgulama
+- Gelir/Hasar sekmeleri, versiyon seçici, toplu kaydetme
+- Türkçe sayı formatı (1.234.567)
+
+#### S9 — Gider Giriş ve Özel Kalemler
+- Hiyerarşik gider tablosu (GENERAL/TECHNICAL/EXTRAORDINARY sınıflandırma)
+- Özel kalemler formu (Muallak, Demo Filo, Finansal Gelir/Gider, T.Katılım, Amortisman)
+- Click-to-edit inline düzenleme, otomatik kaydetme
+
+#### S10 — Dashboard Grafikleri (Recharts)
+- 8 grafik: Gelir-Hasar trend, Loss Ratio, EBITDA bar, Segment donut, Gider pie, Kümülatif alan, Combined Ratio, Top 10 müşteri
+- Aylık özet tablo (12 ay × 10 KPI)
+- Dashboard filtreleri (yıl, versiyon, dönem, segment)
+- ChartCard wrapper, chart-utils paylaşımlı yardımcılar
+
+#### S11 — Onay Akışı UI
+- Bütçe versiyon yönetimi sayfası (oluştur, sil, submit)
+- Onay kuyruğu sayfası (bekleyen onaylar, onayla/reddet)
+- StatusBadge (8 durum renk kodu), RejectModal (zorunlu gerekçe), ApprovalTimeline
+- 12 API mutation hook'u (submit, approve/dept/finance/cfo, reject, activate, archive)
+
+#### S12 — Variance Analysis (Backend + Frontend)
+- **Backend:** VarianceService + VarianceController (summary, customers, heatmap)
+- Alert eşikleri: gelir -%10 MEDIUM, hasar +%15 HIGH, LR>%80 HIGH, gider >%20 CRITICAL
+- **Frontend:** Variance heatmap (yeşil→kırmızı), sapma tablosu, waterfall chart
+- KPI özet kartları (gelir/hasar sapması, uyarı sayıları)
+
+#### S13 — Müşteri ve Segment Analizi
+- Müşteri kârlılık tablosu (sıralama, arama, segment filtre, sparkline)
+- Müşteri detay sayfası (12 ay trend chart, KPI kartları)
+- Segment radar chart (5 eksen karşılaştırma)
+- Konsantrasyon analizi (Top 5/10/20 pay, HHI göstergesi)
+
+#### S14 — Senaryo Motoru (Backend + Frontend)
+- **Backend:** Scenario entity, ScenarioService, ScenariosController
+- Parametre seti: gelir/hasar/gider % değişimi, versiyon başına max 5 senaryo
+- **Frontend:** Senaryo form (slider + input), P&L karşılaştırma tablosu
+- Tornado chart (hassasiyet analizi)
+
+#### S15–S16 — Excel/PDF Export ve FX Sayfası
+- **Excel:** ClosedXML ile bütçe export (Türkçe başlıklar, formatlanmış) + import (doğrulama)
+- **PDF:** QuestPDF ile yönetim kurulu raporu (A4 landscape, KPI + müşteri tabloları)
+- ReportsController (Excel download, PDF download, Excel upload)
+- **FX sayfası:** Kur tablosu, manuel giriş formu, TCMB senkron butonu
+
+#### S17 — Audit Log ve Admin
+- **Backend:** AuditQueryService + AuditController + AdminController
+- Audit log sayfası (filtrelenebilir tablo, tarih aralığı, pagination)
+- Admin sayfası (kullanıcı yönetimi, şirket yönetimi, sekmeli UI)
+
+#### Route & Navigation
+- App.tsx: 12 route (tüm sayfalar AuthGuard korumalı)
+- Sidebar: 10 nav item (Dashboard, Bütçe, Versiyonlar, Müşteriler, Giderler, BvA, Senaryolar, Döviz, Onaylar, Ayarlar)
+
+---
+
 ### S7 — Frontend İskeleti: React + Vite + Tailwind (2026-04-16)
 
 #### Eklendi

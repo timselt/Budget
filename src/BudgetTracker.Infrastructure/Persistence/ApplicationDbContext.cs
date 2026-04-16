@@ -33,6 +33,7 @@ public sealed class ApplicationDbContext : IdentityDbContext<User, Role, int>, I
     public DbSet<BudgetApproval> BudgetApprovals => Set<BudgetApproval>();
     public DbSet<UserSegment> UserSegments => Set<UserSegment>();
     public DbSet<UserCompany> UserCompanies => Set<UserCompany>();
+    public DbSet<Scenario> Scenarios => Set<Scenario>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => base.SaveChangesAsync(cancellationToken);
