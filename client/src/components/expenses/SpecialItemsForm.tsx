@@ -100,10 +100,10 @@ export function SpecialItemsForm({ items, onSave, isSaving }: SpecialItemsFormPr
   )
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
       <table className="w-full min-w-[1100px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-border bg-surface-alt">
+          <tr className="border-b border-sl-outline-variant/15 bg-surface-alt">
             <th className="sticky left-0 z-10 bg-surface-alt px-4 py-3 text-left font-semibold text-text-muted">
               Kalem
             </th>
@@ -124,9 +124,9 @@ export function SpecialItemsForm({ items, onSave, isSaving }: SpecialItemsFormPr
           {rows.map((row) => (
             <tr
               key={row.type}
-              className="border-b border-border/50 transition-colors hover:bg-primary-50/30"
+              className="border-b border-sl-outline-variant/15 transition-colors hover:bg-primary-50/30"
             >
-              <td className="sticky left-0 z-10 bg-white px-4 py-2.5 font-medium">
+              <td className="sticky left-0 z-10 bg-sl-surface-lowest px-4 py-2.5 font-medium">
                 {SPECIAL_ITEM_LABELS[row.type]}
               </td>
               {Array.from({ length: 12 }, (_, i) => {

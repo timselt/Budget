@@ -43,17 +43,17 @@ export function VarianceHeatmap({ data }: VarianceHeatmapProps) {
 
   if (grouped.length === 0) {
     return (
-      <div className="rounded-xl border border-border bg-white p-8 text-center text-text-muted shadow-sm">
+      <div className="rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest p-8 text-center text-text-muted shadow-[var(--sl-shadow-sm)]">
         Isitma haritasi verisi bulunamadi.
       </div>
     )
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-border bg-slate-50/80">
+          <tr className="border-b border-sl-outline-variant/15 bg-slate-50/80">
             <th className="sticky left-0 z-10 bg-slate-50/80 px-3 py-2.5 text-left font-medium text-text-muted">
               Musteri
             </th>
@@ -69,8 +69,8 @@ export function VarianceHeatmap({ data }: VarianceHeatmapProps) {
         </thead>
         <tbody>
           {grouped.map((row) => (
-            <tr key={row.customerId} className="border-b border-border/30">
-              <td className="sticky left-0 z-10 bg-white px-3 py-1.5 font-medium text-sm whitespace-nowrap">
+            <tr key={row.customerId} className="border-b border-sl-outline-variant/15">
+              <td className="sticky left-0 z-10 bg-sl-surface-lowest px-3 py-1.5 font-medium text-sm whitespace-nowrap">
                 {row.customerName}
               </td>
               {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
@@ -91,7 +91,7 @@ export function VarianceHeatmap({ data }: VarianceHeatmapProps) {
         </tbody>
       </table>
 
-      <div className="flex items-center gap-2 border-t border-border px-4 py-2.5">
+      <div className="flex items-center gap-2 border-t border-sl-outline-variant/15 px-4 py-2.5">
         <span className="text-xs text-text-muted mr-1">Skala:</span>
         <div className="flex items-center gap-1">
           <div className="h-4 w-8 rounded bg-red-600" />

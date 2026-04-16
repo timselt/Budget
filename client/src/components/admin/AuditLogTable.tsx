@@ -36,10 +36,10 @@ export function AuditLogTable({ items, isLoading }: AuditLogTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
+    <div className="overflow-x-auto rounded-xl border border-sl-outline-variant/15">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-border bg-surface-alt text-left">
+          <tr className="border-b border-sl-outline-variant/15 bg-surface-alt text-left">
             <th className="px-4 py-3 font-medium text-text-muted">Tarih</th>
             <th className="px-4 py-3 font-medium text-text-muted">Kullanici</th>
             <th className="px-4 py-3 font-medium text-text-muted">Islem</th>
@@ -48,7 +48,7 @@ export function AuditLogTable({ items, isLoading }: AuditLogTableProps) {
             <th className="px-4 py-3 font-medium text-text-muted">IP</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border">
+        <tbody className="">
           {items.map((item) => (
             <tr key={item.id} className="transition-colors hover:bg-surface-alt/50">
               <td className="whitespace-nowrap px-4 py-3 tabular-nums">

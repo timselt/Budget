@@ -36,7 +36,7 @@ function ActionButton({
 }) {
   const variantClasses = {
     default:
-      'border-border text-text hover:bg-surface-alt',
+      'border-sl-outline-variant/15 text-text hover:bg-surface-alt',
     danger:
       'border-red-200 text-red-600 hover:bg-red-50',
     success:
@@ -84,7 +84,7 @@ export function VersionCard({
   const showArchive = status === 'ACTIVE' && !isActive && onArchive
 
   return (
-    <div className="group rounded-xl border border-border bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+    <div className="group rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)] transition-shadow hover:shadow-[var(--sl-shadow-sm)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2.5">

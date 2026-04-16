@@ -125,7 +125,7 @@ export function ExpenseGrid({ entries, onSave, isSaving }: ExpenseGridProps) {
 
   if (rows.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-xl border border-border bg-white">
+      <div className="flex h-48 items-center justify-center rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest">
         <p className="text-sm text-text-muted">
           Henuz gider kategorisi tanimlanmamis.
         </p>
@@ -134,10 +134,10 @@ export function ExpenseGrid({ entries, onSave, isSaving }: ExpenseGridProps) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
       <table className="w-full min-w-[1100px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-border bg-surface-alt">
+          <tr className="border-b border-sl-outline-variant/15 bg-surface-alt">
             <th className="sticky left-0 z-10 bg-surface-alt px-4 py-3 text-left font-semibold text-text-muted">
               Kategori
             </th>
@@ -223,9 +223,9 @@ function ClassificationSection({
       {rows.map((row) => (
         <tr
           key={row.categoryId}
-          className="border-b border-border/50 transition-colors hover:bg-primary-50/30"
+          className="border-b border-sl-outline-variant/15 transition-colors hover:bg-primary-50/30"
         >
-          <td className="sticky left-0 z-10 bg-white px-4 py-2.5 font-medium">
+          <td className="sticky left-0 z-10 bg-sl-surface-lowest px-4 py-2.5 font-medium">
             {row.categoryName}
           </td>
           <td className="px-3 py-2.5">
@@ -273,7 +273,7 @@ function ClassificationSection({
           </td>
         </tr>
       ))}
-      <tr className="border-b border-border bg-surface-alt/60">
+      <tr className="border-b border-sl-outline-variant/15 bg-surface-alt/60">
         <td className="sticky left-0 z-10 bg-surface-alt/60 px-4 py-2 font-semibold text-text-muted">
           {CLASSIFICATION_LABELS[classification]} Toplami
         </td>

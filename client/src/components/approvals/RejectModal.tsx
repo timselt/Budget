@@ -46,7 +46,7 @@ export function RejectModal({
       aria-labelledby="reject-modal-title"
     >
       <div
-        className="mx-4 w-full max-w-md rounded-2xl border border-border bg-white p-6 shadow-xl"
+        className="mx-4 w-full max-w-md rounded-2xl border border-sl-outline-variant/15 bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]"
         onClick={(e) => e.stopPropagation()}
       >
         <h2
@@ -72,7 +72,7 @@ export function RejectModal({
             placeholder="Red gerekçesi (zorunlu)..."
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="w-full resize-none rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted/60 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            className="w-full resize-none rounded-lg border border-sl-outline-variant/15 bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted/60 focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200"
           />
 
           <div className="mt-4 flex items-center justify-end gap-3">

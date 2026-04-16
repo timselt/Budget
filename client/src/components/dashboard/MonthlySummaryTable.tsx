@@ -65,8 +65,8 @@ export function MonthlySummaryTable({ versionId }: Props) {
     <ChartCard title="Aylik KPI Ozeti" className="overflow-x-auto">
       <table className="w-full min-w-[900px] border-collapse text-sm">
         <thead>
-          <tr className="border-b border-border">
-            <th className="sticky left-0 bg-white px-3 py-2 text-left text-xs font-semibold text-text-muted uppercase">
+          <tr className="border-b border-sl-outline-variant/15">
+            <th className="sticky left-0 bg-sl-surface-lowest px-3 py-2 text-left text-xs font-semibold text-text-muted uppercase">
               KPI
             </th>
             {data.map((row) => (
@@ -81,8 +81,8 @@ export function MonthlySummaryTable({ versionId }: Props) {
         </thead>
         <tbody>
           {KPI_COLUMNS.map((col) => (
-            <tr key={col.key} className="border-b border-border/50 hover:bg-surface-alt">
-              <td className="sticky left-0 bg-white px-3 py-2 font-medium text-text">
+            <tr key={col.key} className="border-b border-sl-outline-variant/15 hover:bg-surface-alt">
+              <td className="sticky left-0 bg-sl-surface-lowest px-3 py-2 font-medium text-text">
                 {col.label}
               </td>
               {data.map((row) => {

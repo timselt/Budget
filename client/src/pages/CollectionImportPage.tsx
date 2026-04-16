@@ -172,7 +172,7 @@ export function CollectionImportPage() {
             <button
               onClick={handleUpload}
               disabled={!selectedFile || importMutation.isPending}
-              className="rounded-lg bg-gradient-to-r from-sl-primary to-sl-secondary px-6 py-2.5 font-body text-sm font-medium text-white shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-gradient-to-r from-sl-primary to-sl-secondary px-6 py-2.5 font-body text-sm font-medium text-white shadow-[var(--sl-shadow-sm)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {importMutation.isPending ? 'Yukleniyor...' : 'Yukle'}
             </button>

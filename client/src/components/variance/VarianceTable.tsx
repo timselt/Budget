@@ -71,10 +71,10 @@ export function VarianceTable({ data }: VarianceTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-border bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-border bg-slate-50/80">
+          <tr className="border-b border-sl-outline-variant/15 bg-slate-50/80">
             <th
               className="cursor-pointer px-4 py-3 text-left font-medium text-text-muted"
               onClick={() => handleSort('customerName')}
@@ -120,7 +120,7 @@ export function VarianceTable({ data }: VarianceTableProps) {
           {sorted.map((row) => (
             <tr
               key={row.customerId}
-              className="border-b border-border/50 transition-colors hover:bg-slate-50/50"
+              className="border-b border-sl-outline-variant/15 transition-colors hover:bg-slate-50/50"
             >
               <td className="px-4 py-3 font-medium">
                 <span className="text-text-muted text-xs mr-2">{row.customerCode}</span>

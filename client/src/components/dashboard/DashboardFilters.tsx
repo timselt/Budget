@@ -66,7 +66,7 @@ function FilterSelect({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text shadow-sm transition-colors focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200"
+        className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2 text-sm text-text shadow-[var(--sl-shadow-sm)] transition-colors focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200"
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -92,7 +92,7 @@ export function DashboardFilters({
   segmentOptions = DEFAULT_SEGMENT_OPTIONS,
 }: DashboardFiltersProps) {
   return (
-    <div className="flex flex-wrap items-end gap-4 rounded-xl border border-border bg-white p-4 shadow-sm">
+    <div className="flex flex-wrap items-end gap-4 rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest p-4 shadow-[var(--sl-shadow-sm)]">
       <FilterSelect
         id="filter-year"
         label="Yil"

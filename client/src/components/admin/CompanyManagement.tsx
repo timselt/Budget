@@ -59,7 +59,7 @@ export function CompanyManagement() {
       {showForm && (
         <form
           onSubmit={handleSubmit}
-          className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-surface-alt/30 p-4"
+          className="flex flex-wrap items-end gap-3 rounded-xl border border-sl-outline-variant/15 bg-surface-alt/30 p-4"
         >
           <div className="flex flex-col gap-1">
             <label htmlFor="company-name" className="text-xs font-medium text-text-muted">
@@ -71,7 +71,7 @@ export function CompanyManagement() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Sirket adi giriniz"
-              className="rounded-md border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              className="rounded-md border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -84,7 +84,7 @@ export function CompanyManagement() {
               value={taxId}
               onChange={(e) => setTaxId(e.target.value)}
               placeholder="Vergi numarasi"
-              className="rounded-md border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              className="rounded-md border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
           <button
@@ -97,10 +97,10 @@ export function CompanyManagement() {
         </form>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-border">
+      <div className="overflow-x-auto rounded-xl border border-sl-outline-variant/15">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-surface-alt text-left">
+            <tr className="border-b border-sl-outline-variant/15 bg-surface-alt text-left">
               <th className="px-4 py-3 font-medium text-text-muted">ID</th>
               <th className="px-4 py-3 font-medium text-text-muted">Kod</th>
               <th className="px-4 py-3 font-medium text-text-muted">Ad</th>
@@ -108,7 +108,7 @@ export function CompanyManagement() {
               <th className="px-4 py-3 font-medium text-text-muted">Kayit Tarihi</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="">
             {companies?.map((company) => (
               <tr key={company.id} className="transition-colors hover:bg-surface-alt/50">
                 <td className="px-4 py-3 tabular-nums">{company.id}</td>

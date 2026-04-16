@@ -72,12 +72,12 @@ export function CustomerTable({ customers, segments }: CustomerTableProps) {
           placeholder="Müşteri ara..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100 sm:w-64"
+          className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2 text-sm outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100 sm:w-64"
         />
         <select
           value={segmentFilter}
           onChange={(e) => setSegmentFilter(e.target.value)}
-          className="rounded-lg border border-border bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+          className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2 text-sm outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
         >
           <option value="all">Tüm Segmentler</option>
           {segments.map((s) => (
@@ -90,10 +90,10 @@ export function CustomerTable({ customers, segments }: CustomerTableProps) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-border bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border bg-surface-alt">
+            <tr className="border-b border-sl-outline-variant/15 bg-surface-alt">
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-text-muted">
                 Sıra
               </th>
@@ -117,7 +117,7 @@ export function CustomerTable({ customers, segments }: CustomerTableProps) {
             {filtered.map((customer, index) => (
               <tr
                 key={customer.id}
-                className="border-b border-border/50 transition-colors last:border-0 hover:bg-primary-50/40"
+                className="border-b border-sl-outline-variant/15 transition-colors last:border-0 hover:bg-primary-50/40"
               >
                 <td className="px-4 py-3 tabular-nums text-text-muted">
                   {index + 1}

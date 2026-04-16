@@ -73,10 +73,10 @@ export function ScenarioPnlTable({
   delta,
 }: ScenarioPnlTableProps) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
+    <div className="overflow-x-auto rounded-xl border border-sl-outline-variant/15">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-border bg-surface-raised">
+          <tr className="border-b border-sl-outline-variant/15 bg-surface-raised">
             <th className="px-4 py-3 text-left font-semibold">Kalem</th>
             <th className="px-4 py-3 text-right font-semibold">Baz</th>
             <th className="px-4 py-3 text-right font-semibold">{scenarioName}</th>
@@ -93,7 +93,7 @@ export function ScenarioPnlTable({
             return (
               <tr
                 key={row.key}
-                className={`border-b border-border/50 transition-colors last:border-b-0 hover:bg-surface-raised/50 ${
+                className={`border-b border-sl-outline-variant/15 transition-colors last:border-b-0 hover:bg-surface-raised/50 ${
                   row.isBold ? 'bg-surface-raised/30' : ''
                 }`}
               >

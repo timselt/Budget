@@ -36,7 +36,7 @@ export function ScenarioForm({ onSubmit, isLoading, scenarioCount }: ScenarioFor
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-surface-raised p-5">
+    <form onSubmit={handleSubmit} className="rounded-xl border border-sl-outline-variant/15 bg-surface-raised p-5">
       <h3 className="mb-4 text-base font-semibold tracking-tight">Yeni Senaryo</h3>
 
       <div className="mb-4">
@@ -49,7 +49,7 @@ export function ScenarioForm({ onSubmit, isLoading, scenarioCount }: ScenarioFor
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="orn. Iyimser Senaryo"
-          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm transition-colors focus:border-accent focus:outline-none"
+          className="w-full rounded-lg border border-sl-outline-variant/15 bg-surface px-3 py-2 text-sm transition-colors focus:border-accent focus:outline-none"
           required
         />
       </div>
@@ -92,7 +92,7 @@ export function ScenarioForm({ onSubmit, isLoading, scenarioCount }: ScenarioFor
                 step={0.5}
                 value={parameters[key]}
                 onChange={(e) => handleParamChange(key, Number(e.target.value))}
-                className="w-20 rounded-lg border border-border bg-surface px-2 py-1 text-center text-sm tabular-nums transition-colors focus:border-accent focus:outline-none"
+                className="w-20 rounded-lg border border-sl-outline-variant/15 bg-surface px-2 py-1 text-center text-sm tabular-nums transition-colors focus:border-accent focus:outline-none"
               />
             </div>
           </div>

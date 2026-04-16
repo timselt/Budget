@@ -66,7 +66,7 @@ export function TornadoChart({ scenarios }: TornadoChartProps) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface-raised p-4">
+    <div className="rounded-xl border border-sl-outline-variant/15 bg-surface-raised p-4">
       <h3 className="mb-4 text-base font-semibold tracking-tight">
         Hassasiyet Analizi (Baz'a Gore Fark)
       </h3>

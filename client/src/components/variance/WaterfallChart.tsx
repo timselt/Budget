@@ -49,7 +49,7 @@ function WaterfallTooltip({ active, payload, label }: WaterfallTooltipProps) {
   const sign = datum.runningTotal >= 0 ? '+' : ''
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-md">
+    <div className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2 text-sm shadow-[var(--sl-shadow-sm)]">
       <p className="mb-1 font-medium">Ay: {label}</p>
       <p className="text-text-muted">
         Kumulatif: {sign}{formatCompact(datum.runningTotal)} TRY
@@ -89,7 +89,7 @@ export function WaterfallChart({ data }: WaterfallChartProps) {
   }, [data])
 
   return (
-    <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
       <h3 className="mb-4 text-sm font-semibold text-text-muted">
         Aylik Gelir Sapma Selalesi (TRY)
       </h3>

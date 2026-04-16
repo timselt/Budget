@@ -29,7 +29,7 @@ function CustomerTooltip({ active, payload }: CustomTooltipProps) {
   const item = payload[0].payload
   return (
     <div
-      className="rounded-lg border bg-white px-3 py-2 text-sm shadow-md"
+      className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2 text-sm shadow-[var(--sl-shadow-sm)]"
       style={{ borderColor: CHART_COLORS.border }}
     >
       <p className="font-medium">{item.customerName}</p>
