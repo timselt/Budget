@@ -78,26 +78,30 @@ export function ApprovalsPage() {
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
+      <header className="mb-10">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
           Bekleyen Onaylar
         </h1>
-        <p className="text-sm text-text-muted">
+        <p className="font-body text-sm text-sl-on-surface-variant">
           Onay bekleyen bütçe versiyonlarını inceleyin.
         </p>
       </header>
 
       {/* Year selector */}
-      <div className="mb-6">
+      <div className="mb-8">
         {yearsLoading && (
-          <span className="text-sm text-text-muted">Yıllar yükleniyor...</span>
+          <span className="font-body text-sm text-sl-on-surface-variant">
+            Yıllar yükleniyor...
+          </span>
         )}
 
         {years && (
           <select
             value={selectedYearId ?? ''}
             onChange={(e) => setSelectedYearId(Number(e.target.value) || null)}
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2
+                       font-body text-sm text-sl-on-surface
+                       focus:border-sl-primary focus:outline-none focus:ring-2 focus:ring-sl-primary-fixed"
           >
             <option value="" disabled>
               Yıl seçin
@@ -114,14 +118,14 @@ export function ApprovalsPage() {
       {/* Loading */}
       {versionsLoading && selectedYearId !== null && (
         <div className="flex h-48 items-center justify-center">
-          <p className="text-text-muted">Yükleniyor...</p>
+          <p className="font-body text-sl-on-surface-variant">Yükleniyor...</p>
         </div>
       )}
 
       {/* Empty state */}
       {!versionsLoading && pendingVersions.length === 0 && selectedYearId !== null && (
-        <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border">
-          <p className="text-sm text-text-muted">
+        <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-sl-outline-variant/15 bg-sl-surface-low">
+          <p className="font-body text-sm text-sl-on-surface-variant">
             Bekleyen onay bulunmuyor.
           </p>
         </div>
@@ -129,43 +133,43 @@ export function ApprovalsPage() {
 
       {/* Pending approvals table */}
       {pendingVersions.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
+        <div className="overflow-hidden rounded-xl bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
+          <table className="w-full text-left font-body text-sm">
             <thead>
-              <tr className="border-b border-border bg-surface-alt">
-                <th className="px-5 py-3 font-medium text-text-muted">
+              <tr className="bg-sl-surface-low">
+                <th className="px-5 py-3 font-medium text-sl-on-surface-variant">
                   Versiyon
                 </th>
-                <th className="px-5 py-3 font-medium text-text-muted">
+                <th className="px-5 py-3 font-medium text-sl-on-surface-variant">
                   Durum
                 </th>
-                <th className="px-5 py-3 font-medium text-text-muted">
+                <th className="px-5 py-3 font-medium text-sl-on-surface-variant">
                   Bekleyen Adım
                 </th>
-                <th className="px-5 py-3 font-medium text-text-muted">
+                <th className="px-5 py-3 font-medium text-sl-on-surface-variant">
                   Oluşturulma
                 </th>
-                <th className="px-5 py-3 text-right font-medium text-text-muted">
+                <th className="px-5 py-3 text-right font-medium text-sl-on-surface-variant">
                   İşlem
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {pendingVersions.map((v) => (
                 <tr
                   key={v.id}
-                  className="transition-colors hover:bg-surface-alt/50"
+                  className="transition-colors hover:bg-sl-surface-low/50"
                 >
-                  <td className="px-5 py-3.5 font-medium text-text">
+                  <td className="px-5 py-3.5 font-medium text-sl-on-surface">
                     {v.name}
                   </td>
                   <td className="px-5 py-3.5">
                     <StatusBadge status={v.status} />
                   </td>
-                  <td className="px-5 py-3.5 text-text-muted">
+                  <td className="px-5 py-3.5 text-sl-on-surface-variant">
                     {getApprovalLevelLabel(v.status)}
                   </td>
-                  <td className="px-5 py-3.5 text-text-muted">
+                  <td className="px-5 py-3.5 text-sl-on-surface-variant">
                     {formatDate(v.createdAt)}
                   </td>
                   <td className="px-5 py-3.5">
@@ -174,7 +178,9 @@ export function ApprovalsPage() {
                         type="button"
                         onClick={() => handleApprove(v.id, v.status)}
                         disabled={isAnyMutating}
-                        className="rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100 disabled:opacity-50"
+                        className="rounded-lg bg-sl-on-tertiary-container/10 px-3 py-1.5 text-xs font-medium
+                                   text-sl-tertiary transition-colors hover:bg-sl-on-tertiary-container/20
+                                   disabled:opacity-50"
                       >
                         Onayla
                       </button>
@@ -184,7 +190,9 @@ export function ApprovalsPage() {
                           setRejectTarget({ id: v.id, name: v.name })
                         }
                         disabled={isAnyMutating}
-                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+                        className="rounded-lg bg-sl-error-container/30 px-3 py-1.5 text-xs font-medium
+                                   text-sl-error transition-colors hover:bg-sl-error-container/50
+                                   disabled:opacity-50"
                       >
                         Reddet
                       </button>

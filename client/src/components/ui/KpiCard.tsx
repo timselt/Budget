@@ -6,20 +6,32 @@ interface KpiCardProps {
 }
 
 export function KpiCard({ title, value, subtitle, trend }: KpiCardProps) {
-  const trendColor =
-    trend === 'up' ? 'text-success' :
-    trend === 'down' ? 'text-danger' :
-    'text-text-muted'
+  const accentColor =
+    trend === 'up' ? 'bg-sl-on-tertiary-container' :
+    trend === 'down' ? 'bg-sl-error' :
+    'bg-sl-primary'
+
+  const valueColor =
+    trend === 'up' ? 'text-sl-on-tertiary-container' :
+    trend === 'down' ? 'text-sl-error' :
+    'text-sl-on-surface'
 
   return (
-    <div className="rounded-xl border border-border bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
-      <p className="text-sm font-medium text-text-muted">{title}</p>
-      <p className={`mt-1 text-2xl font-semibold tracking-tight ${trendColor}`}>
-        {value}
-      </p>
-      {subtitle && (
-        <p className="mt-1 text-xs text-text-muted">{subtitle}</p>
-      )}
+    <div className="relative flex gap-4 rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest py-4 pr-5 pl-0">
+      <div className={`w-1 shrink-0 self-stretch rounded-r-full ${accentColor}`} />
+      <div className="min-w-0">
+        <p className="font-body text-xs uppercase tracking-wider text-sl-on-surface-variant">
+          {title}
+        </p>
+        <p className={`mt-1 font-display text-2xl font-bold tracking-tight ${valueColor}`}>
+          {value}
+        </p>
+        {subtitle && (
+          <p className="mt-1 font-body text-xs text-sl-on-surface-variant">
+            {subtitle}
+          </p>
+        )}
+      </div>
     </div>
   )
 }

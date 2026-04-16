@@ -51,7 +51,7 @@ export function MonthlySummaryTable({ versionId }: Props) {
     )
   }
 
-  if (error || !data) {
+  if (error || !data || !Array.isArray(data)) {
     return (
       <ChartCard title="Aylik KPI Ozeti">
         <div className="flex h-48 items-center justify-center text-danger">

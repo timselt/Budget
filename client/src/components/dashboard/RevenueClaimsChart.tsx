@@ -57,7 +57,7 @@ export function RevenueClaimsChart({ versionId }: Props) {
     )
   }
 
-  if (error || !data) {
+  if (error || !data || !Array.isArray(data)) {
     return (
       <ChartCard title="Aylik Gelir & Hasar">
         <div className="flex h-64 items-center justify-center text-danger">

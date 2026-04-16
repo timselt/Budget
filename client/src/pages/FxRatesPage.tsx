@@ -62,16 +62,18 @@ export function FxRatesPage() {
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Döviz Kurları</h1>
-        <p className="text-sm text-text-muted">
+      <header className="mb-10">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+          Döviz Kurları
+        </h1>
+        <p className="font-body text-sm text-sl-on-surface-variant">
           TCMB kurları ve manuel giriş
         </p>
       </header>
 
-      <div className="mb-6 flex flex-wrap items-end gap-4">
+      <div className="mb-8 flex flex-wrap items-end gap-4">
         <div>
-          <label htmlFor="fx-filter-date" className="block text-xs font-medium text-text-muted mb-1">
+          <label htmlFor="fx-filter-date" className="mb-1 block font-body text-xs font-medium text-sl-on-surface-variant">
             Tarih
           </label>
           <input
@@ -79,19 +81,19 @@ export function FxRatesPage() {
             type="date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
-            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-1.5 font-body text-sm text-sl-on-surface"
           />
         </div>
 
         <div>
-          <label htmlFor="fx-filter-currency" className="block text-xs font-medium text-text-muted mb-1">
+          <label htmlFor="fx-filter-currency" className="mb-1 block font-body text-xs font-medium text-sl-on-surface-variant">
             Para Birimi
           </label>
           <select
             id="fx-filter-currency"
             value={filterCurrency}
             onChange={(e) => setFilterCurrency(e.target.value)}
-            className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm"
+            className="rounded-md border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-1.5 font-body text-sm text-sl-on-surface"
           >
             <option value="">Tümü</option>
             {CURRENCY_OPTIONS.map((c) => (
@@ -104,67 +106,67 @@ export function FxRatesPage() {
           type="button"
           onClick={handleSync}
           disabled={syncMutation.isPending}
-          className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+          className="rounded-md bg-sl-primary px-4 py-1.5 font-body text-sm font-medium text-sl-on-primary transition-colors hover:bg-sl-primary-container disabled:opacity-50"
         >
           {syncMutation.isPending ? 'Senkronize ediliyor...' : 'TCMB Senkronize Et'}
         </button>
 
         {syncMutation.isSuccess && (
-          <span className="text-xs text-green-600">
+          <span className="font-body text-xs text-sl-on-tertiary-container">
             {syncMutation.data.syncedCount} kur senkronize edildi
           </span>
         )}
 
         {syncMutation.isError && (
-          <span className="text-xs text-red-600">
+          <span className="font-body text-xs text-sl-error">
             Senkronizasyon hatası
           </span>
         )}
       </div>
 
       {error && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="mb-6 rounded-md bg-sl-error-container/30 p-3 font-body text-sm text-sl-error">
           Kurlar yüklenirken hata oluştu.
         </div>
       )}
 
       {isLoading ? (
-        <p className="text-sm text-text-muted">Yükleniyor...</p>
+        <p className="font-body text-sm text-sl-on-surface-variant">Yükleniyor...</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
+          <table className="w-full font-body text-sm">
             <thead>
-              <tr className="border-b border-border bg-surface-elevated">
-                <th className="px-4 py-2.5 text-left font-medium text-text-muted">Tarih</th>
-                <th className="px-4 py-2.5 text-left font-medium text-text-muted">Para Birimi</th>
-                <th className="px-4 py-2.5 text-right font-medium text-text-muted">Kur</th>
-                <th className="px-4 py-2.5 text-left font-medium text-text-muted">Kaynak</th>
-                <th className="px-4 py-2.5 text-center font-medium text-text-muted">Yıl Başı Sabit</th>
+              <tr className="bg-sl-surface-low">
+                <th className="px-4 py-2.5 text-left font-medium text-sl-on-surface-variant">Tarih</th>
+                <th className="px-4 py-2.5 text-left font-medium text-sl-on-surface-variant">Para Birimi</th>
+                <th className="px-4 py-2.5 text-right font-medium text-sl-on-surface-variant">Kur</th>
+                <th className="px-4 py-2.5 text-left font-medium text-sl-on-surface-variant">Kaynak</th>
+                <th className="px-4 py-2.5 text-center font-medium text-sl-on-surface-variant">Yıl Başı Sabit</th>
               </tr>
             </thead>
             <tbody>
               {rates?.map((rate: FxRate) => (
-                <tr key={rate.id} className="border-b border-border last:border-b-0 hover:bg-surface-elevated/50 transition-colors">
-                  <td className="px-4 py-2">{formatDate(rate.rateDate)}</td>
-                  <td className="px-4 py-2 font-medium">{rate.currencyCode}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{formatRate(rate.rateValue)}</td>
+                <tr key={rate.id} className="transition-colors hover:bg-sl-surface-low/50">
+                  <td className="px-4 py-2 text-sl-on-surface-variant">{formatDate(rate.rateDate)}</td>
+                  <td className="px-4 py-2 font-medium text-sl-on-surface">{rate.currencyCode}</td>
+                  <td className="px-4 py-2 text-right tabular-nums text-sl-on-surface">{formatRate(rate.rateValue)}</td>
                   <td className="px-4 py-2">
                     <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
                       rate.source === 'TCMB'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-amber-100 text-amber-700'
+                        ? 'bg-sl-primary-fixed text-sl-primary-container'
+                        : 'bg-sl-surface-high text-sl-secondary'
                     }`}>
                       {sourceLabel(rate.source)}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-center">
+                  <td className="px-4 py-2 text-center text-sl-on-surface-variant">
                     {rate.isYearStartFixed ? 'Evet' : 'Hayır'}
                   </td>
                 </tr>
               ))}
               {(!rates || rates.length === 0) && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-text-muted">
+                  <td colSpan={5} className="px-4 py-6 text-center text-sl-on-surface-variant">
                     Kur bulunamadı.
                   </td>
                 </tr>
@@ -174,19 +176,21 @@ export function FxRatesPage() {
         </div>
       )}
 
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold mb-4">Manuel Kur Girişi</h2>
+      <section className="mt-12">
+        <h2 className="mb-4 font-display text-lg font-semibold text-sl-on-surface">
+          Manuel Kur Girişi
+        </h2>
 
         <form onSubmit={handleManualSubmit} className="flex flex-wrap items-end gap-4">
           <div>
-            <label htmlFor="manual-currency" className="block text-xs font-medium text-text-muted mb-1">
+            <label htmlFor="manual-currency" className="mb-1 block font-body text-xs font-medium text-sl-on-surface-variant">
               Para Birimi
             </label>
             <select
               id="manual-currency"
               value={formCurrency}
               onChange={(e) => setFormCurrency(e.target.value)}
-              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm"
+              className="rounded-md border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-1.5 font-body text-sm text-sl-on-surface"
             >
               {CURRENCY_OPTIONS.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -195,7 +199,7 @@ export function FxRatesPage() {
           </div>
 
           <div>
-            <label htmlFor="manual-date" className="block text-xs font-medium text-text-muted mb-1">
+            <label htmlFor="manual-date" className="mb-1 block font-body text-xs font-medium text-sl-on-surface-variant">
               Tarih
             </label>
             <input
@@ -204,12 +208,12 @@ export function FxRatesPage() {
               value={formDate}
               onChange={(e) => setFormDate(e.target.value)}
               required
-              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm"
+              className="rounded-md border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-1.5 font-body text-sm text-sl-on-surface"
             />
           </div>
 
           <div>
-            <label htmlFor="manual-rate" className="block text-xs font-medium text-text-muted mb-1">
+            <label htmlFor="manual-rate" className="mb-1 block font-body text-xs font-medium text-sl-on-surface-variant">
               Kur Değeri
             </label>
             <input
@@ -221,7 +225,7 @@ export function FxRatesPage() {
               onChange={(e) => setFormRate(e.target.value)}
               required
               placeholder="0.0000"
-              className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm w-32"
+              className="w-32 rounded-md border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-1.5 font-body text-sm text-sl-on-surface"
             />
           </div>
 
@@ -231,9 +235,9 @@ export function FxRatesPage() {
               type="checkbox"
               checked={formFixed}
               onChange={(e) => setFormFixed(e.target.checked)}
-              className="rounded border-border"
+              className="rounded border-sl-outline-variant/15"
             />
-            <label htmlFor="manual-fixed" className="text-xs font-medium text-text-muted">
+            <label htmlFor="manual-fixed" className="font-body text-xs font-medium text-sl-on-surface-variant">
               Yıl Başı Sabit Kur
             </label>
           </div>
@@ -241,17 +245,17 @@ export function FxRatesPage() {
           <button
             type="submit"
             disabled={createMutation.isPending}
-            className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-accent/90 disabled:opacity-50"
+            className="rounded-md bg-sl-primary px-4 py-1.5 font-body text-sm font-medium text-sl-on-primary transition-colors hover:bg-sl-primary-container disabled:opacity-50"
           >
             {createMutation.isPending ? 'Kaydediliyor...' : 'Kaydet'}
           </button>
 
           {createMutation.isError && (
-            <span className="text-xs text-red-600">Kaydetme hatası</span>
+            <span className="font-body text-xs text-sl-error">Kaydetme hatası</span>
           )}
 
           {createMutation.isSuccess && (
-            <span className="text-xs text-green-600">Kur kaydedildi</span>
+            <span className="font-body text-xs text-sl-on-tertiary-container">Kur kaydedildi</span>
           )}
         </form>
       </section>

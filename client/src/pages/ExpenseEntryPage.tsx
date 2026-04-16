@@ -136,21 +136,25 @@ export function ExpenseEntryPage() {
 
   return (
     <div>
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Gider Girisi</h1>
-          <p className="mt-1 text-sm text-text-muted">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+            Gider Girisi
+          </h1>
+          <p className="mt-1 font-body text-sm text-sl-on-surface-variant">
             Aylik gider kalemlerini girin ve ozel kalemleri tanimlayin.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <label htmlFor="version-select" className="text-sm font-medium text-text-muted">
+          <label htmlFor="version-select" className="font-body text-sm font-medium text-sl-on-surface-variant">
             Versiyon
           </label>
           <select
             id="version-select"
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm shadow-sm transition-colors focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2
+                       font-body text-sm shadow-[var(--sl-shadow-sm)] transition-colors
+                       focus:border-sl-primary focus:outline-none focus:ring-2 focus:ring-sl-primary-fixed"
             value={selectedVersionId ?? ''}
             onChange={handleVersionChange}
           >
@@ -165,14 +169,14 @@ export function ExpenseEntryPage() {
       </header>
 
       {selectedVersionId === null ? (
-        <div className="flex h-48 items-center justify-center rounded-xl border border-border bg-white">
-          <p className="text-sm text-text-muted">
+        <div className="flex h-48 items-center justify-center rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest">
+          <p className="font-body text-sm text-sl-on-surface-variant">
             Devam etmek icin bir butce versiyonu secin.
           </p>
         </div>
       ) : (
         <>
-          <nav className="mb-5 flex gap-1 rounded-lg bg-surface-alt p-1" role="tablist">
+          <nav className="mb-5 flex gap-1 rounded-lg bg-sl-surface-low p-1" role="tablist">
             <TabButton
               active={activeTab === 'expenses'}
               onClick={() => setActiveTab('expenses')}
@@ -187,13 +191,15 @@ export function ExpenseEntryPage() {
 
           {isLoading && (
             <div className="flex h-48 items-center justify-center">
-              <p className="text-text-muted">Yukleniyor...</p>
+              <p className="font-body text-sl-on-surface-variant">Yukleniyor...</p>
             </div>
           )}
 
           {error && (
-            <div className="rounded-lg border border-danger/30 bg-danger/5 p-4">
-              <p className="text-sm text-danger">Veriler yuklenemedi. Lutfen tekrar deneyin.</p>
+            <div className="rounded-lg bg-sl-error-container/30 p-4">
+              <p className="font-body text-sm text-sl-error">
+                Veriler yuklenemedi. Lutfen tekrar deneyin.
+              </p>
             </div>
           )}
 
@@ -215,8 +221,8 @@ export function ExpenseEntryPage() {
 
           {isSaving && (
             <div className="mt-3 flex items-center gap-2">
-              <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary-400 border-t-transparent" />
-              <span className="text-xs text-text-muted">Kaydediliyor...</span>
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-sl-primary border-t-transparent" />
+              <span className="font-body text-xs text-sl-on-surface-variant">Kaydediliyor...</span>
             </div>
           )}
         </>
@@ -237,10 +243,10 @@ function TabButton({ active, onClick, label }: TabButtonProps) {
       type="button"
       role="tab"
       aria-selected={active}
-      className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
+      className={`rounded-md px-4 py-2 font-body text-sm font-medium transition-all ${
         active
-          ? 'bg-white text-text shadow-sm'
-          : 'text-text-muted hover:text-text'
+          ? 'bg-sl-surface-lowest text-sl-on-surface shadow-[var(--sl-shadow-sm)]'
+          : 'text-sl-on-surface-variant hover:text-sl-on-surface'
       }`}
       onClick={onClick}
     >

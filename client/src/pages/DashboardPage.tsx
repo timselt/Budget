@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
-import { useAuthStore } from '../stores/auth'
+import { useState } from 'react'
 import { useDashboardKpis } from '../hooks/useDashboardKpis'
 import { KpiCard } from '../components/ui/KpiCard'
+import { ChartErrorBoundary } from '../components/ui/ChartErrorBoundary'
 import { RevenueClaimsChart } from '../components/dashboard/RevenueClaimsChart'
 import { LossRatioChart } from '../components/dashboard/LossRatioChart'
 import { EbitdaChart } from '../components/dashboard/EbitdaChart'
@@ -26,41 +26,41 @@ function formatCurrency(value: number): string {
 }
 
 export function DashboardPage() {
-  const { user, fetchUser } = useAuthStore()
   const [versionId] = useState<number>(1)
-
-  useEffect(() => {
-    if (!user) {
-      fetchUser()
-    }
-  }, [user, fetchUser])
-
   const { data: kpis, isLoading, error } = useDashboardKpis(versionId)
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-text-muted">Bütçe performans özeti</p>
+      <header className="mb-10">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+          Dashboard
+        </h1>
+        <p className="font-body text-sm text-sl-on-surface-variant">
+          Bütçe performans özeti
+        </p>
       </header>
 
       {isLoading && (
         <div className="flex h-48 items-center justify-center">
-          <p className="text-text-muted">Yükleniyor...</p>
+          <p className="font-body text-sl-on-surface-variant">Yükleniyor...</p>
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg border border-danger/30 bg-danger/5 p-4">
-          <p className="text-sm text-danger">KPI verileri yüklenemedi.</p>
+        <div className="rounded-lg bg-sl-error-container/30 p-4">
+          <p className="font-body text-sm text-sl-error">
+            KPI verileri yüklenemedi.
+          </p>
         </div>
       )}
 
       {kpis && (
         <>
-          <section className="mb-8">
-            <h2 className="mb-3 text-lg font-medium">Gelir & Hasar</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <section className="mb-12">
+            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+              Gelir & Hasar
+            </h2>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <KpiCard title="Toplam Gelir" value={formatCurrency(kpis.totalRevenue)} />
               <KpiCard title="Toplam Hasar" value={formatCurrency(kpis.totalClaims)} trend="down" />
               <KpiCard title="Teknik Marj" value={formatCurrency(kpis.technicalMargin)} trend="up" />
@@ -72,9 +72,11 @@ export function DashboardPage() {
             </div>
           </section>
 
-          <section className="mb-8">
-            <h2 className="mb-3 text-lg font-medium">Kârlılık</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <section className="mb-12">
+            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+              Kârlılık
+            </h2>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <KpiCard
                 title="Teknik Kâr"
                 value={formatCurrency(kpis.technicalProfit)}
@@ -98,9 +100,11 @@ export function DashboardPage() {
             </div>
           </section>
 
-          <section className="mb-8">
-            <h2 className="mb-3 text-lg font-medium">Oranlar</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <section className="mb-12">
+            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+              Oranlar
+            </h2>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <KpiCard title="Gider Oranı" value={formatPercent(kpis.expenseRatio)} />
               <KpiCard
                 title="Bileşik Oran"
@@ -112,23 +116,27 @@ export function DashboardPage() {
             </div>
           </section>
 
-          <section className="mb-8">
-            <h2 className="mb-3 text-lg font-medium">Grafikler</h2>
+          <section className="mb-12">
+            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+              Grafikler
+            </h2>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <RevenueClaimsChart versionId={versionId} />
-              <LossRatioChart versionId={versionId} />
-              <EbitdaChart versionId={versionId} />
-              <CombinedRatioChart versionId={versionId} />
-              <SegmentDonut versionId={versionId} />
-              <ExpensePie versionId={versionId} />
-              <CumulativeAreaChart versionId={versionId} />
-              <TopCustomersChart versionId={versionId} />
+              <ChartErrorBoundary><RevenueClaimsChart versionId={versionId} /></ChartErrorBoundary>
+              <ChartErrorBoundary><LossRatioChart versionId={versionId} /></ChartErrorBoundary>
+              <ChartErrorBoundary><EbitdaChart versionId={versionId} /></ChartErrorBoundary>
+              <ChartErrorBoundary><CombinedRatioChart versionId={versionId} /></ChartErrorBoundary>
+              <ChartErrorBoundary><SegmentDonut versionId={versionId} /></ChartErrorBoundary>
+              <ChartErrorBoundary><ExpensePie versionId={versionId} /></ChartErrorBoundary>
+              <ChartErrorBoundary><CumulativeAreaChart versionId={versionId} /></ChartErrorBoundary>
+              <ChartErrorBoundary><TopCustomersChart versionId={versionId} /></ChartErrorBoundary>
             </div>
           </section>
 
-          <section className="mb-8">
-            <h2 className="mb-3 text-lg font-medium">Aylık Özet</h2>
-            <MonthlySummaryTable versionId={versionId} />
+          <section className="mb-12">
+            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+              Aylık Özet
+            </h2>
+            <ChartErrorBoundary><MonthlySummaryTable versionId={versionId} /></ChartErrorBoundary>
           </section>
         </>
       )}

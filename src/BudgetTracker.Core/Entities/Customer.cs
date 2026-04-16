@@ -11,6 +11,8 @@ public sealed class Customer : TenantEntity
     public DateOnly? EndDate { get; private set; }
     public string? SourceSheet { get; private set; }
     public string? Notes { get; private set; }
+    public string? AccountNo { get; private set; }
+    public string? FullTitle { get; private set; }
     public bool IsActive { get; private set; }
 
     private Customer() { }

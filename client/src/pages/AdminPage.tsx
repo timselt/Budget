@@ -17,24 +17,26 @@ export function AdminPage() {
   }, [])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Yonetim Paneli</h1>
-        <p className="mt-1 text-sm text-text-muted">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+          Yonetim Paneli
+        </h1>
+        <p className="mt-1 font-body text-sm text-sl-on-surface-variant">
           Kullanici ve sirket yonetimi.
         </p>
       </div>
 
-      <nav className="flex gap-1 rounded-lg border border-border bg-surface-alt/30 p-1">
+      <nav className="flex gap-1 rounded-lg bg-sl-surface-low p-1">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => handleTabChange(tab.key)}
-            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-md px-4 py-2 font-body text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? 'bg-white text-text shadow-sm'
-                : 'text-text-muted hover:text-text'
+                ? 'bg-sl-surface-lowest text-sl-on-surface shadow-[var(--sl-shadow-sm)]'
+                : 'text-sl-on-surface-variant hover:text-sl-on-surface'
             }`}
           >
             {tab.label}

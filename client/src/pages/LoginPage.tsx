@@ -21,19 +21,19 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface">
+    <div className="flex min-h-screen items-center justify-center bg-sl-surface">
       <div className="w-full max-w-sm">
-        <div className="rounded-2xl border border-border bg-white p-8 shadow-lg">
-          <h1 className="mb-1 text-2xl font-semibold tracking-tight text-primary-800">
+        <div className="rounded-lg border border-sl-outline-variant/15 bg-sl-glass-bg p-8 backdrop-blur-[12px]">
+          <h1 className="mb-1 font-display text-2xl font-bold tracking-tight text-sl-primary">
             BudgetTracker
           </h1>
-          <p className="mb-6 text-sm text-text-muted">
+          <p className="mb-6 font-body text-sm text-sl-on-surface-variant">
             Tur Assist Group Bütçe Takip
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="mb-1 block text-sm font-medium">
+              <label htmlFor="email" className="mb-2 block font-body text-xs uppercase tracking-wider text-sl-on-surface-variant">
                 E-posta
               </label>
               <input
@@ -42,13 +42,13 @@ export function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+                className="w-full border-b border-sl-outline-variant/40 bg-transparent px-0 py-2 font-body text-sm text-sl-on-surface outline-none transition-colors focus:border-b-2 focus:border-sl-primary"
                 placeholder="admin@tag.local"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-1 block text-sm font-medium">
+              <label htmlFor="password" className="mb-2 block font-body text-xs uppercase tracking-wider text-sl-on-surface-variant">
                 Şifre
               </label>
               <input
@@ -57,18 +57,18 @@ export function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-primary-400 focus:ring-2 focus:ring-primary-100"
+                className="w-full border-b border-sl-outline-variant/40 bg-transparent px-0 py-2 font-body text-sm text-sl-on-surface outline-none transition-colors focus:border-b-2 focus:border-sl-primary"
               />
             </div>
 
             {error && (
-              <p className="text-sm text-danger">{error}</p>
+              <p className="font-body text-sm text-sl-error">{error}</p>
             )}
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+              className="w-full rounded-md bg-gradient-to-r from-sl-primary to-sl-primary-container px-4 py-2.5 font-body text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
             </button>

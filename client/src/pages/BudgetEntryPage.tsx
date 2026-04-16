@@ -72,8 +72,10 @@ export function BudgetEntryPage() {
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Bütçe Girişi</h1>
-          <p className="mt-0.5 text-sm text-text-muted">
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+            Bütçe Girişi
+          </h1>
+          <p className="mt-0.5 font-body text-sm text-sl-on-surface-variant">
             Müşteri bazlı aylık bütçe verilerini girin ve kaydedin.
           </p>
         </div>
@@ -83,9 +85,10 @@ export function BudgetEntryPage() {
             value={selectedVersionId ?? ''}
             onChange={handleVersionChange}
             disabled={isVersionsLoading}
-            className="h-9 rounded-lg border border-border bg-surface px-3 text-sm
-                       text-text shadow-sm transition-colors
-                       focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            className="h-9 rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3
+                       font-body text-sm text-sl-on-surface shadow-[var(--sl-shadow-sm)]
+                       transition-colors focus:border-sl-primary focus:outline-none
+                       focus:ring-2 focus:ring-sl-primary-fixed"
           >
             <option value="">Versiyon seçin…</option>
             {versions?.map((v: BudgetVersion) => (
@@ -97,13 +100,13 @@ export function BudgetEntryPage() {
 
           {activeVersion && (
             <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-body text-xs font-medium
                 ${
                   activeVersion.status === 'ACTIVE'
-                    ? 'bg-green-100 text-green-800'
+                    ? 'bg-sl-on-tertiary-container/15 text-sl-tertiary'
                     : activeVersion.status === 'DRAFT'
-                      ? 'bg-amber-100 text-amber-800'
-                      : 'bg-blue-100 text-blue-800'
+                      ? 'bg-sl-primary-fixed/40 text-sl-primary'
+                      : 'bg-sl-primary-fixed text-sl-primary-container'
                 }`}
             >
               {activeVersion.status}
@@ -114,18 +117,18 @@ export function BudgetEntryPage() {
 
       {selectedVersionId && (
         <>
-          <div className="flex items-center justify-between border-b border-border">
+          <div className="flex items-center justify-between">
             <nav className="flex gap-0" aria-label="Bütçe türü">
               {BUDGET_TABS.map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => handleTabChange(tab.key)}
-                  className={`relative px-5 py-2.5 text-sm font-medium transition-colors
+                  className={`relative px-5 py-2.5 font-body text-sm font-medium transition-colors
                     ${
                       budgetType === tab.key
-                        ? 'text-primary-600 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-primary-500'
-                        : 'text-text-muted hover:text-text'
+                        ? 'text-sl-primary after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-sl-primary'
+                        : 'text-sl-on-surface-variant hover:text-sl-on-surface'
                     }`}
                 >
                   {tab.label}
@@ -137,17 +140,18 @@ export function BudgetEntryPage() {
               type="button"
               onClick={handleSave}
               disabled={dirtyEntries.size === 0 || saveMutation.isPending}
-              className="flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm
-                         font-medium text-white shadow-sm transition-all
-                         hover:bg-primary-700 active:scale-[0.98]
+              className="flex items-center gap-2 rounded-lg bg-sl-primary px-4 py-2
+                         font-body text-sm font-medium text-sl-on-primary
+                         shadow-[var(--sl-shadow-sm)] transition-all
+                         hover:bg-sl-primary-container active:scale-[0.98]
                          disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saveMutation.isPending ? (
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-sl-on-primary border-t-transparent" />
               ) : null}
               Kaydet
               {dirtyEntries.size > 0 && (
-                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs">
+                <span className="rounded-full bg-sl-on-primary/20 px-1.5 py-0.5 text-xs">
                   {dirtyEntries.size}
                 </span>
               )}
@@ -155,19 +159,19 @@ export function BudgetEntryPage() {
           </div>
 
           {isError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="rounded-lg bg-sl-error-container/30 p-4 font-body text-sm text-sl-error">
               Veriler yüklenirken hata oluştu: {(error as Error)?.message ?? 'Bilinmeyen hata'}
             </div>
           )}
 
           {saveMutation.isError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="rounded-lg bg-sl-error-container/30 p-4 font-body text-sm text-sl-error">
               Kaydetme hatası: {(saveMutation.error as Error)?.message ?? 'Bilinmeyen hata'}
             </div>
           )}
 
           {saveMutation.isSuccess && dirtyEntries.size === 0 && (
-            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
+            <div className="rounded-lg bg-sl-on-tertiary-container/10 p-4 font-body text-sm text-sl-tertiary">
               Veriler başarıyla kaydedildi.
             </div>
           )}
@@ -181,9 +185,9 @@ export function BudgetEntryPage() {
       )}
 
       {!selectedVersionId && (
-        <div className="flex h-64 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border">
+        <div className="flex h-64 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sl-outline-variant/15 bg-sl-surface-low">
           <svg
-            className="h-10 w-10 text-text-muted"
+            className="h-10 w-10 text-sl-on-surface-variant"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.2}
@@ -195,7 +199,7 @@ export function BudgetEntryPage() {
               d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"
             />
           </svg>
-          <p className="text-sm text-text-muted">
+          <p className="font-body text-sm text-sl-on-surface-variant">
             Başlamak için bir bütçe versiyonu seçin.
           </p>
         </div>

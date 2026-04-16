@@ -57,7 +57,7 @@ export function CumulativeAreaChart({ versionId }: Props) {
     )
   }
 
-  if (error || !data) {
+  if (error || !data || !Array.isArray(data)) {
     return (
       <ChartCard title="Kumulatif Gelir vs Butce Hedefi">
         <div className="flex h-64 items-center justify-center text-danger">

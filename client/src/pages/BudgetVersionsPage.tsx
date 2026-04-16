@@ -73,19 +73,21 @@ export function BudgetVersionsPage() {
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
+      <header className="mb-10">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
           Bütçe Versiyonları
         </h1>
-        <p className="text-sm text-text-muted">
+        <p className="font-body text-sm text-sl-on-surface-variant">
           Versiyon oluşturun, onay akışını yönetin.
         </p>
       </header>
 
       {/* Year selector + create */}
-      <div className="mb-6 flex flex-wrap items-center gap-3">
+      <div className="mb-8 flex flex-wrap items-center gap-3">
         {yearsLoading && (
-          <span className="text-sm text-text-muted">Yıllar yükleniyor...</span>
+          <span className="font-body text-sm text-sl-on-surface-variant">
+            Yıllar yükleniyor...
+          </span>
         )}
 
         {years && (
@@ -96,7 +98,9 @@ export function BudgetVersionsPage() {
               setSelectedYearId(val || null)
               setDetailId(null)
             }}
-            className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200"
+            className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2
+                       font-body text-sm text-sl-on-surface
+                       focus:border-sl-primary focus:outline-none focus:ring-2 focus:ring-sl-primary-fixed"
           >
             <option value="" disabled>
               Yıl seçin
@@ -113,7 +117,9 @@ export function BudgetVersionsPage() {
           type="button"
           onClick={handleCreate}
           disabled={selectedYearId === null || createVersion.isPending}
-          className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
+          className="rounded-lg bg-sl-primary px-4 py-2 font-body text-sm font-medium
+                     text-sl-on-primary transition-colors hover:bg-sl-primary-container
+                     disabled:opacity-50"
         >
           {createVersion.isPending ? 'Oluşturuluyor...' : 'Yeni Versiyon'}
         </button>
@@ -121,8 +127,8 @@ export function BudgetVersionsPage() {
 
       {/* Error state */}
       {versionsError && (
-        <div className="mb-4 rounded-lg border border-danger/30 bg-danger/5 p-4">
-          <p className="text-sm text-danger">
+        <div className="mb-6 rounded-lg bg-sl-error-container/30 p-4">
+          <p className="font-body text-sm text-sl-error">
             Versiyonlar yüklenemedi. Lütfen tekrar deneyin.
           </p>
         </div>
@@ -131,7 +137,7 @@ export function BudgetVersionsPage() {
       {/* Loading state */}
       {versionsLoading && selectedYearId !== null && (
         <div className="flex h-48 items-center justify-center">
-          <p className="text-text-muted">Yükleniyor...</p>
+          <p className="font-body text-sl-on-surface-variant">Yükleniyor...</p>
         </div>
       )}
 
@@ -140,14 +146,14 @@ export function BudgetVersionsPage() {
         {/* Version list */}
         <div className="flex-1">
           {versions && versions.length === 0 && (
-            <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-border">
-              <p className="text-sm text-text-muted">
+            <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-sl-outline-variant/15 bg-sl-surface-low">
+              <p className="font-body text-sm text-sl-on-surface-variant">
                 Bu yıl için henüz versiyon oluşturulmamış.
               </p>
               <button
                 type="button"
                 onClick={handleCreate}
-                className="mt-3 text-sm font-medium text-primary-600 hover:text-primary-700"
+                className="mt-3 font-body text-sm font-medium text-sl-primary hover:text-sl-primary-container"
               >
                 İlk versiyonu oluştur
               </button>
@@ -161,7 +167,7 @@ export function BudgetVersionsPage() {
                 onClick={() => setDetailId(v.id)}
                 className={`cursor-pointer rounded-xl transition-all ${
                   detailId === v.id
-                    ? 'ring-2 ring-primary-300'
+                    ? 'ring-2 ring-sl-primary-fixed'
                     : ''
                 }`}
               >
@@ -211,11 +217,11 @@ export function BudgetVersionsPage() {
         {/* Detail sidebar */}
         {versionDetail && (
           <aside className="hidden w-80 shrink-0 lg:block">
-            <div className="sticky top-6 rounded-xl border border-border bg-white p-5 shadow-sm">
-              <h2 className="text-sm font-semibold text-text">
+            <div className="sticky top-6 rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
+              <h2 className="font-display text-sm font-semibold text-sl-on-surface">
                 Onay Geçmişi
               </h2>
-              <p className="mb-4 text-xs text-text-muted">
+              <p className="mb-4 font-body text-xs text-sl-on-surface-variant">
                 {versionDetail.name}
               </p>
               <ApprovalTimeline

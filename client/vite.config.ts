@@ -8,11 +8,11 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5100',
         changeOrigin: true,
       },
       '/connect': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5100',
         changeOrigin: true,
       },
     },

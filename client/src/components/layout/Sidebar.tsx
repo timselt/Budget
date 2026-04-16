@@ -11,6 +11,8 @@ const navItems = [
   { to: '/scenarios', label: 'Senaryolar', icon: '◻' },
   { to: '/fx-rates', label: 'Döviz Kurları', icon: '◻' },
   { to: '/approvals', label: 'Onaylar', icon: '◻' },
+  { to: '/tahsilat', label: 'Tahsilat', icon: '◻' },
+  { to: '/tahsilat/import', label: 'Veri Yukle', icon: '◻' },
   { to: '/admin', label: 'Ayarlar', icon: '◻' },
 ]
 
@@ -18,23 +20,23 @@ export function Sidebar() {
   const { user, logout } = useAuthStore()
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r border-border bg-white">
-      <div className="flex h-14 items-center border-b border-border px-4">
-        <span className="text-lg font-semibold tracking-tight text-primary-700">
+    <aside className="flex h-screen w-60 flex-col bg-sl-surface-low">
+      <div className="flex h-14 items-center px-4">
+        <span className="font-display text-lg font-semibold tracking-tight text-sl-primary">
           BudgetTracker
         </span>
       </div>
 
-      <nav className="flex-1 space-y-0.5 px-2 py-3">
+      <nav className="flex flex-1 flex-col gap-1 px-2 py-3">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
-              `flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
                 isActive
-                  ? 'bg-primary-50 text-primary-700'
-                  : 'text-text-muted hover:bg-surface-alt hover:text-text'
+                  ? 'bg-sl-surface-lowest font-medium text-sl-primary'
+                  : 'text-sl-on-surface-variant hover:bg-sl-surface-high'
               }`
             }
           >
@@ -44,15 +46,15 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-border p-3">
+      <div className="p-3">
         <div className="flex items-center justify-between">
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{user?.displayName}</p>
-            <p className="truncate text-xs text-text-muted">{user?.email}</p>
+            <p className="truncate text-sm font-medium text-sl-on-surface">{user?.displayName}</p>
+            <p className="truncate text-xs text-sl-on-surface-variant">{user?.email}</p>
           </div>
           <button
             onClick={logout}
-            className="rounded-md px-2 py-1 text-xs text-text-muted hover:bg-surface-alt hover:text-danger"
+            className="rounded-md px-2 py-1 text-xs text-sl-on-surface-variant hover:bg-sl-surface-high hover:text-sl-error"
           >
             Çıkış
           </button>

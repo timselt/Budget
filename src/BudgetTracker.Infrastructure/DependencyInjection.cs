@@ -1,5 +1,6 @@
 using BudgetTracker.Application.Audit;
 using BudgetTracker.Application.BudgetEntries;
+using BudgetTracker.Application.Collections;
 using BudgetTracker.Application.Common.Abstractions;
 using BudgetTracker.Application.Customers;
 using BudgetTracker.Application.Expenses;
@@ -63,6 +64,9 @@ public static class DependencyInjection
         services.AddScoped<IVarianceService, VarianceService>();
         services.AddScoped<IScenarioService, ScenarioService>();
         services.AddScoped<IAuditQueryService, AuditQueryService>();
+        services.AddScoped<ICollectionImportService, CollectionImportService>();
+        services.AddScoped<ICollectionCalculationService, CollectionCalculationService>();
+        services.AddScoped<ICollectionQueryService, CollectionQueryService>();
         services.AddScoped<IExcelExportService, ExcelExportService>();
         services.AddScoped<IExcelImportService, ExcelImportService>();
         services.AddScoped<IPdfReportService, PdfReportService>();

@@ -1,6 +1,29 @@
 @import "tailwindcss";
+@import "./styles/sovereign-ledger.css";
 
 @theme {
+  /* --- Sovereign Ledger Colors --- */
+  --color-sl-surface: var(--sl-surface);
+  --color-sl-surface-low: var(--sl-surface-low);
+  --color-sl-surface-lowest: var(--sl-surface-lowest);
+  --color-sl-surface-high: var(--sl-surface-high);
+  --color-sl-on-surface: var(--sl-on-surface);
+  --color-sl-on-surface-variant: var(--sl-on-surface-variant);
+  --color-sl-primary: var(--sl-primary);
+  --color-sl-primary-container: var(--sl-primary-container);
+  --color-sl-primary-fixed: var(--sl-primary-fixed);
+  --color-sl-on-primary: var(--sl-on-primary);
+  --color-sl-secondary: var(--sl-secondary);
+  --color-sl-error: var(--sl-error);
+  --color-sl-error-container: var(--sl-error-container);
+  --color-sl-tertiary: var(--sl-tertiary);
+  --color-sl-on-tertiary-container: var(--sl-on-tertiary-container);
+  --color-sl-outline-variant: var(--sl-outline-variant);
+  --color-sl-surface-tint: var(--sl-surface-tint);
+  --color-sl-ghost-border: var(--sl-ghost-border);
+  --color-sl-glass-bg: var(--sl-glass-bg);
+
+  /* --- Legacy palette (kept for existing components) --- */
   --color-primary-50: oklch(97% 0.02 250);
   --color-primary-100: oklch(93% 0.04 250);
   --color-primary-200: oklch(87% 0.08 250);
@@ -12,24 +35,37 @@
   --color-primary-800: oklch(33% 0.12 250);
   --color-primary-900: oklch(25% 0.08 250);
 
-  --color-surface: oklch(98.5% 0.005 250);
-  --color-surface-alt: oklch(96% 0.01 250);
-  --color-border: oklch(90% 0.02 250);
-  --color-text: oklch(18% 0.01 250);
-  --color-text-muted: oklch(45% 0.02 250);
+  --color-surface: var(--sl-surface);
+  --color-surface-alt: var(--sl-surface-low);
+  --color-border: var(--sl-outline-variant);
+  --color-text: var(--sl-on-surface);
+  --color-text-muted: var(--sl-on-surface-variant);
 
   --color-success: oklch(65% 0.2 145);
   --color-warning: oklch(75% 0.18 80);
-  --color-danger: oklch(60% 0.22 25);
+  --color-danger: var(--sl-error);
 
-  --font-sans: "Inter", "system-ui", sans-serif;
+  /* --- Font Families --- */
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-sans: var(--font-body);
+
+  /* --- Border Radius --- */
+  --radius-sm: var(--sl-radius-sm);
+  --radius-md: var(--sl-radius-md);
+  --radius-lg: var(--sl-radius-lg);
+  --radius-full: var(--sl-radius-full);
+
+  /* --- Box Shadows --- */
+  --shadow-ambient: var(--sl-shadow-ambient);
+  --shadow-sm: var(--sl-shadow-sm);
 }
 
 body {
   margin: 0;
-  font-family: var(--font-sans);
-  background-color: var(--color-surface);
-  color: var(--color-text);
+  font-family: var(--font-body);
+  background-color: var(--sl-surface);
+  color: var(--sl-on-surface);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

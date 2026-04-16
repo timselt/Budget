@@ -34,6 +34,8 @@ public sealed class ApplicationDbContext : IdentityDbContext<User, Role, int>, I
     public DbSet<UserSegment> UserSegments => Set<UserSegment>();
     public DbSet<UserCompany> UserCompanies => Set<UserCompany>();
     public DbSet<Scenario> Scenarios => Set<Scenario>();
+    public DbSet<ImportPeriod> ImportPeriods => Set<ImportPeriod>();
+    public DbSet<CollectionInvoice> CollectionInvoices => Set<CollectionInvoice>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => base.SaveChangesAsync(cancellationToken);

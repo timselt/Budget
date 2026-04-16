@@ -21,4 +21,6 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<BudgetApproval> BudgetApprovals { get; }
     DbSet<UserSegment> UserSegments { get; }
     DbSet<Scenario> Scenarios { get; }
+    DbSet<ImportPeriod> ImportPeriods { get; }
+    DbSet<CollectionInvoice> CollectionInvoices { get; }
 }

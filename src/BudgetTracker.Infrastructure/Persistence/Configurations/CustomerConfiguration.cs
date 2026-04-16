@@ -25,6 +25,8 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         b.Property(x => x.EndDate);
         b.Property(x => x.SourceSheet).HasMaxLength(100);
         b.Property(x => x.Notes);
+        b.Property(x => x.AccountNo).HasMaxLength(30);
+        b.Property(x => x.FullTitle).HasMaxLength(500);
         b.Property(x => x.IsActive).IsRequired();
         b.Property(x => x.CreatedAt).IsRequired();
 

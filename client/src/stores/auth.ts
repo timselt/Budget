@@ -37,7 +37,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       })
 
       localStorage.setItem('access_token', data.access_token)
-      localStorage.setItem('refresh_token', data.refresh_token)
+      if (data.refresh_token) {
+        localStorage.setItem('refresh_token', data.refresh_token)
+      }
       set({ isAuthenticated: true })
     } finally {
       set({ isLoading: false })
@@ -56,7 +58,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { data } = await axios.get('/connect/userinfo', {
         headers: { Authorization: `Bearer ${token}` },
       })
-      set({ user: data })
+      set({
+        user: {
+          id: data.sub ?? data.id,
+          email: data.email ?? '',
+          displayName: data.name ?? data.displayName ?? data.email ?? '',
+          roles: Array.isArray(data.role) ? data.role : data.role ? [data.role] : [],
+          activeCompanyId: data.company_id ?? 0,
+        },
+      })
     } catch {
       set({ user: null, isAuthenticated: false })
       localStorage.removeItem('access_token')

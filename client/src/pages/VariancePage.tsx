@@ -59,76 +59,86 @@ export function VariancePage() {
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
+      <header className="mb-10">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
           Varyans Analizi
         </h1>
-        <p className="text-sm text-text-muted">
+        <p className="font-body text-sm text-sl-on-surface-variant">
           Butce ve gerceklesen karsilastirmasi
         </p>
       </header>
 
       {summaryError && (
-        <div className="mb-6 rounded-lg border border-danger/30 bg-danger/5 p-4">
-          <p className="text-sm text-danger">Varyans verileri yuklenemedi.</p>
+        <div className="mb-8 rounded-lg bg-sl-error-container/30 p-4">
+          <p className="font-body text-sm text-sl-error">
+            Varyans verileri yuklenemedi.
+          </p>
         </div>
       )}
 
       {isLoading && (
         <div className="flex h-48 items-center justify-center">
-          <p className="text-text-muted">Yukleniyor...</p>
+          <p className="font-body text-sl-on-surface-variant">Yukleniyor...</p>
         </div>
       )}
 
       {summary && (
         <>
-          <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-text-muted">Gelir Sapmasi</p>
-              <p className={`mt-1 text-2xl font-semibold tabular-nums tracking-tight ${totalRevenueVariance >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+          <section className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
+              <p className="font-body text-sm font-medium text-sl-on-surface-variant">
+                Gelir Sapmasi
+              </p>
+              <p className={`mt-1 font-display text-2xl font-semibold tabular-nums tracking-tight ${totalRevenueVariance >= 0 ? 'text-sl-on-tertiary-container' : 'text-sl-error'}`}>
                 {formatCurrency(totalRevenueVariance)}
               </p>
-              <p className="mt-0.5 text-xs text-text-muted">
+              <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">
                 {formatPercent(totalRevenueVariancePct)}
               </p>
             </div>
 
-            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-text-muted">Hasar Sapmasi</p>
-              <p className={`mt-1 text-2xl font-semibold tabular-nums tracking-tight ${totalClaimsVariance <= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
+              <p className="font-body text-sm font-medium text-sl-on-surface-variant">
+                Hasar Sapmasi
+              </p>
+              <p className={`mt-1 font-display text-2xl font-semibold tabular-nums tracking-tight ${totalClaimsVariance <= 0 ? 'text-sl-on-tertiary-container' : 'text-sl-error'}`}>
                 {formatCurrency(totalClaimsVariance)}
               </p>
-              <p className="mt-0.5 text-xs text-text-muted">
+              <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">
                 {formatPercent(totalClaimsVariancePct)}
               </p>
             </div>
 
-            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-text-muted">Kritik Uyari</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-red-600">
+            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
+              <p className="font-body text-sm font-medium text-sl-on-surface-variant">
+                Kritik Uyari
+              </p>
+              <p className="mt-1 font-display text-2xl font-semibold tabular-nums tracking-tight text-sl-error">
                 {criticalCount}
               </p>
-              <p className="mt-0.5 text-xs text-text-muted">musteri</p>
+              <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">musteri</p>
             </div>
 
-            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-text-muted">Yuksek Uyari</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight text-orange-600">
+            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
+              <p className="font-body text-sm font-medium text-sl-on-surface-variant">
+                Yuksek Uyari
+              </p>
+              <p className="mt-1 font-display text-2xl font-semibold tabular-nums tracking-tight text-sl-secondary">
                 {highCount}
               </p>
-              <p className="mt-0.5 text-xs text-text-muted">musteri</p>
+              <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">musteri</p>
             </div>
           </section>
 
-          <nav className="mb-4 flex gap-1 rounded-lg border border-border bg-slate-50 p-1">
+          <nav className="mb-5 flex gap-1 rounded-lg bg-sl-surface-low p-1">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                className={`rounded-md px-4 py-2 font-body text-sm font-medium transition-colors ${
                   activeTab === tab.key
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-text-muted hover:text-slate-700'
+                    ? 'bg-sl-surface-lowest text-sl-on-surface shadow-[var(--sl-shadow-sm)]'
+                    : 'text-sl-on-surface-variant hover:text-sl-on-surface'
                 }`}
               >
                 {tab.label}

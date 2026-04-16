@@ -16,6 +16,9 @@ const FxRatesPage = lazy(() => import('./pages/FxRatesPage').then(m => ({ defaul
 const ApprovalsPage = lazy(() => import('./pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })))
 const AuditLogPage = lazy(() => import('./pages/AuditLogPage').then(m => ({ default: m.AuditLogPage })))
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })))
+const CollectionDashboardPage = lazy(() => import('./pages/CollectionDashboardPage').then(m => ({ default: m.CollectionDashboardPage })))
+const CollectionSegmentPage = lazy(() => import('./pages/CollectionSegmentPage').then(m => ({ default: m.CollectionSegmentPage })))
+const CollectionImportPage = lazy(() => import('./pages/CollectionImportPage').then(m => ({ default: m.CollectionImportPage })))
 
 function PageLoader() {
   return (
@@ -47,6 +50,9 @@ export function App() {
           <Route path="scenarios" element={<ScenarioPage />} />
           <Route path="fx-rates" element={<FxRatesPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
+          <Route path="tahsilat" element={<CollectionDashboardPage />} />
+          <Route path="tahsilat/segment/:id" element={<CollectionSegmentPage />} />
+          <Route path="tahsilat/import" element={<CollectionImportPage />} />
           <Route path="admin" element={<AdminPage />} />
           <Route path="admin/audit" element={<AuditLogPage />} />
         </Route>

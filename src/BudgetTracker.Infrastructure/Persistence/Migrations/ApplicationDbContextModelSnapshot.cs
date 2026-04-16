@@ -544,6 +544,105 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                     b.ToTable("budget_years", (string)null);
                 });
 
+            modelBuilder.Entity("BudgetTracker.Core.Entities.CollectionInvoice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("customer_id");
+
+                    b.Property<int>("DaysDiff")
+                        .HasColumnType("integer")
+                        .HasColumnName("days_diff");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("due_date");
+
+                    b.Property<int>("ImportPeriodId")
+                        .HasColumnType("integer")
+                        .HasColumnName("import_period_id");
+
+                    b.Property<string>("InvoiceNo")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("invoice_no");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("transaction_date");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_collection_invoices");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_collection_invoices_customer_id");
+
+                    b.HasIndex("ImportPeriodId")
+                        .HasDatabaseName("ix_collection_invoices_import_period_id");
+
+                    b.HasIndex("InvoiceNo")
+                        .HasDatabaseName("ix_collection_invoices_invoice_no");
+
+                    b.HasIndex("CompanyId", "CustomerId")
+                        .HasDatabaseName("ix_collection_invoices_company_id_customer_id");
+
+                    b.HasIndex("CompanyId", "ImportPeriodId")
+                        .HasDatabaseName("ix_collection_invoices_company_id_import_period_id");
+
+                    b.ToTable("collection_invoices", (string)null);
+                });
+
             modelBuilder.Entity("BudgetTracker.Core.Entities.Company", b =>
                 {
                     b.Property<int>("Id")
@@ -645,6 +744,11 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AccountNo")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("account_no");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -674,6 +778,11 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly?>("EndDate")
                         .HasColumnType("date")
                         .HasColumnName("end_date");
+
+                    b.Property<string>("FullTitle")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("full_title");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
@@ -969,6 +1078,155 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_fx_rates_currency_code_rate_date_is_year_start_fixed");
 
                     b.ToTable("fx_rates", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.ImportPeriod", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("file_name");
+
+                    b.Property<DateTime>("ImportDate")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("import_date");
+
+                    b.Property<decimal>("OverdueAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("overdue_amount");
+
+                    b.Property<decimal>("PendingAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("pending_amount");
+
+                    b.Property<string>("PeriodLabel")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("period_label");
+
+                    b.Property<int>("SegmentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("segment_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_amount");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_import_periods");
+
+                    b.HasIndex("SegmentId")
+                        .HasDatabaseName("ix_import_periods_segment_id");
+
+                    b.HasIndex("CompanyId", "SegmentId", "ImportDate")
+                        .HasDatabaseName("ix_import_periods_company_id_segment_id_import_date");
+
+                    b.ToTable("import_periods", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Scenario", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BudgetVersionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("budget_version_id");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("ParametersJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("parameters_json");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_scenarios");
+
+                    b.HasIndex("BudgetVersionId")
+                        .HasDatabaseName("ix_scenarios_budget_version_id");
+
+                    b.ToTable("scenarios", (string)null);
                 });
 
             modelBuilder.Entity("BudgetTracker.Core.Entities.Segment", b =>
@@ -1823,6 +2081,34 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_budget_years_companies_company_id");
                 });
 
+            modelBuilder.Entity("BudgetTracker.Core.Entities.CollectionInvoice", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_collection_invoices_companies_company_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_collection_invoices_customers_customer_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.ImportPeriod", "ImportPeriod")
+                        .WithMany("Invoices")
+                        .HasForeignKey("ImportPeriodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_collection_invoices_import_periods_import_period_id");
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("ImportPeriod");
+                });
+
             modelBuilder.Entity("BudgetTracker.Core.Entities.Customer", b =>
                 {
                     b.HasOne("BudgetTracker.Core.Entities.Company", null)
@@ -1895,6 +2181,37 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_fx_rates_currencies_currency_code");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.ImportPeriod", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_import_periods_companies_company_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.Segment", "Segment")
+                        .WithMany()
+                        .HasForeignKey("SegmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_import_periods_segments_segment_id");
+
+                    b.Navigation("Segment");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Scenario", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.BudgetVersion", "BudgetVersion")
+                        .WithMany()
+                        .HasForeignKey("BudgetVersionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_scenarios_budget_versions_budget_version_id");
+
+                    b.Navigation("BudgetVersion");
                 });
 
             modelBuilder.Entity("BudgetTracker.Core.Entities.Segment", b =>
@@ -2056,6 +2373,11 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                     b.Navigation("Application");
 
                     b.Navigation("Authorization");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.ImportPeriod", b =>
+                {
+                    b.Navigation("Invoices");
                 });
 
             modelBuilder.Entity("BudgetTracker.Infrastructure.Identity.User", b =>

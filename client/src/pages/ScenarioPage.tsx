@@ -54,9 +54,11 @@ export function ScenarioPage() {
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Senaryo Simulasyonu</h1>
-        <p className="text-sm text-text-muted">
+      <header className="mb-10">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+          Senaryo Simulasyonu
+        </h1>
+        <p className="font-body text-sm text-sl-on-surface-variant">
           Gelir, hasar ve gider parametrelerini degistirerek farkli senaryolari karsilastirin.
         </p>
       </header>
@@ -71,12 +73,14 @@ export function ScenarioPage() {
           />
 
           {isScenariosLoading && (
-            <p className="text-sm text-text-muted">Senaryolar yukleniyor...</p>
+            <p className="font-body text-sm text-sl-on-surface-variant">
+              Senaryolar yukleniyor...
+            </p>
           )}
 
           {scenarioList.length > 0 && (
-            <div className="rounded-xl border border-border bg-surface-raised p-4">
-              <h3 className="mb-3 text-base font-semibold tracking-tight">
+            <div className="rounded-xl bg-sl-surface-lowest p-4 shadow-[var(--sl-shadow-sm)]">
+              <h3 className="mb-3 font-display text-base font-semibold tracking-tight text-sl-on-surface">
                 Senaryolar ({scenarioList.length}/5)
               </h3>
               <ul className="space-y-2">
@@ -87,10 +91,10 @@ export function ScenarioPage() {
                   return (
                     <li
                       key={s.id}
-                      className={`flex items-center justify-between rounded-lg border px-3 py-2.5 transition-colors ${
+                      className={`flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors ${
                         isSelected
-                          ? 'border-accent bg-accent/5'
-                          : 'border-border hover:border-accent/40'
+                          ? 'bg-sl-primary-fixed/30'
+                          : 'hover:bg-sl-surface-low'
                       }`}
                     >
                       <button
@@ -98,8 +102,10 @@ export function ScenarioPage() {
                         onClick={() => setSelectedId(isSelected ? null : s.id)}
                         className="flex-1 text-left"
                       >
-                        <span className="text-sm font-medium">{s.name}</span>
-                        <span className="ml-2 text-xs text-text-muted">
+                        <span className="font-body text-sm font-medium text-sl-on-surface">
+                          {s.name}
+                        </span>
+                        <span className="ml-2 font-body text-xs text-sl-on-surface-variant">
                           G:{s.parameters.revenueChangePct > 0 ? '+' : ''}
                           {s.parameters.revenueChangePct}%
                           {' '}H:{s.parameters.claimsChangePct > 0 ? '+' : ''}
@@ -110,12 +116,12 @@ export function ScenarioPage() {
                       </button>
 
                       <div className="ml-2 flex items-center gap-1.5">
-                        <label className="flex cursor-pointer items-center gap-1 text-xs text-text-muted">
+                        <label className="flex cursor-pointer items-center gap-1 font-body text-xs text-sl-on-surface-variant">
                           <input
                             type="checkbox"
                             checked={isInCompare}
                             onChange={() => toggleCompare(s.id)}
-                            className="accent-accent"
+                            className="accent-sl-primary"
                           />
                           Kiy.
                         </label>
@@ -123,7 +129,7 @@ export function ScenarioPage() {
                           type="button"
                           onClick={() => handleDelete(s.id)}
                           disabled={deleteMutation.isPending}
-                          className="rounded p-1 text-text-muted transition-colors hover:bg-danger/10 hover:text-danger"
+                          className="rounded p-1 text-sl-on-surface-variant transition-colors hover:bg-sl-error-container/30 hover:text-sl-error"
                           aria-label={`${s.name} senaryosunu sil`}
                         >
                           <svg
@@ -151,7 +157,9 @@ export function ScenarioPage() {
         {/* Sag panel: PnL tablo + Tornado chart */}
         <section className="space-y-6 xl:col-span-8">
           {isPnlLoading && selectedId !== null && (
-            <p className="text-sm text-text-muted">PnL hesaplaniyor...</p>
+            <p className="font-body text-sm text-sl-on-surface-variant">
+              PnL hesaplaniyor...
+            </p>
           )}
 
           {pnlData && selectedScenario && !isCompareMode && (
@@ -168,46 +176,58 @@ export function ScenarioPage() {
           )}
 
           {isCompareMode && comparisonData && (
-            <div className="overflow-x-auto rounded-xl border border-border">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-xl bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
+              <table className="w-full font-body text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-surface-raised">
-                    <th className="px-4 py-3 text-left font-semibold">Senaryo</th>
-                    <th className="px-4 py-3 text-right font-semibold">Net Kar</th>
-                    <th className="px-4 py-3 text-right font-semibold">EBITDA</th>
-                    <th className="px-4 py-3 text-right font-semibold">Kar Marji</th>
-                    <th className="px-4 py-3 text-right font-semibold">Bilesik Oran</th>
+                  <tr className="bg-sl-surface-low">
+                    <th className="px-4 py-3 text-left font-semibold text-sl-on-surface">
+                      Senaryo
+                    </th>
+                    <th className="px-4 py-3 text-right font-semibold text-sl-on-surface">
+                      Net Kar
+                    </th>
+                    <th className="px-4 py-3 text-right font-semibold text-sl-on-surface">
+                      EBITDA
+                    </th>
+                    <th className="px-4 py-3 text-right font-semibold text-sl-on-surface">
+                      Kar Marji
+                    </th>
+                    <th className="px-4 py-3 text-right font-semibold text-sl-on-surface">
+                      Bilesik Oran
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-b border-border bg-surface-raised/30">
-                    <td className="px-4 py-2.5 font-semibold">Baz</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">
+                  <tr className="bg-sl-surface-low/40">
+                    <td className="px-4 py-2.5 font-semibold text-sl-on-surface">Baz</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums text-sl-on-surface">
                       {formatCurrency(comparisonData.base.netProfit)}
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">
+                    <td className="px-4 py-2.5 text-right tabular-nums text-sl-on-surface">
                       {formatCurrency(comparisonData.base.ebitda)}
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">
+                    <td className="px-4 py-2.5 text-right tabular-nums text-sl-on-surface">
                       {formatRatio(comparisonData.base.profitRatio)}
                     </td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">
+                    <td className="px-4 py-2.5 text-right tabular-nums text-sl-on-surface">
                       {formatRatio(comparisonData.base.combinedRatio)}
                     </td>
                   </tr>
                   {comparisonData.scenarios.map((s) => (
-                    <tr key={s.scenarioId} className="border-b border-border/50 last:border-b-0">
-                      <td className="px-4 py-2.5 font-medium">{s.scenarioName}</td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
+                    <tr key={s.scenarioId}>
+                      <td className="px-4 py-2.5 font-medium text-sl-on-surface">
+                        {s.scenarioName}
+                      </td>
+                      <td className="px-4 py-2.5 text-right tabular-nums text-sl-on-surface-variant">
                         {formatCurrency(s.pnl.netProfit)}
                       </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
+                      <td className="px-4 py-2.5 text-right tabular-nums text-sl-on-surface-variant">
                         {formatCurrency(s.pnl.ebitda)}
                       </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
+                      <td className="px-4 py-2.5 text-right tabular-nums text-sl-on-surface-variant">
                         {formatRatio(s.pnl.profitRatio)}
                       </td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">
+                      <td className="px-4 py-2.5 text-right tabular-nums text-sl-on-surface-variant">
                         {formatRatio(s.pnl.combinedRatio)}
                       </td>
                     </tr>
@@ -218,8 +238,8 @@ export function ScenarioPage() {
           )}
 
           {!selectedId && !isCompareMode && (
-            <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-border">
-              <p className="text-sm text-text-muted">
+            <div className="flex h-64 items-center justify-center rounded-xl border border-dashed border-sl-outline-variant/15 bg-sl-surface-low">
+              <p className="font-body text-sm text-sl-on-surface-variant">
                 Detay gormek icin bir senaryo secin veya karsilastirma icin en az 2 senaryo isaretleyin.
               </p>
             </div>

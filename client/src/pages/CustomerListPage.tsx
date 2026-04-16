@@ -68,32 +68,36 @@ export function CustomerListPage() {
 
   return (
     <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
+      <header className="mb-10">
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
           Müşteri Analizi
         </h1>
-        <p className="text-sm text-text-muted">
+        <p className="font-body text-sm text-sl-on-surface-variant">
           Kârlılık sıralaması, segment karşılaştırma ve yoğunlaşma analizi
         </p>
       </header>
 
       {isLoading && (
         <div className="flex h-48 items-center justify-center">
-          <p className="text-text-muted">Yükleniyor...</p>
+          <p className="font-body text-sl-on-surface-variant">Yükleniyor...</p>
         </div>
       )}
 
       {error && (
-        <div className="rounded-lg border border-danger/30 bg-danger/5 p-4">
-          <p className="text-sm text-danger">Müşteri verileri yüklenemedi.</p>
+        <div className="rounded-lg bg-sl-error-container/30 p-4">
+          <p className="font-body text-sm text-sl-error">
+            Müşteri verileri yüklenemedi.
+          </p>
         </div>
       )}
 
       {customers && (
         <>
           {/* Profitability Table */}
-          <section className="mb-8">
-            <h2 className="mb-3 text-lg font-medium">Kârlılık Sıralaması</h2>
+          <section className="mb-12">
+            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+              Kârlılık Sıralaması
+            </h2>
             <CustomerTable customers={customers} segments={segmentNames} />
           </section>
 
