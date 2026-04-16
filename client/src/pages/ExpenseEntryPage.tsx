@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react'
+import { useBudgetYears } from '../hooks/useBudgetYears'
+import type { BudgetYear } from '../hooks/useBudgetYears'
 import { useBudgetVersions } from '../hooks/useBudgetVersions'
 import type { BudgetVersion } from '../hooks/useBudgetVersions'
 import {
@@ -21,20 +23,21 @@ const DEFAULT_CURRENCY = 'TRY'
 
 export function ExpenseEntryPage() {
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
+  const [selectedYearId, setSelectedYearId] = useState<number | null>(null)
   const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null)
 
-  // TODO: yearId secici eklenecek, simdilik 1
-  const { data: versions } = useBudgetVersions(1)
+  const { data: years } = useBudgetYears()
+  const { data: versions } = useBudgetVersions(selectedYearId)
   const {
     data: expenseEntries,
     isLoading: expensesLoading,
     error: expensesError,
-  } = useExpenseEntries(selectedVersionId)
+  } = useExpenseEntries(selectedYearId, selectedVersionId)
   const {
     data: specialItems,
     isLoading: specialLoading,
     error: specialError,
-  } = useSpecialItems(selectedVersionId)
+  } = useSpecialItems(selectedYearId, selectedVersionId)
 
   const createExpense = useCreateExpenseEntry()
   const deleteExpense = useDeleteExpenseEntry()
@@ -48,19 +51,20 @@ export function ExpenseEntryPage() {
 
   const handleExpenseSave = useCallback(
     (categoryId: number, month: number, amount: number, existingId: number | null) => {
-      if (selectedVersionId === null) return
+      if (selectedYearId === null || selectedVersionId === null) return
 
       if (existingId !== null && amount === 0) {
-        deleteExpense.mutate({ id: existingId, versionId: selectedVersionId })
+        deleteExpense.mutate({ id: existingId, yearId: selectedYearId, versionId: selectedVersionId })
         return
       }
 
       if (existingId !== null) {
         deleteExpense.mutate(
-          { id: existingId, versionId: selectedVersionId },
+          { id: existingId, yearId: selectedYearId, versionId: selectedVersionId },
           {
             onSuccess: () => {
               createExpense.mutate({
+                yearId: selectedYearId,
                 versionId: selectedVersionId,
                 categoryId,
                 month,
@@ -75,6 +79,7 @@ export function ExpenseEntryPage() {
 
       if (amount > 0) {
         createExpense.mutate({
+          yearId: selectedYearId,
           versionId: selectedVersionId,
           categoryId,
           month,
@@ -83,24 +88,25 @@ export function ExpenseEntryPage() {
         })
       }
     },
-    [selectedVersionId, createExpense, deleteExpense]
+    [selectedYearId, selectedVersionId, createExpense, deleteExpense]
   )
 
   const handleSpecialSave = useCallback(
     (type: SpecialItemType, month: number, amount: number, existingId: number | null) => {
-      if (selectedVersionId === null) return
+      if (selectedYearId === null || selectedVersionId === null) return
 
       if (existingId !== null && amount === 0) {
-        deleteSpecialItem.mutate({ id: existingId, versionId: selectedVersionId })
+        deleteSpecialItem.mutate({ id: existingId, yearId: selectedYearId, versionId: selectedVersionId })
         return
       }
 
       if (existingId !== null) {
         deleteSpecialItem.mutate(
-          { id: existingId, versionId: selectedVersionId },
+          { id: existingId, yearId: selectedYearId, versionId: selectedVersionId },
           {
             onSuccess: () => {
               createSpecialItem.mutate({
+                yearId: selectedYearId,
                 versionId: selectedVersionId,
                 type,
                 month,
@@ -115,6 +121,7 @@ export function ExpenseEntryPage() {
 
       if (amount > 0) {
         createSpecialItem.mutate({
+          yearId: selectedYearId,
           versionId: selectedVersionId,
           type,
           month,
@@ -123,7 +130,7 @@ export function ExpenseEntryPage() {
         })
       }
     },
-    [selectedVersionId, createSpecialItem, deleteSpecialItem]
+    [selectedYearId, selectedVersionId, createSpecialItem, deleteSpecialItem]
   )
 
   const isLoading = activeTab === 'expenses' ? expensesLoading : specialLoading
@@ -147,18 +154,29 @@ export function ExpenseEntryPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <label htmlFor="version-select" className="font-body text-sm font-medium text-sl-on-surface-variant">
-            Versiyon
-          </label>
           <select
-            id="version-select"
-            className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2
-                       font-body text-sm shadow-[var(--sl-shadow-sm)] transition-colors
-                       focus:border-sl-primary focus:outline-none focus:ring-2 focus:ring-sl-primary-fixed"
+            className="h-9 rounded-lg bg-sl-surface-lowest px-3 pr-8 font-body text-sm font-medium text-sl-on-surface shadow-[0_12px_32px_rgba(25,28,31,0.04)] outline-none focus:ring-2 focus:ring-sl-primary/40"
+            value={selectedYearId ?? ''}
+            onChange={(e) => {
+              const val = e.target.value
+              setSelectedYearId(val ? Number(val) : null)
+              setSelectedVersionId(null)
+            }}
+          >
+            <option value="">Yıl seçin…</option>
+            {years?.map((y: BudgetYear) => (
+              <option key={y.id} value={y.id}>
+                {y.year}
+              </option>
+            ))}
+          </select>
+          <select
+            className="h-9 rounded-lg bg-sl-surface-lowest px-3 pr-8 font-body text-sm font-medium text-sl-on-surface shadow-[0_12px_32px_rgba(25,28,31,0.04)] outline-none focus:ring-2 focus:ring-sl-primary/40 disabled:opacity-50"
             value={selectedVersionId ?? ''}
             onChange={handleVersionChange}
+            disabled={!selectedYearId}
           >
-            <option value="">Versiyon secin...</option>
+            <option value="">Versiyon seçin…</option>
             {versions?.map((v: BudgetVersion) => (
               <option key={v.id} value={v.id}>
                 {v.name} {v.isActive ? '(Aktif)' : `(${v.status})`}

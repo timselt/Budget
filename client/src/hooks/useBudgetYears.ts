@@ -11,7 +11,7 @@ export function useBudgetYears() {
   return useQuery<BudgetYear[]>({
     queryKey: ['budget-years'],
     queryFn: async () => {
-      const { data } = await api.get('/budget-years')
+      const { data } = await api.get('/budget/years')
       return data
     },
   })

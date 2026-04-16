@@ -104,9 +104,10 @@ export function useBudgetEntries(versionId: number | null, type: BudgetType) {
   return useQuery<BudgetEntryRow[]>({
     queryKey: ['budget-entries', versionId, type],
     queryFn: async () => {
-      const { data } = await api.get<BudgetEntry[]>('/budget-entries', {
-        params: { versionId, type },
-      })
+      const { data } = await api.get<BudgetEntry[]>(
+        `/budget/versions/${versionId}/entries`,
+        { params: { type } },
+      )
       return entriesToRows(data)
     },
     enabled: versionId !== null,
@@ -118,7 +119,10 @@ export function useSaveBudgetEntries() {
 
   return useMutation({
     mutationFn: async (payload: BulkSavePayload) => {
-      const { data } = await api.post('/budget-entries/bulk', payload)
+      const { data } = await api.put(
+        `/budget/versions/${payload.versionId}/entries/bulk`,
+        { type: payload.type, entries: payload.entries },
+      )
       return data
     },
     onSuccess: (_data, variables) => {

@@ -4,7 +4,6 @@ import {
   useBudgetVersions,
   useBudgetVersion,
   useCreateVersion,
-  useDeleteVersion,
   useSubmitVersion,
   useApproveVersion,
   useRejectVersion,
@@ -30,7 +29,6 @@ export function BudgetVersionsPage() {
   const { data: versionDetail } = useBudgetVersion(detailId)
 
   const createVersion = useCreateVersion()
-  const deleteVersion = useDeleteVersion(selectedYearId)
   const submitVersion = useSubmitVersion(selectedYearId)
   const approveVersion = useApproveVersion(selectedYearId)
   const rejectVersion = useRejectVersion(selectedYearId)
@@ -39,7 +37,6 @@ export function BudgetVersionsPage() {
 
   const isAnyMutating =
     createVersion.isPending ||
-    deleteVersion.isPending ||
     submitVersion.isPending ||
     approveVersion.isPending ||
     rejectVersion.isPending ||
@@ -53,7 +50,8 @@ export function BudgetVersionsPage() {
 
   function handleCreate() {
     if (selectedYearId === null) return
-    createVersion.mutate({ yearId: selectedYearId })
+    const versionName = `V${(versions?.length ?? 0) + 1}`
+    createVersion.mutate({ yearId: selectedYearId, name: versionName })
   }
 
   function handleApprove(id: number, status: string) {
@@ -181,11 +179,6 @@ export function BudgetVersionsPage() {
                   onSubmit={
                     v.status === 'DRAFT'
                       ? () => submitVersion.mutate(v.id)
-                      : undefined
-                  }
-                  onDelete={
-                    v.status === 'DRAFT'
-                      ? () => deleteVersion.mutate(v.id)
                       : undefined
                   }
                   onApprove={

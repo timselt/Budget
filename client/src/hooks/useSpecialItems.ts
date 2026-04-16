@@ -18,6 +18,7 @@ export interface SpecialItem {
 }
 
 interface CreateSpecialItem {
+  yearId: number
   versionId: number
   type: SpecialItemType
   month: number
@@ -43,16 +44,16 @@ export const SPECIAL_ITEM_TYPES: readonly SpecialItemType[] = [
   'AMORTISMAN',
 ] as const
 
-export function useSpecialItems(versionId: number | null) {
+export function useSpecialItems(yearId: number | null, versionId: number | null) {
   return useQuery<SpecialItem[]>({
-    queryKey: ['special-items', versionId],
+    queryKey: ['special-items', yearId, versionId],
     queryFn: async () => {
-      const { data } = await api.get('/special-items', {
+      const { data } = await api.get(`/special-items/${yearId}`, {
         params: { versionId },
       })
       return data
     },
-    enabled: versionId !== null,
+    enabled: yearId !== null && versionId !== null,
   })
 }
 
@@ -61,12 +62,18 @@ export function useCreateSpecialItem() {
 
   return useMutation({
     mutationFn: async (item: CreateSpecialItem) => {
-      const { data } = await api.post('/special-items', item)
+      const { data } = await api.post(`/special-items/${item.yearId}`, {
+        versionId: item.versionId,
+        type: item.type,
+        month: item.month,
+        amount: item.amount,
+        currencyCode: item.currencyCode,
+      })
       return data
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['special-items', variables.versionId],
+        queryKey: ['special-items', variables.yearId, variables.versionId],
       })
     },
   })
@@ -76,12 +83,12 @@ export function useDeleteSpecialItem() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (params: { id: number; versionId: number }) => {
-      await api.delete(`/special-items/${params.id}`)
+    mutationFn: async (params: { id: number; yearId: number; versionId: number }) => {
+      await api.delete(`/special-items/${params.yearId}/${params.id}`)
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['special-items', variables.versionId],
+        queryKey: ['special-items', variables.yearId, variables.versionId],
       })
     },
   })

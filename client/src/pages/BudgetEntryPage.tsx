@@ -1,5 +1,8 @@
 import { useCallback, useState } from 'react'
-import { useBudgetVersions, type BudgetVersion } from '../hooks/useBudgetVersions'
+import { useBudgetYears } from '../hooks/useBudgetYears'
+import type { BudgetYear } from '../hooks/useBudgetYears'
+import { useBudgetVersions } from '../hooks/useBudgetVersions'
+import type { BudgetVersion } from '../hooks/useBudgetVersions'
 import {
   useBudgetEntries,
   useSaveBudgetEntries,
@@ -7,26 +10,33 @@ import {
 } from '../hooks/useBudgetEntries'
 import { BudgetGrid } from '../components/budget/BudgetGrid'
 
-const CURRENT_YEAR_ID = new Date().getFullYear()
-
 const BUDGET_TABS: { key: BudgetType; label: string }[] = [
   { key: 'Revenue', label: 'Gelir' },
   { key: 'Claims', label: 'Hasar' },
 ]
 
 export function BudgetEntryPage() {
+  const [selectedYearId, setSelectedYearId] = useState<number | null>(null)
   const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null)
   const [budgetType, setBudgetType] = useState<BudgetType>('Revenue')
   const [dirtyEntries, setDirtyEntries] = useState<
     Map<string, { customerId: number; month: number; amount: number }>
   >(new Map())
 
-  const { data: versions, isLoading: isVersionsLoading } = useBudgetVersions(CURRENT_YEAR_ID)
+  const { data: years, isLoading: isYearsLoading } = useBudgetYears()
+  const { data: versions, isLoading: isVersionsLoading } = useBudgetVersions(selectedYearId)
   const { data: rows, isLoading: isEntriesLoading, isError, error } = useBudgetEntries(
     selectedVersionId,
     budgetType,
   )
   const saveMutation = useSaveBudgetEntries()
+
+  const handleYearChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value
+    setSelectedYearId(val ? Number(val) : null)
+    setSelectedVersionId(null)
+    setDirtyEntries(new Map())
+  }, [])
 
   const handleVersionChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value
@@ -75,20 +85,31 @@ export function BudgetEntryPage() {
           <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
             Bütçe Girişi
           </h1>
-          <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
+          <p className="mt-2 max-w-2xl font-body text-lg text-sl-on-surface-variant">
             Müşteri bazlı aylık bütçe verilerini girin ve kaydedin.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <select
+            value={selectedYearId ?? ''}
+            onChange={handleYearChange}
+            disabled={isYearsLoading}
+            className="h-9 rounded-lg bg-sl-surface-lowest px-3 pr-8 font-body text-sm font-medium text-sl-on-surface shadow-[0_12px_32px_rgba(25,28,31,0.04)] outline-none focus:ring-2 focus:ring-sl-primary/40"
+          >
+            <option value="">Yıl seçin…</option>
+            {years?.map((y: BudgetYear) => (
+              <option key={y.id} value={y.id}>
+                {y.year} {y.isLocked ? '(Kilitli)' : ''}
+              </option>
+            ))}
+          </select>
+
+          <select
             value={selectedVersionId ?? ''}
             onChange={handleVersionChange}
-            disabled={isVersionsLoading}
-            className="h-9 rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3
-                       font-body text-sm text-sl-on-surface shadow-[var(--sl-shadow-sm)]
-                       transition-colors focus:border-sl-primary focus:outline-none
-                       focus:ring-2 focus:ring-sl-primary-fixed"
+            disabled={isVersionsLoading || !selectedYearId}
+            className="h-9 rounded-lg bg-sl-surface-lowest px-3 pr-8 font-body text-sm font-medium text-sl-on-surface shadow-[0_12px_32px_rgba(25,28,31,0.04)] outline-none focus:ring-2 focus:ring-sl-primary/40 disabled:opacity-50"
           >
             <option value="">Versiyon seçin…</option>
             {versions?.map((v: BudgetVersion) => (
@@ -100,10 +121,10 @@ export function BudgetEntryPage() {
 
           {activeVersion && (
             <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-body text-xs font-medium
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-label text-xs font-bold uppercase tracking-[0.05em]
                 ${
                   activeVersion.status === 'ACTIVE'
-                    ? 'bg-sl-on-tertiary-container/15 text-sl-tertiary'
+                    ? 'bg-sl-tertiary-container/20 text-sl-tertiary'
                     : activeVersion.status === 'DRAFT'
                       ? 'bg-sl-primary-fixed/40 text-sl-primary'
                       : 'bg-sl-primary-fixed text-sl-primary-container'
@@ -140,18 +161,15 @@ export function BudgetEntryPage() {
               type="button"
               onClick={handleSave}
               disabled={dirtyEntries.size === 0 || saveMutation.isPending}
-              className="flex items-center gap-2 rounded-lg bg-sl-primary px-4 py-2
-                         font-body text-sm font-medium text-sl-on-primary
-                         shadow-[var(--sl-shadow-sm)] transition-all
-                         hover:bg-sl-primary-container active:scale-[0.98]
-                         disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-gradient-to-br from-sl-primary to-sl-primary-container px-4 py-2 font-label text-sm font-bold uppercase tracking-[0.05em] text-white shadow-[0_4px_12px_rgba(181,3,3,0.2)] transition-all hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {saveMutation.isPending ? (
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-sl-on-primary border-t-transparent" />
-              ) : null}
+              {saveMutation.isPending && (
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              )}
+              <span className="material-symbols-outlined text-[18px]">save</span>
               Kaydet
               {dirtyEntries.size > 0 && (
-                <span className="rounded-full bg-sl-on-primary/20 px-1.5 py-0.5 text-xs">
+                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-xs">
                   {dirtyEntries.size}
                 </span>
               )}
@@ -159,19 +177,19 @@ export function BudgetEntryPage() {
           </div>
 
           {isError && (
-            <div className="rounded-lg bg-sl-error-container/30 p-4 font-body text-sm text-sl-error">
+            <div className="rounded-xl bg-sl-error-container/30 p-4 font-body text-sm text-sl-error">
               Veriler yüklenirken hata oluştu: {(error as Error)?.message ?? 'Bilinmeyen hata'}
             </div>
           )}
 
           {saveMutation.isError && (
-            <div className="rounded-lg bg-sl-error-container/30 p-4 font-body text-sm text-sl-error">
+            <div className="rounded-xl bg-sl-error-container/30 p-4 font-body text-sm text-sl-error">
               Kaydetme hatası: {(saveMutation.error as Error)?.message ?? 'Bilinmeyen hata'}
             </div>
           )}
 
           {saveMutation.isSuccess && dirtyEntries.size === 0 && (
-            <div className="rounded-lg bg-sl-on-tertiary-container/10 p-4 font-body text-sm text-sl-tertiary">
+            <div className="rounded-xl bg-sl-tertiary-container/10 p-4 font-body text-sm text-sl-tertiary">
               Veriler başarıyla kaydedildi.
             </div>
           )}
@@ -185,22 +203,12 @@ export function BudgetEntryPage() {
       )}
 
       {!selectedVersionId && (
-        <div className="flex h-64 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sl-outline-variant/15 bg-sl-surface-low">
-          <svg
-            className="h-10 w-10 text-sl-on-surface-variant"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.2}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776"
-            />
-          </svg>
+        <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-xl bg-sl-surface-container-low">
+          <span className="material-symbols-outlined text-4xl text-sl-on-surface-variant/40">
+            folder_open
+          </span>
           <p className="font-body text-sm text-sl-on-surface-variant">
-            Başlamak için bir bütçe versiyonu seçin.
+            Başlamak için bir yıl ve bütçe versiyonu seçin.
           </p>
         </div>
       )}

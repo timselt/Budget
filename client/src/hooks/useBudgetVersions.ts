@@ -4,17 +4,18 @@ import type { TimelineEntry } from '../components/approvals/ApprovalTimeline'
 
 export interface BudgetVersion {
   id: number
-  yearId: number
+  budgetYearId: number
   name: string
   status: string
   isActive: boolean
+  rejectionReason?: string | null
   createdAt: string
   statusHistory?: readonly TimelineEntry[]
 }
 
 interface CreateVersionPayload {
   yearId: number
-  copyFromVersionId?: number
+  name: string
 }
 
 interface RejectPayload {
@@ -26,9 +27,7 @@ export function useBudgetVersions(yearId: number | null) {
   return useQuery<BudgetVersion[]>({
     queryKey: ['budget-versions', yearId],
     queryFn: async () => {
-      const { data } = await api.get('/budget-versions', {
-        params: { yearId },
-      })
+      const { data } = await api.get(`/budget/years/${yearId}/versions`)
       return data
     },
     enabled: yearId !== null,
@@ -39,7 +38,7 @@ export function useBudgetVersion(id: number | null) {
   return useQuery<BudgetVersion>({
     queryKey: ['budget-versions', 'detail', id],
     queryFn: async () => {
-      const { data } = await api.get(`/budget-versions/${id}`)
+      const { data } = await api.get(`/budget/versions/${id}`)
       return data
     },
     enabled: id !== null,
@@ -51,7 +50,9 @@ export function useCreateVersion() {
 
   return useMutation({
     mutationFn: async (payload: CreateVersionPayload) => {
-      const { data } = await api.post('/budget-versions', payload)
+      const { data } = await api.post(`/budget/years/${payload.yearId}/versions`, {
+        name: payload.name,
+      })
       return data as BudgetVersion
     },
     onSuccess: (_data, variables) => {
@@ -62,27 +63,12 @@ export function useCreateVersion() {
   })
 }
 
-export function useDeleteVersion(yearId: number | null) {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (id: number) => {
-      await api.delete(`/budget-versions/${id}`)
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ['budget-versions', yearId],
-      })
-    },
-  })
-}
-
 export function useSubmitVersion(yearId: number | null) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.post(`/budget-versions/${id}/submit`)
+      const { data } = await api.post(`/budget/versions/${id}/submit`)
       return data as BudgetVersion
     },
     onSuccess: () => {
@@ -98,7 +84,7 @@ export function useApproveVersion(yearId: number | null) {
 
   return useMutation({
     mutationFn: async ({ id, level }: { id: number; level: 'dept' | 'finance' | 'cfo' }) => {
-      const { data } = await api.post(`/budget-versions/${id}/approve/${level}`)
+      const { data } = await api.post(`/budget/versions/${id}/approve/${level}`)
       return data as BudgetVersion
     },
     onSuccess: () => {
@@ -114,7 +100,7 @@ export function useActivateVersion(yearId: number | null) {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.post(`/budget-versions/${id}/activate`)
+      const { data } = await api.post(`/budget/versions/${id}/activate`)
       return data as BudgetVersion
     },
     onSuccess: () => {
@@ -130,7 +116,7 @@ export function useRejectVersion(yearId: number | null) {
 
   return useMutation({
     mutationFn: async ({ id, reason }: RejectPayload) => {
-      const { data } = await api.post(`/budget-versions/${id}/reject`, { reason })
+      const { data } = await api.post(`/budget/versions/${id}/reject`, { reason })
       return data as BudgetVersion
     },
     onSuccess: () => {
@@ -146,7 +132,7 @@ export function useArchiveVersion(yearId: number | null) {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data } = await api.post(`/budget-versions/${id}/archive`)
+      const { data } = await api.post(`/budget/versions/${id}/archive`)
       return data as BudgetVersion
     },
     onSuccess: () => {
@@ -157,7 +143,6 @@ export function useArchiveVersion(yearId: number | null) {
   })
 }
 
-/** Derive the next approval level from current status */
 export function getApprovalLevel(
   status: string,
 ): 'dept' | 'finance' | 'cfo' | null {
