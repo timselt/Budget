@@ -13,4 +13,11 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<BudgetYear> BudgetYears { get; }
     DbSet<BudgetVersion> BudgetVersions { get; }
     DbSet<AuditLogEntry> AuditLogs { get; }
+    DbSet<Customer> Customers { get; }
+    DbSet<BudgetEntry> BudgetEntries { get; }
+    DbSet<ActualEntry> ActualEntries { get; }
+    DbSet<ExpenseEntry> ExpenseEntries { get; }
+    DbSet<SpecialItem> SpecialItems { get; }
+    DbSet<BudgetApproval> BudgetApprovals { get; }
+    DbSet<UserSegment> UserSegments { get; }
 }

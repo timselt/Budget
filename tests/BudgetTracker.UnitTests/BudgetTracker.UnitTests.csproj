@@ -17,6 +17,7 @@
     </PackageReference>
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="NSubstitute" />
+    <PackageReference Include="MockQueryable.NSubstitute" />
     <PackageReference Include="coverlet.collector">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -29,6 +30,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\BudgetTracker.Core\BudgetTracker.Core.csproj" />
+    <ProjectReference Include="..\..\src\BudgetTracker.Application\BudgetTracker.Application.csproj" />
+    <ProjectReference Include="..\..\src\BudgetTracker.Infrastructure\BudgetTracker.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

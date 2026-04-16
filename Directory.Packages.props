@@ -28,6 +28,9 @@
     <PackageVersion Include="OpenIddict.AspNetCore" Version="7.4.0" />
     <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.4.0" />
 
+    <!-- Validation -->
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+
     <!-- Test paketleri (S2.7'de kullanılacak) -->
     <!-- FluentAssertions 8.x Xceed ticari lisansa geçti; 6.12.2 son OSS sürüm. -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
@@ -35,6 +38,7 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
+    <PackageVersion Include="MockQueryable.NSubstitute" Version="7.0.3" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="4.11.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.6" />
     <PackageVersion Include="Respawn" Version="6.2.1" />

@@ -25,6 +25,13 @@ public sealed class ApplicationDbContext : IdentityDbContext<User, Role, int>, I
     public DbSet<BudgetYear> BudgetYears => Set<BudgetYear>();
     public DbSet<BudgetVersion> BudgetVersions => Set<BudgetVersion>();
     public DbSet<AuditLogEntry> AuditLogs => Set<AuditLogEntry>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<BudgetEntry> BudgetEntries => Set<BudgetEntry>();
+    public DbSet<ActualEntry> ActualEntries => Set<ActualEntry>();
+    public DbSet<ExpenseEntry> ExpenseEntries => Set<ExpenseEntry>();
+    public DbSet<SpecialItem> SpecialItems => Set<SpecialItem>();
+    public DbSet<BudgetApproval> BudgetApprovals => Set<BudgetApproval>();
+    public DbSet<UserSegment> UserSegments => Set<UserSegment>();
     public DbSet<UserCompany> UserCompanies => Set<UserCompany>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

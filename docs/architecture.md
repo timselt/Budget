@@ -379,6 +379,73 @@ S3 sprintinde BudgetTracker'ın kimlik doğrulama + yetkilendirme katmanı kurul
 Yeni ADR eklerken aşağıdaki şablonu kullan:
 
 ```markdown
+## ADR-0004 — Domain Entity'ler, FX Dönüşüm ve KPI Hesaplama Motoru
+
+**Tarih:** 2026-04-16
+**Statü:** Kabul edildi
+**Karar Sahibi:** Timur Selçuk Turan
+**İlgili Belgeler:**
+- Master spec: `docs/BUTCE_TAKIP_YAZILIMI.md` (§3 Entity, §4 FX, §5.1 KPI)
+- ADR-0002 (persistans katmanı, multi-tenant stratejisi)
+
+### 1. Bağlam
+
+S2'de kurulan altyapının üzerine bütçe domain entity'leri, çift FX sütun yapısı ve 16 KPI'lık performans hesaplama motoru eklenmeli. Master spec §3'teki entity modeli (Customer, BudgetEntry, ActualEntry, ExpenseEntry, SpecialItem, BudgetApproval, UserSegment) ve §5.1'deki KPI formülleri (Loss Ratio, Combined Ratio, EBITDA, Muallak Ratio vb.) hayata geçirilecek.
+
+### 2. Karar
+
+#### 2.1. Entity Tasarımı
+
+- Her entity `TenantEntity` türevi (`CompanyId` + global query filter + RLS)
+- Factory method pattern: `Create(...)` statik metodu ile oluşturma, constructor dışarıya kapalı
+- `BudgetEntry` / `ActualEntry` / `ExpenseEntry`: çift FX sütunu (`AmountOriginal`, `CurrencyCode`, `AmountTryFixed`, `AmountTrySpot`)
+- `BudgetApproval`: `Approve()` / `Reject()` metotları ile state guard (EnsurePending)
+- `UserSegment`: basit POCO, composite PK (`UserId` + `SegmentId`)
+
+#### 2.2. FX Dönüşüm Stratejisi
+
+- Tek `CurrencyCode` yaklaşımı: tüm FX oranları kaynak → TRY implicit
+- TRY passthrough: oran = 1, DB sorgusu yapılmaz
+- Fixed rate: `IsYearStartFixed = true` olan kayıt, yoksa 1 Ocak öncesi en yakın oran
+- Spot rate: ayın son gününe en yakın oran
+- Banker's rounding: `Math.Round(value, 2, MidpointRounding.ToEven)`
+
+#### 2.3. KPI Hesaplama Motoru
+
+- `KpiCalculationEngine` — 16 KPI formülü + konsantrasyon analizi (HHI, TopN)
+- Filtreleme: `versionId` (zorunlu), `segmentId` (opsiyonel), `MonthRange` (opsiyonel)
+- Expense sınıflandırması: `ExpenseCategory.Classification` join ile gruplandırma (General/Technical/Financial)
+- `SafeRatio()`: sıfıra bölme koruması, 4 ondalık banker's rounding
+- `ConcentrationResult`: Herfindahl-Hirschman Index (HHI) = Σ(payᵢ²)
+
+#### 2.4. Validation
+
+- FluentValidation kullanımı: `CreateBudgetEntryRequestValidator`, `CreateCustomerRequestValidator`, `CreateExpenseEntryRequestValidator`, `CreateSpecialItemRequestValidator`
+- Assembly tarama ile DI kaydı (`AddValidatorsFromAssemblyContaining`)
+
+### 3. Reddedilen Alternatifler
+
+| Alternatif | Reddedilme Nedeni |
+|---|---|
+| From/To FX çifti (`CurrencyFrom` + `CurrencyTo`) | Mevcut kullanım senaryosu tamamıyla kaynak → TRY; çapraz dönüşüm ihtiyacı yok. Gereksiz karmaşıklık. Gerektiğinde ADR ile genişletilir. |
+| KPI hesaplamasını DB view/stored procedure ile yapmak | EF Core query composition yeterli; unit test'te mock DbSet ile test edilebilirlik avantajı. Domain logic C#'ta kalmalı. |
+| MediatR pipeline ile KPI'ları handler'a sarma | Şu aşamada tek bir `CalculateAsync` çağrısı yeterli. CQRS handler ihtiyacı S5+ API endpoint'lerinde değerlendirilecek. |
+
+### 4. Sonuçlar
+
+**Olumlu:**
+- 7 entity + 7 EF config + RLS policy ile tam multi-tenant domain modeli
+- 77 unit test (tümü yeşil), golden scenario KPI doğrulaması dahil
+- FluentValidation ile input boundary koruması
+- FX dönüşüm servisi izole ve test edilebilir
+
+**Olumsuz:**
+- `ExpenseEntry` hem budget hem actual tipini taşıyor (`EntryType` enum); tablo büyüdükçe partition veya ayrı tablo düşünülmeli
+- Cross-currency dönüşüm (ör. USD → EUR) desteklenmiyor — yalnız kaynak → TRY
+- `SpecialItem.Month` nullable — yıllık bazda toplam kalem için `null`; raporlamada dikkat gerektirir
+
+---
+
 ## ADR-XXXX — [Başlık]
 
 **Tarih:** YYYY-MM-DD

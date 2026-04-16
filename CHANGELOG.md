@@ -4,6 +4,56 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### S4 — Domain Entity'ler, Application Katmanı ve KPI Motoru (2026-04-16)
+
+#### Eklendi
+
+- **Domain entity'leri (`BudgetTracker.Core/Entities`):**
+  - `Customer` — müşteri yönetimi, segment ilişkisi, soft-delete
+  - `BudgetEntry` — bütçe kalemleri (Revenue/Claim), çift FX sütunu (`AmountTryFixed`, `AmountTrySpot`)
+  - `ActualEntry` — gerçekleşen kalemler, ERP sync desteği (`ActualSource`)
+  - `ExpenseEntry` — gider kalemleri (Budget/Actual), kategori bazlı sınıflandırma
+  - `SpecialItem` — özel kalemler (MuallakHasar, DemoFilo, FinansalGelir, TKatilim, Amortisman)
+  - `BudgetApproval` — onay akışı entity'si, `Approve()` / `Reject()` state guard
+  - `UserSegment` — kullanıcı-segment yetkilendirme ilişkisi
+
+- **Enum'lar (`BudgetTracker.Core/Enums`):**
+  - `EntryType`, `ActualSource`, `SpecialItemType`, `ApprovalDecision`, `ApprovalStage`, `ExpenseEntryType`
+
+- **EF konfigürasyonları + migration:**
+  - 7 `IEntityTypeConfiguration<T>` — snake_case, decimal precision, FK Restrict, soft-delete filter
+  - Migration `20260416044943_AddBudgetDomainEntities` — 7 tablo, CHECK constraints, RLS ENABLE+FORCE, `budget_app` role DML grants
+
+- **Application DTOs + FluentValidation:**
+  - `CustomerDto`, `BudgetEntryDto`, `ExpenseEntryDto`, `SpecialItemDto`, `BudgetApprovalDto`
+  - Request DTO'ları + 4 FluentValidation validator
+  - `BulkUpdateBudgetEntriesRequest` — toplu bütçe giriş desteği
+
+- **FX dönüşüm servisi (`BudgetTracker.Infrastructure/FxRates`):**
+  - `FxConversionService` — TRY passthrough, fixed rate (yıl başı), spot rate (ay sonu)
+  - Banker's rounding (`MidpointRounding.ToEven`) tutarlılığı
+
+- **Application servisleri:**
+  - `BudgetEntryService` — CRUD + bulk upsert, version lock guard (Draft/Rejected), atomic FX dönüşüm
+  - `CustomerService` — CRUD + soft-delete
+
+- **KPI hesaplama motoru (`BudgetTracker.Application/Calculations`):**
+  - 16 KPI formülü: LossRatio, ExpenseRatio, CombinedRatio, TechnicalProfit, NetProfit, EBITDA, EbitdaMargin, ProfitRatio, MuallakRatio vb.
+  - Konsantrasyon analizi: HHI (Herfindahl-Hirschman Index), TopN müşteri payı
+  - Filtreleme: versionId + opsiyonel segmentId + opsiyonel MonthRange
+
+- **DI wiring:**
+  - `AddApplication()` extension — FluentValidation assembly scan + KpiCalculationEngine
+  - Infrastructure DI — `FxConversionService`, `CustomerService`, `BudgetEntryService` kayıtları
+
+- **Testler (77 toplam, tümü yeşil):**
+  - `CustomerTests` (7), `BudgetEntryTests` (6), `BudgetApprovalTests` (8), `ExpenseEntryTests` (5), `SpecialItemTests` (6)
+  - `FxConversionServiceTests` (5), `KpiCalculationEngineTests` (4)
+  - Golden scenario: spec §5.1 referans değerleriyle KPI doğrulaması
+
+- **Dokümantasyon:**
+  - `docs/architecture.md` — ADR-0004 (Domain Entity'ler, FX Dönüşüm, KPI Motoru)
+
 ### S3 — Kimlik Doğrulama: ASP.NET Identity + OpenIddict (2026-04-15)
 
 #### Eklendi

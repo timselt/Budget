@@ -1,3 +1,4 @@
+using BudgetTracker.Application;
 using BudgetTracker.Infrastructure;
 using BudgetTracker.Infrastructure.Authentication;
 using BudgetTracker.Infrastructure.Identity;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHealthChecks()

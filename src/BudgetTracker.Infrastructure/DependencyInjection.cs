@@ -1,10 +1,15 @@
+using BudgetTracker.Application.BudgetEntries;
 using BudgetTracker.Application.Common.Abstractions;
+using BudgetTracker.Application.Customers;
+using BudgetTracker.Application.FxRates;
 using BudgetTracker.Core.Common;
 using BudgetTracker.Infrastructure.Authentication;
 using BudgetTracker.Infrastructure.Common;
+using BudgetTracker.Infrastructure.FxRates;
 using BudgetTracker.Infrastructure.Identity;
 using BudgetTracker.Infrastructure.Persistence;
 using BudgetTracker.Infrastructure.Persistence.Interceptors;
+using BudgetTracker.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -36,6 +41,10 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+
+        services.AddScoped<IFxConversionService, FxConversionService>();
+        services.AddScoped<ICustomerService, CustomerService>();
+        services.AddScoped<IBudgetEntryService, BudgetEntryService>();
 
         services.AddIdentity<User, Role>(options =>
             {
