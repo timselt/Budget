@@ -4,6 +4,35 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### S6 — API Hardening: Exception Handler, Validation Pipeline, TCMB (2026-04-16)
+
+#### Eklendi
+
+- **Global Exception Handler (`BudgetTracker.Api/Middleware`):**
+  - `GlobalExceptionHandler` — `IExceptionHandler` implementasyonu
+  - ProblemDetails RFC 9457 formatında hata response'ları
+  - Exception → HTTP status mapping: ArgumentException→422, NotFound→404, Conflict→409, Generic→400, Unauthorized→403, Unhandled→500
+
+- **FluentValidation Pipeline (`BudgetTracker.Api/Filters`):**
+  - `FluentValidationFilter` — `IAsyncActionFilter` ile otomatik request validation
+  - ValidationProblemDetails ile 422 response, alan bazlı hata detayı
+
+- **TCMB Kur Çekme Servisi (`BudgetTracker.Infrastructure/FxRates`):**
+  - `TcmbFxService` — TCMB XML API'den USD/EUR/GBP kur çekme
+  - Mid-rate hesaplama (ForexBuying + ForexSelling / 2), banker's rounding
+  - Idempotent (aynı tarih tekrar çekmez), HTTP hata toleranslı
+
+- **Yeni Controller'lar:**
+  - `SegmentsController` — GET list + GET /{id}/performance (segment bazlı KPI)
+  - `FxRatesController` — GET rates (date/currency filtre), POST manual, POST sync (TCMB)
+
+- **Testler (86 toplam, tümü yeşil):**
+  - `GlobalExceptionHandlerTests` (6 test) — tüm exception→status mapping
+  - `TcmbFxServiceTests` (3 test) — already synced, HTTP fail, XML parse
+
+- **Dokümantasyon:**
+  - `docs/architecture.md` — ADR-0006
+
 ### S5 — API Controller'ları: CRUD + Dashboard + Onay Akışı (2026-04-16)
 
 #### Eklendi

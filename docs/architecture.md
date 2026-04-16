@@ -519,6 +519,76 @@ Her adım ilgili role policy ile korunur. State machine doğrulaması domain ent
 
 ---
 
+## ADR-0006 — API Hardening: Exception Handling, Validation Pipeline, TCMB Entegrasyonu
+
+**Tarih:** 2026-04-16
+**Statü:** Kabul edildi
+**Karar Sahibi:** Timur Selçuk Turan
+**İlgili Belgeler:**
+- Master spec: `docs/BUTCE_TAKIP_YAZILIMI.md` (§6.12 FX, §7 Güvenlik)
+- ADR-0005 (API Controller Katmanı)
+
+### 1. Bağlam
+
+S5'te oluşturulan API controller'ları InvalidOperationException'ları 500 olarak dönüyordu, FluentValidation validator'ları DI'da kayıtlı ama API pipeline'ına bağlı değildi, ve TCMB kur çekme servisi eksikti.
+
+### 2. Karar
+
+#### 2.1. Global Exception Handler
+
+- `IExceptionHandler` implementasyonu (ASP.NET Core 8+ native pattern)
+- Exception tipi → HTTP status mapping:
+  - `ArgumentException` → 422
+  - `InvalidOperationException` ("not found") → 404
+  - `InvalidOperationException` ("cannot be edited") → 409
+  - `InvalidOperationException` (diğer) → 400
+  - `UnauthorizedAccessException` → 403
+  - Diğer → 500 (generic mesaj, stacktrace gizli)
+- ProblemDetails RFC 9457 formatında response
+
+#### 2.2. FluentValidation Pipeline
+
+- `IAsyncActionFilter` olarak implement (MVC pipeline)
+- Action argument'larını tarar, eşleşen `IValidator<T>` bulursa validate eder
+- Hata durumunda `ValidationProblemDetails` ile 422 döner
+- Controller kodunda manual validation gerekmez
+
+#### 2.3. TCMB Kur Çekme Servisi
+
+- `ITcmbFxService.SyncRatesAsync(DateOnly date)` — tek gün için kur çeker
+- TCMB XML API: `https://www.tcmb.gov.tr/kurlar/{yyyyMM}/{ddMMyyyy}.xml`
+- Takip edilen paralar: USD, EUR, GBP
+- Mid-rate hesaplama: `(ForexBuying + ForexSelling) / 2` — banker's rounding 4 ondalık
+- Idempotent: aynı tarih için tekrar çekmez
+- HTTP hata toleransı: bağlantı hatası veya non-200 → 0 döner, exception fırlatmaz
+
+#### 2.4. Ek Endpoint'ler
+
+- `SegmentsController`: GET list + GET performance (KPI by segment)
+- `FxRatesController`: GET rates (filtre: date/currency) + POST manual + POST sync (TCMB)
+
+### 3. Reddedilen Alternatifler
+
+| Alternatif | Reddedilme Nedeni |
+|---|---|
+| MVC `UseExceptionHandler` lambda | `IExceptionHandler` daha test edilebilir ve composable |
+| FluentValidation.AspNetCore auto-validation | Paket .NET 8+ ile uyumsuz, deprecated. Manuel filter daha kontrollü. |
+| TCMB verisi için third-party NuGet | Bakım riski, XML parse basit. Kendi implementasyonumuz daha güvenli. |
+
+### 4. Sonuçlar
+
+**Olumlu:**
+- Tüm API hataları ProblemDetails formatında tutarlı response
+- Validation hataları 422 ile alan bazlı detay döner
+- TCMB kur çekme idempotent ve hata toleranslı
+- 86 unit test, tümü yeşil
+
+**Olumsuz:**
+- Hangfire job henüz bağlanmadı — TCMB sync şimdilik sadece manuel endpoint ile
+- Rate limiting henüz uygulanmadı
+
+---
+
 ## ADR-XXXX — [Başlık]
 
 **Tarih:** YYYY-MM-DD

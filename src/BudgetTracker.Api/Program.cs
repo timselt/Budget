@@ -1,3 +1,5 @@
+using BudgetTracker.Api.Filters;
+using BudgetTracker.Api.Middleware;
 using BudgetTracker.Application;
 using BudgetTracker.Infrastructure;
 using BudgetTracker.Infrastructure.Authentication;
@@ -17,7 +19,12 @@ builder.Services.AddHealthChecks()
         failureStatus: HealthStatus.Unhealthy,
         tags: new[] { "ready", "db" });
 
-builder.Services.AddControllers();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<FluentValidationFilter>();
+});
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -38,6 +45,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
     Predicate = check => check.Tags.Contains("ready"),
 });
 
+app.UseExceptionHandler();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<TenantResolutionMiddleware>();

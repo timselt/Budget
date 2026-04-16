@@ -45,6 +45,12 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
         services.AddScoped<IFxConversionService, FxConversionService>();
+        services.AddScoped<ITcmbFxService, TcmbFxService>();
+        services.AddHttpClient("tcmb", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+            client.DefaultRequestHeaders.Add("Accept", "application/xml");
+        });
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IBudgetEntryService, BudgetEntryService>();
         services.AddScoped<IExpenseEntryService, ExpenseEntryService>();
