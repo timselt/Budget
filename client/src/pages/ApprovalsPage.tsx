@@ -1,218 +1,155 @@
-import { useState } from 'react'
-import { useBudgetYears } from '../hooks/useBudgetYears'
-import {
-  useBudgetVersions,
-  useApproveVersion,
-  useRejectVersion,
-  getApprovalLevel,
-  type BudgetVersion,
-} from '../hooks/useBudgetVersions'
-import { StatusBadge } from '../components/approvals/StatusBadge'
-import { RejectModal } from '../components/approvals/RejectModal'
-
-const PENDING_STATUSES = new Set([
-  'SUBMITTED',
-  'DEPT_APPROVED',
-  'FINANCE_APPROVED',
-])
-
-function formatDate(iso: string): string {
-  return new Intl.DateTimeFormat('tr-TR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(iso))
+interface PendingItem {
+  ribbon: 'primary' | 'warning' | 'tertiary'
+  title: string
+  chip: 'error' | 'warning' | 'info'
+  chipLabel: string
+  meta: string
+  actions?: boolean
 }
 
-function getApprovalLevelLabel(status: string): string {
-  switch (status) {
-    case 'SUBMITTED':
-      return 'Departman onayı bekliyor'
-    case 'DEPT_APPROVED':
-      return 'Finans onayı bekliyor'
-    case 'FINANCE_APPROVED':
-      return 'CFO onayı bekliyor'
-    default:
-      return ''
-  }
+const PENDING: readonly PendingItem[] = [
+  {
+    ribbon: 'primary',
+    title: 'FY26 Bütçe v3 — Sağlık Segmenti',
+    chip: 'error',
+    chipLabel: 'YÜKSEK',
+    meta: 'M. Yılmaz • 14 Nis 2026 • 485M TL gelir, 81M teknik marj',
+    actions: true,
+  },
+  {
+    ribbon: 'warning',
+    title: 'Q2 Forecast Revizyonu',
+    chip: 'warning',
+    chipLabel: 'ORTA',
+    meta: 'S. Öz • 12 Nis 2026 • EBITDA +18M revize',
+  },
+  {
+    ribbon: 'tertiary',
+    title: 'Konut Segmenti Sermaye Talebi',
+    chip: 'info',
+    chipLabel: 'BİLGİ',
+    meta: 'S. Özkan • 10 Nis 2026 • KonutKonfor operasyon ek yatırım',
+  },
+]
+
+interface TimelineStep {
+  dotClass: string
+  title: string
+  titleClass?: string
+  meta: string
 }
+
+const TIMELINE: readonly TimelineStep[] = [
+  {
+    dotClass: 'bg-success',
+    title: 'Departman Müdürü',
+    meta: 'M. Yılmaz • 10 Nis 14:23 • "Kontrat varsayımları güncellendi"',
+  },
+  {
+    dotClass: 'bg-success',
+    title: 'Finans Kontrol',
+    meta: 'A. Koç • 11 Nis 09:15 • Gerçekleşen sapma kontrolü: tamam',
+  },
+  {
+    dotClass: 'bg-warning animate-pulse',
+    title: 'CFO Onayı (Beklemede)',
+    titleClass: 'text-tertiary',
+    meta: "B. Ayhan • Beklemede — 14 Nis'ten beri",
+  },
+  {
+    dotClass: 'bg-surface-container-high',
+    title: 'CEO Onayı',
+    titleClass: 'text-on-surface-variant',
+    meta: 'T. Turan',
+  },
+]
 
 export function ApprovalsPage() {
-  const [selectedYearId, setSelectedYearId] = useState<number | null>(null)
-  const [rejectTarget, setRejectTarget] = useState<{
-    id: number
-    name: string
-  } | null>(null)
-
-  const { data: years, isLoading: yearsLoading } = useBudgetYears()
-  const { data: versions, isLoading: versionsLoading } =
-    useBudgetVersions(selectedYearId)
-
-  const approveVersion = useApproveVersion(selectedYearId)
-  const rejectVersion = useRejectVersion(selectedYearId)
-
-  const isAnyMutating = approveVersion.isPending || rejectVersion.isPending
-
-  // Auto-select first year
-  if (years && years.length > 0 && selectedYearId === null) {
-    setSelectedYearId(years[0].id)
-  }
-
-  const pendingVersions: BudgetVersion[] =
-    versions?.filter((v) => PENDING_STATUSES.has(v.status)) ?? []
-
-  function handleApprove(id: number, status: string) {
-    const level = getApprovalLevel(status)
-    if (level) {
-      approveVersion.mutate({ id, level })
-    }
-  }
-
-  function handleRejectConfirm(reason: string) {
-    if (!rejectTarget) return
-    rejectVersion.mutate(
-      { id: rejectTarget.id, reason },
-      { onSuccess: () => setRejectTarget(null) },
-    )
-  }
-
   return (
-    <div>
-      <header className="mb-8">
-        <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
-          Onay Akışı
-        </h1>
-        <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
-          Onay bekleyen bütçe versiyonlarını inceleyin ve işlem yapın.
-        </p>
-      </header>
-
-      {/* Year selector */}
-      <div className="mb-6">
-        {yearsLoading && (
-          <span className="font-body text-sm text-sl-on-surface-variant">
-            Yıllar yükleniyor...
-          </span>
-        )}
-
-        {years && (
-          <select
-            value={selectedYearId ?? ''}
-            onChange={(e) => setSelectedYearId(Number(e.target.value) || null)}
-            className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2
-                       font-body text-sm text-sl-on-surface
-                       focus:border-sl-primary focus:outline-none focus:ring-2 focus:ring-sl-primary-fixed"
-          >
-            <option value="" disabled>
-              Yıl seçin
-            </option>
-            {years.map((y) => (
-              <option key={y.id} value={y.id}>
-                {y.year}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      {/* Loading */}
-      {versionsLoading && selectedYearId !== null && (
-        <div className="flex h-48 items-center justify-center">
-          <p className="font-body text-sl-on-surface-variant">Yükleniyor...</p>
-        </div>
-      )}
-
-      {/* Empty state */}
-      {!versionsLoading && pendingVersions.length === 0 && selectedYearId !== null && (
-        <div className="flex h-48 flex-col items-center justify-center rounded-xl border border-dashed border-sl-outline-variant/15 bg-sl-surface-low">
-          <p className="font-body text-sm text-sl-on-surface-variant">
-            Bekleyen onay bulunmuyor.
+    <section>
+      <div className="flex justify-between items-end mb-8">
+        <div>
+          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Onay Akışı</h2>
+          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
+            Bütçe ve forecast versiyonlarının çok seviyeli onay sistemi (Departman → CFO → CEO →
+            YK).
           </p>
         </div>
-      )}
+      </div>
 
-      {/* Pending approvals table */}
-      {pendingVersions.length > 0 && (
-        <div className="overflow-hidden rounded-xl bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
-          <table className="w-full text-left font-body text-sm">
-            <thead>
-              <tr className="bg-sl-surface-low">
-                <th className="px-5 py-3 font-medium text-sl-on-surface-variant">
-                  Versiyon
-                </th>
-                <th className="px-5 py-3 font-medium text-sl-on-surface-variant">
-                  Durum
-                </th>
-                <th className="px-5 py-3 font-medium text-sl-on-surface-variant">
-                  Bekleyen Adım
-                </th>
-                <th className="px-5 py-3 font-medium text-sl-on-surface-variant">
-                  Oluşturulma
-                </th>
-                <th className="px-5 py-3 text-right font-medium text-sl-on-surface-variant">
-                  İşlem
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingVersions.map((v) => (
-                <tr
-                  key={v.id}
-                  className="transition-colors hover:bg-sl-surface-low/50"
-                >
-                  <td className="px-5 py-3.5 font-medium text-sl-on-surface">
-                    {v.name}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <StatusBadge status={v.status} />
-                  </td>
-                  <td className="px-5 py-3.5 text-sl-on-surface-variant">
-                    {getApprovalLevelLabel(v.status)}
-                  </td>
-                  <td className="px-5 py-3.5 text-sl-on-surface-variant">
-                    {formatDate(v.createdAt)}
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleApprove(v.id, v.status)}
-                        disabled={isAnyMutating}
-                        className="rounded-lg bg-sl-on-tertiary-container/10 px-3 py-1.5 text-xs font-medium
-                                   text-sl-tertiary transition-colors hover:bg-sl-on-tertiary-container/20
-                                   disabled:opacity-50"
-                      >
-                        Onayla
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setRejectTarget({ id: v.id, name: v.name })
-                        }
-                        disabled={isAnyMutating}
-                        className="rounded-lg bg-sl-error-container/30 px-3 py-1.5 text-xs font-medium
-                                   text-sl-error transition-colors hover:bg-sl-error-container/50
-                                   disabled:opacity-50"
-                      >
-                        Reddet
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="grid grid-cols-2 gap-6">
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-bold tracking-tight">Bekleyen Onaylar (3)</h3>
+            <span className="chip chip-warning">Aksiyon Gerekli</span>
+          </div>
+          <div className="space-y-4">
+            {PENDING.map((p) => (
+              <div
+                key={p.title}
+                className="relative bg-surface-container-low rounded-lg p-4 pl-5"
+              >
+                <div className={`ribbon-${p.ribbon}`} />
+                <div className="flex items-start justify-between mb-2">
+                  <p className="font-bold text-sm">{p.title}</p>
+                  <span className={`chip chip-${p.chip}`}>{p.chipLabel}</span>
+                </div>
+                <p className="text-xs text-on-surface-variant">{p.meta}</p>
+                {p.actions && (
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      style={{ padding: '.4rem .75rem', fontSize: '.75rem' }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                        check
+                      </span>
+                      Onayla
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ padding: '.4rem .75rem', fontSize: '.75rem' }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                        edit
+                      </span>
+                      Yorum Ekle
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-tertiary"
+                      style={{ padding: '.4rem .5rem', fontSize: '.75rem' }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                        close
+                      </span>
+                      Reddet
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-      )}
 
-      {/* Reject modal */}
-      <RejectModal
-        isOpen={rejectTarget !== null}
-        versionName={rejectTarget?.name ?? ''}
-        onConfirm={handleRejectConfirm}
-        onCancel={() => setRejectTarget(null)}
-        isLoading={rejectVersion.isPending}
-      />
-    </div>
+        <div className="card">
+          <h3 className="text-base font-bold tracking-tight mb-4">Onay Akışı Görünümü</h3>
+          <div className="space-y-4">
+            {TIMELINE.map((t) => (
+              <div key={t.title} className="relative pl-6">
+                <div className="absolute left-0 top-0 bottom-0 w-px bg-surface-container-high" />
+                <div
+                  className={`absolute -left-1 top-1 w-2.5 h-2.5 rounded-full ${t.dotClass}`}
+                />
+                <p className={`text-sm font-bold ${t.titleClass ?? ''}`}>{t.title}</p>
+                <p className="text-xs text-on-surface-variant">{t.meta}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }

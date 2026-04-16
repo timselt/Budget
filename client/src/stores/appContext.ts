@@ -7,6 +7,7 @@ export const COMPANIES = [
   { id: 'konutkonfor', name: 'KonutKonfor' },
   { id: 'sigorta-acentesi', name: 'SigortaAcentesi.com' },
   { id: 'rs-otomotiv', name: 'RS Otomotiv' },
+  { id: 'konsolide', name: 'Konsolide (Grup)' },
 ] as const
 
 export const SCENARIOS = [

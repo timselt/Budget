@@ -1,92 +1,44 @@
 @import "tailwindcss";
-@import "./styles/sovereign-ledger.css";
+@import "./styles/finopstur.css";
 
 @theme {
-  /* --- Sovereign Ledger Colors --- */
-  --color-sl-surface: var(--sl-surface);
-  --color-sl-surface-low: var(--sl-surface-low);
-  --color-sl-surface-lowest: var(--sl-surface-lowest);
-  --color-sl-surface-high: var(--sl-surface-high);
-  --color-sl-surface-container-low: var(--sl-surface-container-low);
-  --color-sl-surface-container: var(--sl-surface-container);
-  --color-sl-surface-container-high: var(--sl-surface-container-high);
-  --color-sl-surface-container-highest: var(--sl-surface-container-highest);
-  --color-sl-on-surface: var(--sl-on-surface);
-  --color-sl-on-surface-variant: var(--sl-on-surface-variant);
-  --color-sl-primary: var(--sl-primary);
-  --color-sl-primary-container: var(--sl-primary-container);
-  --color-sl-primary-fixed: var(--sl-primary-fixed);
-  --color-sl-on-primary: var(--sl-on-primary);
-  --color-sl-secondary: var(--sl-secondary);
-  --color-sl-secondary-container: var(--sl-secondary-container);
-  --color-sl-on-secondary-container: var(--sl-on-secondary-container);
-  --color-sl-surface-bright: var(--sl-surface-bright);
-  --color-sl-error: var(--sl-error);
-  --color-sl-error-container: var(--sl-error-container);
-  --color-sl-tertiary: var(--sl-tertiary);
-  --color-sl-tertiary-container: var(--sl-tertiary-container);
-  --color-sl-on-tertiary-container: var(--sl-on-tertiary-container);
-  --color-sl-outline-variant: var(--sl-outline-variant);
-  --color-sl-surface-tint: var(--sl-surface-tint);
-  --color-sl-ghost-border: var(--sl-ghost-border);
-  --color-sl-glass-bg: var(--sl-glass-bg);
-  --color-sl-success: var(--sl-success);
-  --color-sl-success-container: var(--sl-success-container);
-  --color-sl-on-success-container: var(--sl-on-success-container);
-  --color-sl-warning: var(--sl-warning);
-  --color-sl-warning-container: var(--sl-warning-container);
-  --color-sl-on-warning-container: var(--sl-on-warning-container);
-  --color-sl-outline: var(--sl-outline);
-  --color-sl-inverse-surface: var(--sl-inverse-surface);
-  --color-sl-inverse-on-surface: var(--sl-inverse-on-surface);
+  /* FinOps Tur palette — prototip birebir */
+  --color-primary: #b50303;
+  --color-primary-container: #da291c;
+  --color-primary-fixed: #ffdad4;
+  --color-on-primary: #ffffff;
+  --color-tertiary: #005b9f;
+  --color-tertiary-container: #0074c8;
+  --color-tertiary-fixed: #d2e4ff;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-surface: #f7f9fe;
+  --color-surface-bright: #f7f9fe;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f2f4f8;
+  --color-surface-container: #eceef2;
+  --color-surface-container-high: #e6e8ed;
+  --color-surface-container-highest: #e0e2e7;
+  --color-on-surface: #191c1f;
+  --color-on-surface-variant: #5c403b;
+  --color-outline: #916f6a;
+  --color-outline-variant: #e6bdb7;
+  --color-inverse-surface: #2d3134;
+  --color-inverse-on-surface: #eff1f5;
+  --color-success: #006d3e;
+  --color-success-container: #b8f2c6;
+  --color-warning: #8a5300;
+  --color-warning-container: #ffddb3;
 
-  /* --- Legacy palette (kept for existing components) --- */
-  --color-primary-50: oklch(97% 0.02 250);
-  --color-primary-100: oklch(93% 0.04 250);
-  --color-primary-200: oklch(87% 0.08 250);
-  --color-primary-300: oklch(78% 0.12 250);
-  --color-primary-400: oklch(68% 0.16 250);
-  --color-primary-500: oklch(55% 0.18 250);
-  --color-primary-600: oklch(47% 0.18 250);
-  --color-primary-700: oklch(40% 0.16 250);
-  --color-primary-800: oklch(33% 0.12 250);
-  --color-primary-900: oklch(25% 0.08 250);
+  /* Fonts */
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-display: Inter, system-ui, sans-serif;
 
-  --color-surface: var(--sl-surface);
-  --color-surface-alt: var(--sl-surface-low);
-  --color-border: var(--sl-outline-variant);
-  --color-text: var(--sl-on-surface);
-  --color-text-muted: var(--sl-on-surface-variant);
-
-  --color-success: var(--sl-success);
-  --color-warning: var(--sl-warning);
-  --color-danger: var(--sl-error);
-
-  /* --- Font Families --- */
-  --font-display: var(--font-display);
-  --font-headline: var(--font-headline);
-  --font-label: var(--font-label);
-  --font-body: var(--font-body);
-  --font-sans: var(--font-body);
-
-  /* --- Border Radius --- */
-  --radius-sm: var(--sl-radius-sm);
-  --radius-md: var(--sl-radius-md);
-  --radius-lg: var(--sl-radius-lg);
-  --radius-xl: var(--sl-radius-xl);
-  --radius-full: var(--sl-radius-full);
-
-  /* --- Box Shadows --- */
-  --shadow-ambient: var(--sl-shadow-ambient);
-  --shadow-sm: var(--sl-shadow-sm);
-  --shadow-hover: var(--sl-shadow-hover);
-}
-
-body {
-  margin: 0;
-  font-family: var(--font-body);
-  background-color: var(--sl-surface);
-  color: var(--sl-on-surface);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* Radius */
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
 }

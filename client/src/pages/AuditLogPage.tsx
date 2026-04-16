@@ -1,149 +1,88 @@
-import { useState, useCallback } from 'react'
-import { useAuditLogs, type AuditLogFilters } from '../hooks/useAuditLogs'
-import { AuditLogTable } from '../components/admin/AuditLogTable'
+interface AuditRow {
+  datetime: string
+  user: string
+  ip: string
+  module: string
+  action: 'update' | 'create' | 'approve' | 'import' | 'delete' | 'export'
+  actionLabel: string
+  oldValue: string
+  newValue: string
+}
 
-const ENTITY_TYPES = [
-  '',
-  'BudgetEntry',
-  'BudgetVersion',
-  'ExpenseEntry',
-  'Customer',
-  'Company',
-  'SpecialItem',
-  'FxRate',
-] as const
+const ACTION_CHIP: Record<AuditRow['action'], string> = {
+  update: 'chip-info',
+  create: 'chip-success',
+  approve: 'chip-success',
+  import: 'chip-success',
+  delete: 'chip-error',
+  export: 'chip-neutral',
+}
 
-const PAGE_SIZE = 50
+const ROWS: readonly AuditRow[] = [
+  { datetime: '17.04.2026 14:23:11', user: 'Timur Turan', ip: '10.12.4.22', module: 'Bütçe', action: 'update', actionLabel: 'UPDATE', oldValue: '98,0M', newValue: '112,0M' },
+  { datetime: '17.04.2026 13:45:02', user: 'M. Yılmaz', ip: '10.12.8.14', module: 'Master Data', action: 'create', actionLabel: 'CREATE', oldValue: '-', newValue: 'Yeni hesap 600.04' },
+  { datetime: '17.04.2026 11:02:49', user: 'A. Çelik', ip: '10.12.6.31', module: 'Onay', action: 'approve', actionLabel: 'APPROVE', oldValue: 'Pending', newValue: 'Approved' },
+  { datetime: '17.04.2026 09:15:33', user: 'B. Ayhan', ip: '10.12.2.7', module: 'Forecast', action: 'update', actionLabel: 'UPDATE', oldValue: 'EBITDA 360M', newValue: 'EBITDA 378M' },
+  { datetime: '16.04.2026 17:44:20', user: 'S. Özkan', ip: '10.12.9.5', module: 'Actual', action: 'import', actionLabel: 'IMPORT', oldValue: '-', newValue: 'ERP sync 18.462 kayıt' },
+  { datetime: '16.04.2026 15:12:58', user: 'A. Koç', ip: '10.12.3.18', module: 'Master Data', action: 'delete', actionLabel: 'DELETE', oldValue: 'Hesap 740.99', newValue: '-' },
+  { datetime: '16.04.2026 10:30:04', user: 'System', ip: '127.0.0.1', module: 'Rapor', action: 'export', actionLabel: 'EXPORT', oldValue: '-', newValue: 'YK Paketi PDF üretildi' },
+]
 
 export function AuditLogPage() {
-  const [entityType, setEntityType] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
-  const [page, setPage] = useState(1)
-
-  const filters: AuditLogFilters = {
-    entityType: entityType || undefined,
-    from: dateFrom || undefined,
-    to: dateTo || undefined,
-    page,
-    limit: PAGE_SIZE,
-  }
-
-  const { data, isLoading } = useAuditLogs(filters)
-
-  const totalPages = data ? Math.max(1, Math.ceil(data.totalCount / PAGE_SIZE)) : 1
-
-  const handleEntityChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setEntityType(e.target.value)
-    setPage(1)
-  }, [])
-
-  const handleDateFromChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setDateFrom(e.target.value)
-    setPage(1)
-  }, [])
-
-  const handleDateToChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setDateTo(e.target.value)
-    setPage(1)
-  }, [])
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
-          Audit Log
-        </h1>
-        <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
-          Sistem üzerindeki tüm değişiklikleri inceleyin — 7 yıl saklama süresi.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-end gap-4 rounded-xl bg-sl-surface-low p-4">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="entity-type" className="font-body text-xs font-medium text-sl-on-surface-variant">
-            Entity Tipi
-          </label>
-          <select
-            id="entity-type"
-            value={entityType}
-            onChange={handleEntityChange}
-            className="rounded-md border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2
-                       font-body text-sm text-sl-on-surface
-                       focus:outline-none focus:ring-2 focus:ring-sl-primary-fixed"
-          >
-            <option value="">Tumu</option>
-            {ENTITY_TYPES.filter(Boolean).map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="date-from" className="font-body text-xs font-medium text-sl-on-surface-variant">
-            Baslangic Tarihi
-          </label>
-          <input
-            id="date-from"
-            type="date"
-            value={dateFrom}
-            onChange={handleDateFromChange}
-            className="rounded-md border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2
-                       font-body text-sm text-sl-on-surface
-                       focus:outline-none focus:ring-2 focus:ring-sl-primary-fixed"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="date-to" className="font-body text-xs font-medium text-sl-on-surface-variant">
-            Bitis Tarihi
-          </label>
-          <input
-            id="date-to"
-            type="date"
-            value={dateTo}
-            onChange={handleDateToChange}
-            className="rounded-md border border-sl-outline-variant/15 bg-sl-surface-lowest px-3 py-2
-                       font-body text-sm text-sl-on-surface
-                       focus:outline-none focus:ring-2 focus:ring-sl-primary-fixed"
-          />
-        </div>
-      </div>
-
-      <AuditLogTable items={data?.items ?? []} isLoading={isLoading} />
-
-      {data && data.totalCount > PAGE_SIZE && (
-        <div className="flex items-center justify-between rounded-xl bg-sl-surface-lowest px-4 py-3 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
-          <p className="font-body text-sm text-sl-on-surface-variant">
-            Toplam <span className="font-medium text-sl-on-surface">{data.totalCount}</span> kayıt
+    <section>
+      <div className="flex justify-between items-end mb-8">
+        <div>
+          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Audit Log</h2>
+          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
+            Değişmez değişiklik kaydı — KVKK + SOC 2 + iç denetim gereksinimleri.
           </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="rounded-md border border-sl-outline-variant/15 px-3 py-1.5 font-body text-sm font-medium
-                         text-sl-on-surface transition-colors hover:bg-sl-surface-low disabled:opacity-40"
-            >
-              Onceki
-            </button>
-            <span className="flex items-center px-2 font-body text-sm tabular-nums text-sl-on-surface-variant">
-              {page} / {totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="rounded-md border border-sl-outline-variant/15 px-3 py-1.5 font-body text-sm font-medium
-                         text-sl-on-surface transition-colors hover:bg-sl-surface-low disabled:opacity-40"
-            >
-              Sonraki
-            </button>
-          </div>
         </div>
-      )}
-    </div>
+        <div className="flex gap-3">
+          <select className="select">
+            <option>Son 7 gün</option>
+            <option>Son 30 gün</option>
+            <option>Tüm</option>
+          </select>
+          <button type="button" className="btn-secondary">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              download
+            </span>
+            Dışa Aktar
+          </button>
+        </div>
+      </div>
+
+      <div className="card p-0 overflow-hidden">
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Tarih/Saat</th>
+              <th>Kullanıcı</th>
+              <th>IP</th>
+              <th>Modül</th>
+              <th>Aksiyon</th>
+              <th>Eski Değer</th>
+              <th>Yeni Değer</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ROWS.map((r) => (
+              <tr key={`${r.datetime}-${r.user}`}>
+                <td className="font-mono text-xs">{r.datetime}</td>
+                <td>{r.user}</td>
+                <td className="font-mono text-xs">{r.ip}</td>
+                <td>{r.module}</td>
+                <td>
+                  <span className={`chip ${ACTION_CHIP[r.action]}`}>{r.actionLabel}</span>
+                </td>
+                <td className={r.oldValue.includes('M') ? 'num' : ''}>{r.oldValue}</td>
+                <td className={r.newValue.includes('M') ? 'num' : ''}>{r.newValue}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }

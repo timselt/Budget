@@ -1,44 +1,94 @@
+interface ReportCard {
+  icon: string
+  title: string
+  description: string
+  tags: readonly { label: string; variant?: 'neutral' | 'info' }[]
+  accent: 'primary' | 'tertiary'
+}
+
+const REPORTS: readonly ReportCard[] = [
+  {
+    icon: 'slideshow',
+    title: 'Yönetim Kurulu Paketi',
+    description: '12 slayt • EBITDA köprüsü • Segment P&L • Stratejik girişimler',
+    tags: [{ label: 'PPTX' }, { label: 'Aylık' }],
+    accent: 'primary',
+  },
+  {
+    icon: 'summarize',
+    title: 'CFO Paketi',
+    description: 'Detaylı P&L • Varyans analizi • Cash flow • KPI scorecard',
+    tags: [{ label: 'XLSX + PDF' }, { label: 'Haftalık' }],
+    accent: 'tertiary',
+  },
+  {
+    icon: 'groups',
+    title: 'Departman Raporu',
+    description: 'Kendi segmentini ve giderini içeren filtreli görünüm',
+    tags: [{ label: 'PDF' }, { label: 'Günlük' }],
+    accent: 'tertiary',
+  },
+  {
+    icon: 'policy',
+    title: 'BDDK / SPK Şablonu',
+    description: 'Solvency, yükümlülük karşılama, teknik karşılıklar',
+    tags: [{ label: 'XLSX' }, { label: 'Çeyreklik' }],
+    accent: 'primary',
+  },
+  {
+    icon: 'handshake',
+    title: 'Sigorta Şirketi Raporu',
+    description: 'SLA, dosya istatistiği, loss ratio, brand performansı',
+    tags: [{ label: 'PDF + Excel' }, { label: 'Aylık' }],
+    accent: 'tertiary',
+  },
+  {
+    icon: 'tune',
+    title: 'Özel Rapor Oluştur',
+    description: 'Sürükle-bırak rapor builder; boyut × metrik × zaman',
+    tags: [{ label: 'Ad-hoc', variant: 'info' }],
+    accent: 'primary',
+  },
+]
+
 export function ReportsPage() {
   return (
-    <div>
-      <header className="mb-10">
-        <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
-          Raporlar
-        </h1>
-        <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
-          Yönetim Kurulu, CFO, Departman ve BDDK/SPK formatlı standart raporlar.
-        </p>
-      </header>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {REPORT_TYPES.map((r) => (
-          <div
+    <section>
+      <div className="flex justify-between items-end mb-8">
+        <div>
+          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Raporlar</h2>
+          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
+            Yönetim Kurulu, CFO, Departman ve BDDK/SPK formatlı standart raporlar.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6">
+        {REPORTS.map((r) => (
+          <button
             key={r.title}
-            className="group cursor-pointer rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)] transition-shadow hover:shadow-[var(--sl-shadow-hover)]"
+            type="button"
+            className="card hover:shadow-lg transition-all cursor-pointer text-left"
           >
-            <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${r.iconBg}`}>
-              <span className={`material-symbols-outlined ${r.iconColor}`}>{r.icon}</span>
+            <div
+              className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${
+                r.accent === 'primary' ? 'bg-primary/10 text-primary' : 'bg-tertiary/10 text-tertiary'
+              }`}
+            >
+              <span className="material-symbols-outlined">{r.icon}</span>
             </div>
-            <h3 className="-ml-2 font-headline text-base font-bold text-sl-on-surface">{r.title}</h3>
-            <p className="mt-2 text-xs text-sl-on-surface-variant">{r.description}</p>
-            <div className="mt-4 flex items-center gap-2">
+            <h3 className="font-bold text-on-surface">{r.title}</h3>
+            <p className="text-xs text-on-surface-variant mt-2">{r.description}</p>
+            <div className="flex items-center gap-2 mt-4">
               {r.tags.map((t) => (
-                <span key={t} className="rounded-full bg-sl-surface-container px-2.5 py-0.5 text-[0.65rem] font-bold text-sl-on-surface-variant">
-                  {t}
+                <span key={t.label} className={`chip chip-${t.variant ?? 'neutral'}`}>
+                  {t.label}
                 </span>
               ))}
             </div>
-          </div>
+          </button>
         ))}
       </div>
-    </div>
+    </section>
   )
 }
-
-const REPORT_TYPES = [
-  { title: 'Yönetim Kurulu Paketi', description: '12 slayt • EBITDA köprüsü • Segment P&L • Stratejik girişimler', icon: 'slideshow', iconBg: 'bg-sl-primary/10', iconColor: 'text-sl-primary', tags: ['PPTX', 'Aylık'] },
-  { title: 'CFO Paketi', description: 'Detaylı P&L • Varyans analizi • Cash flow • KPI scorecard', icon: 'summarize', iconBg: 'bg-sl-tertiary/10', iconColor: 'text-sl-tertiary', tags: ['XLSX + PDF', 'Haftalık'] },
-  { title: 'Departman Raporu', description: 'Kendi segmentini ve giderini içeren filtreli görünüm', icon: 'groups', iconBg: 'bg-sl-tertiary/10', iconColor: 'text-sl-tertiary', tags: ['PDF', 'Günlük'] },
-  { title: 'BDDK / SPK Şablonu', description: 'Solvency, yükümlülük karşılama, teknik karşılıklar', icon: 'policy', iconBg: 'bg-sl-primary/10', iconColor: 'text-sl-primary', tags: ['XLSX', 'Çeyreklik'] },
-  { title: 'Sigorta Şirketi Raporu', description: 'SLA, dosya istatistiği, loss ratio, brand performansı', icon: 'handshake', iconBg: 'bg-sl-tertiary/10', iconColor: 'text-sl-tertiary', tags: ['PDF + Excel', 'Aylık'] },
-  { title: 'Özel Rapor Oluştur', description: 'Sürükle-bırak rapor builder; boyut × metrik × zaman', icon: 'tune', iconBg: 'bg-sl-primary/10', iconColor: 'text-sl-primary', tags: ['Ad-hoc'] },
-] as const

@@ -1,51 +1,40 @@
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth'
 
-const mainNav = [
+interface NavDef {
+  to: string
+  label: string
+  icon: string
+  end?: boolean
+}
+
+const mainNav: readonly NavDef[] = [
   { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
-  { to: '/budget/planning', label: 'Bütçe Planlama', icon: 'monetization_on' },
-  { to: '/actuals', label: 'Gerçekleşen', icon: 'sync' },
+  { to: '/budget/planning', label: 'Bütçe Planlama', icon: 'edit_note' },
+  { to: '/actuals', label: 'Gerçekleşen', icon: 'receipt_long' },
   { to: '/forecast', label: 'Forecast', icon: 'trending_up' },
-  { to: '/variance', label: 'Sapma Analizi', icon: 'query_stats' },
-  { to: '/reports', label: 'Raporlar', icon: 'summarize' },
+  { to: '/variance', label: 'Sapma Analizi', icon: 'compare_arrows' },
+  { to: '/reports', label: 'Raporlar', icon: 'assessment' },
 ]
 
-const mgmtNav = [
+const mgmtNav: readonly NavDef[] = [
   { to: '/master-data', label: 'Master Data', icon: 'account_tree' },
   { to: '/consolidation', label: 'Konsolidasyon', icon: 'hub' },
-  { to: '/approvals', label: 'Onay Akışı', icon: 'task_alt' },
+  { to: '/approvals', label: 'Onay Akışı', icon: 'verified' },
   { to: '/audit', label: 'Audit Log', icon: 'history' },
 ]
 
-function NavItem({ to, label, icon, end }: { to: string; label: string; icon: string; end?: boolean }) {
+function SidebarLink({ to, label, icon, end }: NavDef) {
   return (
     <NavLink
       to={to}
       end={end}
-      className={({ isActive }) =>
-        `group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
-          isActive
-            ? 'bg-sl-surface-container-low font-bold text-sl-primary'
-            : 'font-medium text-sl-on-surface-variant hover:bg-sl-surface-container-low/50'
-        }`
-      }
+      className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
     >
-      {({ isActive }) => (
-        <>
-          {isActive && (
-            <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-sl-primary" />
-          )}
-          <span
-            className={`material-symbols-outlined text-[20px] ${
-              isActive ? '' : 'group-hover:text-sl-primary'
-            }`}
-            style={isActive ? { fontVariationSettings: '"FILL" 1' } : undefined}
-          >
-            {icon}
-          </span>
-          {label}
-        </>
-      )}
+      <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+        {icon}
+      </span>
+      {label}
     </NavLink>
   )
 }
@@ -62,58 +51,62 @@ function getInitials(name: string | undefined): string {
 
 export function Sidebar() {
   const { user, logout } = useAuthStore()
+  const roleLine = user?.roles?.[0] ?? 'CEO • Tur Assist'
+  const displayName = user?.displayName ?? 'Timur Turan'
 
   return (
-    <aside className="fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-sl-surface-container py-8 px-4">
-      <div className="mb-10 flex items-center gap-3 pl-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-sl-primary to-sl-primary-container">
-          <span className="material-symbols-outlined text-[20px] text-white">finance</span>
-        </div>
-        <div>
-          <h1 className="font-headline text-lg font-black tracking-tighter text-sl-on-surface">
-            FinOps<span className="text-sl-primary">Tur</span>
-          </h1>
-          <p className="font-label text-[0.6rem] font-medium uppercase tracking-[0.08em] text-sl-on-surface-variant">
-            Kurumsal Bütçe Platformu
-          </p>
-        </div>
-      </div>
-
-      <nav className="flex flex-1 flex-col font-body text-sm tracking-[-0.02em]">
-        <div className="flex flex-col gap-1">
-          {mainNav.map((item) => (
-            <NavItem key={item.to} {...item} />
-          ))}
-        </div>
-
-        <div className="my-4 h-px bg-sl-surface-container-high" />
-
-        <p className="mb-2 pl-3 font-label text-[0.6rem] font-bold uppercase tracking-[0.08em] text-sl-on-surface-variant/60">
-          Yönetim
-        </p>
-        <div className="flex flex-col gap-1">
-          {mgmtNav.map((item) => (
-            <NavItem key={item.to} {...item} />
-          ))}
-        </div>
-      </nav>
-
-      <div className="mt-auto pt-6">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sl-primary-container">
-            <span className="font-label text-xs font-bold text-sl-on-primary-container">
-              {getInitials(user?.displayName)}
+    <aside className="w-64 fixed left-0 top-0 h-screen bg-surface-container-low flex flex-col py-6 px-3 z-50">
+      <div className="px-3 mb-8">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
+            <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>
+              insights
             </span>
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-sl-on-surface">{user?.displayName}</p>
+          <h1 className="text-xl font-black tracking-display text-primary">
+            FinOps<span className="text-on-surface">Tur</span>
+          </h1>
+        </div>
+        <p className="text-xs text-on-surface-variant font-medium mt-1 pl-10">
+          2026 Bütçe &amp; Performans
+        </p>
+      </div>
+
+      <nav className="flex-1 overflow-y-auto pr-1">
+        {mainNav.map((n) => (
+          <SidebarLink key={n.to} {...n} />
+        ))}
+
+        <div className="nav-section">Yönetim</div>
+        {mgmtNav.map((n) => (
+          <SidebarLink key={n.to} {...n} />
+        ))}
+      </nav>
+
+      <div className="mt-4 px-2">
+        <button type="button" className="btn-primary w-full justify-center">
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            download
+          </span>
+          Rapor İndir
+        </button>
+        <div className="mt-4 flex items-center gap-3 pl-1">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-sm">
+            {getInitials(displayName)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-on-surface truncate">{displayName}</p>
+            <p className="text-[0.65rem] text-on-surface-variant truncate">{roleLine}</p>
           </div>
           <button
+            type="button"
             onClick={logout}
-            className="rounded-md p-1.5 text-sl-on-surface-variant transition-colors hover:bg-sl-error-container hover:text-sl-error"
-            title="Çıkış Yap"
+            className="p-1.5 text-on-surface-variant hover:text-primary transition-colors rounded-md"
+            title="Çıkış"
           >
-            <span className="material-symbols-outlined text-[18px]">logout</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              logout
+            </span>
           </button>
         </div>
       </div>

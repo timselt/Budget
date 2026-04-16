@@ -1,138 +1,150 @@
+import '../lib/chart-config'
+import { ForecastChart } from '../components/forecast/ForecastChart'
+
+interface Scenario {
+  ribbon: 'success' | 'tertiary' | 'warning'
+  title: string
+  value: string
+  valueClass: string
+  description: string
+}
+
+const SCENARIOS: readonly Scenario[] = [
+  {
+    ribbon: 'success',
+    title: 'Optimistic',
+    value: '415M EBITDA',
+    valueClass: 'text-success',
+    description: 'Oto pazarında +%5, hasar artışı sınırlı',
+  },
+  {
+    ribbon: 'tertiary',
+    title: 'Base (Plan)',
+    value: '378M EBITDA',
+    valueClass: 'text-tertiary',
+    description: 'Mevcut kontrat yenileme varsayımı',
+  },
+  {
+    ribbon: 'warning',
+    title: 'Conservative',
+    value: '312M EBITDA',
+    valueClass: 'text-warning',
+    description: '2 büyük sigorta kontrat kaybı, maliyet +%12',
+  },
+]
+
+interface Sensitivity {
+  label: string
+  impact: string
+  width: number
+  color: 'bg-primary' | 'bg-tertiary'
+}
+
+const SENSITIVITIES: readonly Sensitivity[] = [
+  { label: 'Oto dosya maliyeti ±%10', impact: '±42M', width: 85, color: 'bg-primary' },
+  { label: 'Gelir büyüme ±%5', impact: '±28M', width: 62, color: 'bg-primary' },
+  { label: 'Personel artışı ±%8', impact: '±19M', width: 45, color: 'bg-tertiary' },
+  { label: 'TL/USD kuru ±%10', impact: '±11M', width: 28, color: 'bg-tertiary' },
+]
+
 export function ForecastPage() {
   return (
-    <div>
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <section>
+      <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
+          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Rolling Forecast
-          </h1>
-          <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
+          </h2>
+          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
             Aylık güncellenen 12-ay forecast. Plan / Gerçekleşen / Tahmin katmanlı görünüm.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <select className="h-9 rounded-lg bg-sl-surface-container-high px-3 pr-8 font-body text-sm font-medium text-sl-on-surface outline-none transition-all focus:bg-sl-surface-lowest focus:ring-2 focus:ring-sl-primary/40">
-            <option>Yöntem: Moving Average</option>
-            <option>Yöntem: Exponential Smoothing</option>
-            <option>Yöntem: Linear Regression</option>
+        <div className="flex gap-3">
+          <select className="select">
+            <option>Yöntem: Trend + Uzman</option>
+            <option>Istatistik (ARIMA)</option>
+            <option>Makine Öğrenmesi</option>
           </select>
-          <button className="flex items-center gap-2 rounded-md bg-gradient-to-br from-sl-primary to-sl-primary-container px-4 py-2 font-body text-sm font-medium text-white shadow-[0_4px_12px_rgba(181,3,3,0.15)] transition-all duration-200 hover:shadow-[0_8px_20px_rgba(181,3,3,0.25)] hover:brightness-110 active:scale-[0.97]">
-            <span className="material-symbols-outlined text-[18px]">calculate</span>
+          <button type="button" className="btn-primary">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              auto_awesome
+            </span>
             Yeniden Hesapla
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* KPI Cards */}
-      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-          <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">Yıl Sonu Gelir Tahmini</p>
-          <p className="mt-2 font-headline text-2xl font-black tracking-tighter">2.298,5M</p>
-          <p className="mt-1 text-xs font-bold text-sl-success">+2,4% vs Plan</p>
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="card relative">
+          <div className="ribbon-primary" />
+          <span className="label-sm">Yıl Sonu Gelir Tahmini</span>
+          <p className="text-2xl font-black num mt-2">2.298,5M</p>
+          <p className="text-xs text-tertiary font-bold mt-1">+%2,4 vs Plan</p>
         </div>
-        <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-          <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">Yıl Sonu EBITDA Tahmini</p>
-          <p className="mt-2 font-headline text-2xl font-black tracking-tighter">378,1M</p>
-          <p className="mt-1 text-xs font-bold text-sl-tertiary">+18M vs Plan</p>
+        <div className="card relative">
+          <div className="ribbon-tertiary" />
+          <span className="label-sm">Yıl Sonu EBITDA Tahmini</span>
+          <p className="text-2xl font-black num mt-2">378,1M</p>
+          <p className="text-xs text-tertiary font-bold mt-1">+18M vs Plan</p>
         </div>
-        <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-          <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">Güven Aralığı</p>
-          <p className="mt-2 font-headline text-2xl font-black tracking-tighter">±%3,2</p>
-          <p className="mt-1 text-xs text-sl-on-surface-variant">%90 güven düzeyi</p>
+        <div className="card relative">
+          <div className="ribbon-warning" />
+          <span className="label-sm">Güven Aralığı</span>
+          <p className="text-2xl font-black num mt-2">±%3,2</p>
+          <p className="text-xs text-on-surface-variant mt-1">%90 güven seviyesi</p>
         </div>
       </div>
 
-      {/* Plan vs Actual vs Forecast chart placeholder */}
-      <div className="mb-6 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="-ml-2 font-headline text-base font-bold tracking-tight text-sl-on-surface">
-            Plan vs Gerçekleşen vs Forecast
-          </h3>
-          <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-4 rounded-sm bg-sl-primary/40" />
-              Plan
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-4 rounded-sm bg-sl-tertiary" />
-              Gerçekleşen
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-4 rounded-sm border-2 border-dashed border-sl-primary" />
-              Forecast
-            </span>
+      <div className="card mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold tracking-tight">Plan vs Gerçekleşen vs Forecast</h3>
+          <div className="flex gap-2">
+            <span className="chip chip-neutral">Plan</span>
+            <span className="chip chip-success">Actual</span>
+            <span className="chip chip-info">Forecast</span>
           </div>
         </div>
-        <div className="flex h-64 items-center justify-center text-sl-on-surface-variant">
-          <div className="flex flex-col items-center gap-2">
-            <span className="material-symbols-outlined text-4xl text-sl-on-surface-variant/40">show_chart</span>
-            <p className="text-sm">Grafik — backend entegrasyonu sonrası aktif olacak</p>
-          </div>
+        <div style={{ height: 280 }}>
+          <ForecastChart />
         </div>
       </div>
 
-      {/* Senaryo + Hassasiyet */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Senaryo Analizi */}
-        <div className="rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
-          <h3 className="-ml-2 mb-5 font-headline text-base font-bold tracking-tight text-sl-on-surface">
-            Senaryo Analizi
-          </h3>
-          <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-2 gap-6">
+        <div className="card">
+          <h3 className="text-base font-bold tracking-tight mb-4">Senaryo Analizi</h3>
+          <div className="space-y-4">
             {SCENARIOS.map((s) => (
-              <div key={s.label} className="group relative overflow-hidden rounded-lg bg-sl-surface-container-low p-4 pl-6">
-                <div className={`absolute left-0 top-0 bottom-0 w-1 ${s.ribbon}`} />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-bold text-sl-on-surface">{s.label}</p>
-                    <p className="mt-0.5 text-xs text-sl-on-surface-variant">{s.description}</p>
-                  </div>
-                  <p className="font-headline text-lg font-black tabular-nums tracking-tighter text-sl-on-surface">{s.ebitda}</p>
+              <div key={s.title} className="relative bg-surface-container-low rounded-lg p-4 pl-5">
+                <div className={`ribbon-${s.ribbon}`} />
+                <div className="flex justify-between">
+                  <p className="text-sm font-bold">{s.title}</p>
+                  <p className={`text-sm font-black num ${s.valueClass}`}>{s.value}</p>
                 </div>
+                <p className="text-xs text-on-surface-variant mt-1">{s.description}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Hassasiyet Analizi */}
-        <div className="rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
-          <h3 className="-ml-2 mb-5 font-headline text-base font-bold tracking-tight text-sl-on-surface">
-            Hassasiyet Analizi
+        <div className="card">
+          <h3 className="text-base font-bold tracking-tight mb-4">
+            Hassasiyet Analizi (EBITDA TL etki)
           </h3>
-          <div className="flex flex-col gap-4">
+          <div className="space-y-3">
             {SENSITIVITIES.map((s) => (
-              <div key={s.driver} className="flex items-center gap-4">
-                <p className="w-36 shrink-0 text-sm text-sl-on-surface">{s.driver}</p>
-                <div className="flex-1">
-                  <div className="flex h-6 items-center">
-                    <div className="relative h-2 w-full rounded-full bg-sl-surface-container-high">
-                      <div
-                        className="absolute top-0 h-full rounded-full bg-sl-primary/30"
-                        style={{ left: `${50 - s.impactPercent / 2}%`, width: `${s.impactPercent}%` }}
-                      />
-                      <div className="absolute left-1/2 top-1/2 h-3 w-0.5 -translate-x-1/2 -translate-y-1/2 bg-sl-on-surface-variant/40" />
-                    </div>
-                  </div>
+              <div key={s.label}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span>{s.label}</span>
+                  <span className="font-bold num">{s.impact}</span>
                 </div>
-                <p className="w-14 shrink-0 text-right text-xs font-bold tabular-nums text-sl-on-surface">±{s.impact}</p>
+                <div className="progress-track">
+                  <div className={`progress-fill ${s.color}`} style={{ width: `${s.width}%` }} />
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }
-
-const SCENARIOS = [
-  { label: 'Optimistic', description: 'Büyüme hızlanır, LR iyileşir', ebitda: '415M', ribbon: 'bg-sl-success' },
-  { label: 'Base', description: 'Mevcut trendler devam eder', ebitda: '378M', ribbon: 'bg-sl-tertiary' },
-  { label: 'Conservative', description: 'Enflasyon + hasar baskısı', ebitda: '312M', ribbon: 'bg-sl-warning' },
-] as const
-
-const SENSITIVITIES = [
-  { driver: 'Oto dosya maliyeti', impact: '42M', impactPercent: 40 },
-  { driver: 'Gelir büyümesi', impact: '28M', impactPercent: 28 },
-  { driver: 'Personel kadro', impact: '19M', impactPercent: 18 },
-  { driver: 'TL/USD kuru', impact: '11M', impactPercent: 10 },
-] as const

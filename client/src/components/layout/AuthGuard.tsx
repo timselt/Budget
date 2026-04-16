@@ -19,7 +19,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   if (checking) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <p className="font-body text-sm text-sl-on-surface-variant">Yükleniyor...</p>
+        <p className="text-sm text-on-surface-variant">Yükleniyor...</p>
       </div>
     )
   }

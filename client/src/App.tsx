@@ -18,7 +18,7 @@ const AuditLogPage = lazy(() => import('./pages/AuditLogPage').then(m => ({ defa
 function PageLoader() {
   return (
     <div className="flex h-48 items-center justify-center">
-      <p className="text-sm text-sl-on-surface-variant">Yükleniyor...</p>
+      <p className="text-sm text-on-surface-variant">Yükleniyor...</p>
     </div>
   )
 }

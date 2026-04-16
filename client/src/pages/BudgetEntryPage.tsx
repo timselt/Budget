@@ -1,322 +1,271 @@
-import { useCallback, useState } from 'react'
-import { useBudgetYears } from '../hooks/useBudgetYears'
-import type { BudgetYear } from '../hooks/useBudgetYears'
-import { useBudgetVersions } from '../hooks/useBudgetVersions'
-import type { BudgetVersion } from '../hooks/useBudgetVersions'
-import {
-  useBudgetEntries,
-  useSaveBudgetEntries,
-  type BudgetType,
-} from '../hooks/useBudgetEntries'
-import { BudgetGrid } from '../components/budget/BudgetGrid'
+import { useMemo } from 'react'
 
-const BUDGET_TABS: { key: BudgetType; label: string }[] = [
-  { key: 'Revenue', label: 'Gelir' },
-  { key: 'Claims', label: 'Hasar' },
+interface BudgetRow {
+  name: string
+  type: 'segment' | 'input' | 'total' | 'subtotal'
+  base?: number
+}
+
+const MONTHS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
+
+const ROWS: readonly BudgetRow[] = [
+  { name: '🟥 GELİR', type: 'segment' },
+  { name: '  Sigorta Şirketleri — Oto Asistans', type: 'input', base: 68 },
+  { name: '  Sigorta Şirketleri — Sağlık', type: 'input', base: 24 },
+  { name: '  Sigorta Şirketleri — Konut', type: 'input', base: 12 },
+  { name: '  Banka / Kart Programları', type: 'input', base: 18 },
+  { name: '  B2B2C — OEM Warranty & Tur Medical', type: 'input', base: 16 },
+  { name: '  B2C Direkt', type: 'input', base: 6 },
+  { name: '  SGK Teşvik Geliri', type: 'input', base: 3 },
+  { name: 'GELİR TOPLAM', type: 'total' },
+  { name: '🟧 HASAR', type: 'segment' },
+  { name: '  Oto Hasar Tedarikçi', type: 'input', base: 48 },
+  { name: '  Sağlık Hasar', type: 'input', base: 21 },
+  { name: '  Konut Hasar', type: 'input', base: 9 },
+  { name: '  Warranty Hasar', type: 'input', base: 6 },
+  { name: '  Reasürans/Sigorta Primi', type: 'input', base: 4 },
+  { name: '  Karşılık Artışı', type: 'input', base: 2 },
+  { name: 'HASAR TOPLAM', type: 'total' },
+  { name: 'TEKNİK MARJ', type: 'subtotal' },
+  { name: '🟦 OPEX', type: 'segment' },
+  { name: '  Personel Giderleri', type: 'input', base: 20 },
+  { name: '  Teknoloji & SaaS', type: 'input', base: 7 },
+  { name: '  Operasyon & Çağrı Merkezi', type: 'input', base: 5 },
+  { name: '  Pazarlama', type: 'input', base: 3 },
+  { name: '  Genel Yönetim', type: 'input', base: 4 },
+  { name: '  Amortisman', type: 'input', base: 2 },
+  { name: 'OPEX TOPLAM', type: 'total' },
+  { name: 'EBITDA', type: 'subtotal' },
 ]
 
-const FORMULA_CHECKS = [
-  { label: 'Segment toplamları tutarlı', ok: true },
-  { label: 'Yıllık toplam = aylık toplamlar', ok: true },
-  { label: 'EBITDA marjı %12 üstünde', ok: true },
-  { label: 'Hasar / Prim oranı ≤ %65', ok: false },
-] as const
+interface RenderedRow {
+  row: BudgetRow
+  values: readonly number[]
+  total: number
+}
 
-const APPROVAL_STEPS = [
-  { label: 'Departman Yöneticisi', status: 'done' as const },
-  { label: 'CFO', status: 'current' as const },
-  { label: 'CEO', status: 'pending' as const },
-  { label: 'Yönetim Kurulu', status: 'pending' as const },
-] as const
+function buildRows(): RenderedRow[] {
+  let seed = 1
+  const pseudoRandom = () => {
+    seed = (seed * 9301 + 49297) % 233280
+    return seed / 233280
+  }
 
-const RECENT_CHANGES = [
-  { user: 'A. Yılmaz', action: 'Oto Asistans Q2 gelir güncellendi', time: '14:32' },
-  { user: 'M. Kaya', action: 'Sağlık segmenti hasar tahmini revize', time: '13:15' },
-  { user: 'S. Demir', action: 'OPEX personel bütçesi eklendi', time: '11:48' },
-] as const
+  return ROWS.map((row) => {
+    const values: number[] = []
+    let total = 0
+    for (let i = 0; i < 12; i++) {
+      if (row.type === 'input' && row.base !== undefined) {
+        const mult = 1 + i * 0.02 + pseudoRandom() * 0.06
+        const v = Math.round(row.base * mult * 10) / 10
+        values.push(v)
+        total += v
+      } else if (row.type === 'segment') {
+        values.push(Number.NaN)
+      } else {
+        const v = Math.round((pseudoRandom() * 50 + 80) * 10) / 10
+        values.push(v)
+        total += v
+      }
+    }
+    return { row, values, total: Math.round(total * 10) / 10 }
+  })
+}
+
+function fmt(v: number): string {
+  return v.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+}
 
 export function BudgetEntryPage() {
-  const [selectedYearId, setSelectedYearId] = useState<number | null>(null)
-  const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null)
-  const [budgetType, setBudgetType] = useState<BudgetType>('Revenue')
-  const [dirtyEntries, setDirtyEntries] = useState<
-    Map<string, { customerId: number; month: number; amount: number }>
-  >(new Map())
-
-  const { data: years, isLoading: isYearsLoading } = useBudgetYears()
-  const { data: versions, isLoading: isVersionsLoading } = useBudgetVersions(selectedYearId)
-  const { data: rows, isLoading: isEntriesLoading, isError, error } = useBudgetEntries(
-    selectedVersionId,
-    budgetType,
-  )
-  const saveMutation = useSaveBudgetEntries()
-
-  const handleYearChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value
-    setSelectedYearId(val ? Number(val) : null)
-    setSelectedVersionId(null)
-    setDirtyEntries(new Map())
-  }, [])
-
-  const handleVersionChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value
-    setSelectedVersionId(val ? Number(val) : null)
-    setDirtyEntries(new Map())
-  }, [])
-
-  const handleTabChange = useCallback((type: BudgetType) => {
-    setBudgetType(type)
-    setDirtyEntries(new Map())
-  }, [])
-
-  const handleDirtyChange = useCallback(
-    (entries: Map<string, { customerId: number; month: number; amount: number }>) => {
-      setDirtyEntries(entries)
-    },
-    [],
-  )
-
-  const handleSave = useCallback(() => {
-    if (!selectedVersionId || dirtyEntries.size === 0) return
-
-    const entries = Array.from(dirtyEntries.values()).map((e) => ({
-      customerId: e.customerId,
-      month: e.month,
-      amountOriginal: e.amount,
-      currencyCode: 'TRY',
-    }))
-
-    saveMutation.mutate(
-      { versionId: selectedVersionId, type: budgetType, entries },
-      {
-        onSuccess: () => {
-          setDirtyEntries(new Map())
-        },
-      },
-    )
-  }, [selectedVersionId, dirtyEntries, budgetType, saveMutation])
-
-  const activeVersion = versions?.find((v: BudgetVersion) => v.id === selectedVersionId)
+  const rendered = useMemo(() => buildRows(), [])
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <section>
+      <div className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
+          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Bütçe Planlama
-          </h1>
-          <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
-            Segment × Ürün × Ay bazında bütçe planı girişi ve onay süreci.
+          </h2>
+          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
+            Segment × Ürün × Ay bazında plan giriş ekranı. Kurumsal kurallar ve formül kontrolleri
+            aktif.
           </p>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 rounded-md bg-sl-surface-container-high px-3 py-2 font-body text-sm font-medium text-sl-on-surface transition-colors hover:bg-sl-surface-container-highest">
-            <span className="material-symbols-outlined text-[18px]">upload_file</span>
+        <div className="flex gap-3">
+          <button type="button" className="btn-secondary">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              upload_file
+            </span>
             Excel İçe Aktar
           </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={dirtyEntries.size === 0 || saveMutation.isPending}
-            className="flex items-center gap-2 rounded-md bg-sl-surface-container-high px-3 py-2 font-body text-sm font-medium text-sl-on-surface transition-colors hover:bg-sl-surface-container-highest disabled:opacity-50"
-          >
-            {saveMutation.isPending && (
-              <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-sl-on-surface border-t-transparent" />
-            )}
-            <span className="material-symbols-outlined text-[18px]">save</span>
+          <button type="button" className="btn-secondary">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              save
+            </span>
             Taslak Kaydet
-            {dirtyEntries.size > 0 && (
-              <span className="rounded-full bg-sl-primary/10 px-1.5 py-0.5 text-xs font-bold text-sl-primary">
-                {dirtyEntries.size}
-              </span>
-            )}
           </button>
-          <button className="flex items-center gap-2 rounded-md bg-gradient-to-br from-sl-primary to-sl-primary-container px-4 py-2 font-body text-sm font-medium text-white shadow-[0_4px_12px_rgba(181,3,3,0.15)] transition-all duration-200 hover:shadow-[0_8px_20px_rgba(181,3,3,0.25)] hover:brightness-110 active:scale-[0.97]">
-            <span className="material-symbols-outlined text-[18px]">send</span>
+          <button type="button" className="btn-primary">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              verified
+            </span>
             Onaya Gönder
           </button>
         </div>
-      </header>
+      </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <select
-          value={selectedYearId ?? ''}
-          onChange={handleYearChange}
-          disabled={isYearsLoading}
-          className="h-9 rounded-lg bg-sl-surface-container-high px-3 pr-8 font-body text-sm font-medium text-sl-on-surface outline-none transition-all focus:bg-sl-surface-lowest focus:ring-2 focus:ring-sl-primary/40"
-        >
-          <option value="">Yıl seçin…</option>
-          {years?.map((y: BudgetYear) => (
-            <option key={y.id} value={y.id}>
-              {y.year} {y.isLocked ? '(Kilitli)' : ''}
-            </option>
-          ))}
+      {/* Filter card */}
+      <div className="card mb-6 flex flex-wrap items-center gap-3">
+        <span className="label-sm">Filtre</span>
+        <select className="select">
+          <option>Şirket: Tur Assist A.Ş.</option>
         </select>
-
-        <select
-          value={selectedVersionId ?? ''}
-          onChange={handleVersionChange}
-          disabled={isVersionsLoading || !selectedYearId}
-          className="h-9 rounded-lg bg-sl-surface-container-high px-3 pr-8 font-body text-sm font-medium text-sl-on-surface outline-none transition-all focus:bg-sl-surface-lowest focus:ring-2 focus:ring-sl-primary/40 disabled:opacity-50"
-        >
-          <option value="">Versiyon seçin…</option>
-          {versions?.map((v: BudgetVersion) => (
-            <option key={v.id} value={v.id}>
-              {v.name} {v.isActive ? '(Aktif)' : ''}
-            </option>
-          ))}
+        <select className="select">
+          <option>Yıl: FY 2026</option>
         </select>
-
-        {activeVersion && (
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-label text-xs font-bold uppercase tracking-[0.05em]
-              ${
-                activeVersion.status === 'ACTIVE'
-                  ? 'bg-sl-success-container text-sl-success'
-                  : activeVersion.status === 'DRAFT'
-                    ? 'bg-sl-warning-container text-sl-warning'
-                    : 'bg-sl-primary/10 text-sl-primary'
-              }`}
-          >
-            {activeVersion.status}
+        <select className="select">
+          <option>Versiyon: v3 Draft</option>
+        </select>
+        <select className="select">
+          <option>Senaryo: Base</option>
+          <option>Optimistic</option>
+          <option>Conservative</option>
+        </select>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="chip chip-info">
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+              info
+            </span>
+            Mavi = kullanıcı girişi
           </span>
-        )}
-
-        <div className="ml-auto flex items-center gap-3 text-xs text-sl-on-surface-variant">
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-sl-primary/20" />
-            Kullanıcı girişi
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-sl-surface-container-high" />
-            Formül hesaplı
-          </span>
+          <span className="chip chip-neutral">Gri = formül</span>
         </div>
       </div>
 
-      {selectedVersionId && (
-        <>
-          {/* Budget type tabs */}
-          <nav className="flex gap-0" aria-label="Bütçe türü">
-            {BUDGET_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => handleTabChange(tab.key)}
-                className={`relative px-5 py-2.5 font-body text-sm font-medium transition-colors
-                  ${
-                    budgetType === tab.key
-                      ? 'text-sl-primary after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-sl-primary'
-                      : 'text-sl-on-surface-variant hover:text-sl-on-surface'
-                  }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+      <div className="card p-0 overflow-hidden">
+        <div className="max-h-[70vh] overflow-auto">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{ minWidth: 280 }}>Kalem</th>
+                {MONTHS.map((m) => (
+                  <th key={m} className="text-right">
+                    {m}
+                  </th>
+                ))}
+                <th className="text-right" style={{ background: '#191c1f', color: '#fff' }}>
+                  Toplam
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rendered.map(({ row, values, total }) => (
+                <tr
+                  key={row.name}
+                  className={
+                    row.type === 'segment'
+                      ? 'segment-row'
+                      : row.type === 'total'
+                        ? 'total-row'
+                        : row.type === 'subtotal'
+                          ? 'subtotal-row'
+                          : undefined
+                  }
+                >
+                  <td>{row.name}</td>
+                  {values.map((v, i) => {
+                    if (row.type === 'input') {
+                      return (
+                        <td key={i} className="text-right">
+                          <input
+                            className="cell-edit"
+                            style={{ color: '#005b9f' }}
+                            defaultValue={fmt(v)}
+                          />
+                        </td>
+                      )
+                    }
+                    if (row.type === 'segment') {
+                      return <td key={i} />
+                    }
+                    return (
+                      <td key={i} className="text-right num">
+                        {fmt(v)}
+                      </td>
+                    )
+                  })}
+                  {row.type === 'segment' ? (
+                    <td />
+                  ) : (
+                    <td className="text-right num font-bold">{fmt(total)}</td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-          {isError && (
-            <div className="rounded-xl bg-sl-error-container/30 p-4 font-body text-sm text-sl-error">
-              Veriler yüklenirken hata oluştu: {(error as Error)?.message ?? 'Bilinmeyen hata'}
-            </div>
-          )}
-
-          {saveMutation.isError && (
-            <div className="rounded-xl bg-sl-error-container/30 p-4 font-body text-sm text-sl-error">
-              Kaydetme hatası: {(saveMutation.error as Error)?.message ?? 'Bilinmeyen hata'}
-            </div>
-          )}
-
-          {saveMutation.isSuccess && dirtyEntries.size === 0 && (
-            <div className="rounded-xl bg-sl-success-container/30 p-4 font-body text-sm text-sl-success">
-              Veriler başarıyla kaydedildi.
-            </div>
-          )}
-
-          {/* Grid + Side Panels */}
-          <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-12 xl:col-span-9">
-              <BudgetGrid
-                rows={rows ?? []}
-                isLoading={isEntriesLoading}
-                onDirtyChange={handleDirtyChange}
-              />
-            </div>
-
-            <aside className="col-span-12 flex flex-col gap-5 xl:col-span-3">
-              {/* Formül Kontrolü */}
-              <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-                <h3 className="mb-4 font-headline text-sm font-bold text-sl-on-surface">Formül Kontrolü</h3>
-                <div className="flex flex-col gap-2.5">
-                  {FORMULA_CHECKS.map((check) => (
-                    <div key={check.label} className="flex items-center gap-2">
-                      <span className={`material-symbols-outlined text-[16px] ${check.ok ? 'text-sl-success' : 'text-sl-warning'}`}>
-                        {check.ok ? 'check_circle' : 'warning'}
-                      </span>
-                      <span className="text-xs text-sl-on-surface-variant">{check.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Onay Akışı */}
-              <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-                <h3 className="mb-4 font-headline text-sm font-bold text-sl-on-surface">Onay Akışı</h3>
-                <div className="flex flex-col gap-3">
-                  {APPROVAL_STEPS.map((step, i) => (
-                    <div key={step.label} className="flex items-center gap-3">
-                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold
-                        ${step.status === 'done' ? 'bg-sl-success-container text-sl-success' : step.status === 'current' ? 'bg-sl-primary/10 text-sl-primary' : 'bg-sl-surface-container-high text-sl-on-surface-variant'}`}>
-                        {step.status === 'done' ? (
-                          <span className="material-symbols-outlined text-[14px]">check</span>
-                        ) : (
-                          i + 1
-                        )}
-                      </div>
-                      <span className={`text-xs ${step.status === 'done' ? 'font-bold text-sl-success' : step.status === 'current' ? 'font-bold text-sl-primary' : 'text-sl-on-surface-variant'}`}>
-                        {step.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Son Değişiklikler */}
-              <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-                <h3 className="mb-4 font-headline text-sm font-bold text-sl-on-surface">Son Değişiklikler</h3>
-                <div className="flex flex-col gap-3">
-                  {RECENT_CHANGES.map((change) => (
-                    <div key={change.time} className="flex items-start gap-2">
-                      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sl-primary-container">
-                        <span className="font-label text-[0.5rem] font-bold text-sl-on-primary-container">
-                          {change.user.split(' ').map(w => w[0]).join('')}
-                        </span>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs text-sl-on-surface">{change.action}</p>
-                        <p className="mt-0.5 text-[0.6rem] text-sl-on-surface-variant">{change.user} · {change.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </aside>
-          </div>
-        </>
-      )}
-
-      {!selectedVersionId && (
-        <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-xl bg-sl-surface-container-low">
-          <span className="material-symbols-outlined text-4xl text-sl-on-surface-variant/40">
-            folder_open
-          </span>
-          <p className="font-body text-sm text-sl-on-surface-variant">
-            Başlamak için bir yıl ve bütçe versiyonu seçin.
+      <div className="mt-4 grid grid-cols-3 gap-4">
+        <div className="card">
+          <span className="label-sm">Formül Kontrolü</span>
+          <p className="text-sm text-on-surface mt-2">
+            <span className="chip chip-success">OK</span> Gelir Toplam = Σ segmentler
+          </p>
+          <p className="text-sm text-on-surface mt-2">
+            <span className="chip chip-success">OK</span> Hasar Toplam = Σ branşlar
+          </p>
+          <p className="text-sm text-on-surface mt-2">
+            <span className="chip chip-warning">UYARI</span> Q4 growth %28 (limit: %25)
           </p>
         </div>
-      )}
-    </div>
+        <div className="card">
+          <span className="label-sm">Onay Akışı</span>
+          <div className="mt-3 space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-success" style={{ fontSize: 18 }}>
+                check_circle
+              </span>
+              Departman Müdürü
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-tertiary" style={{ fontSize: 18 }}>
+                pending
+              </span>
+              CFO (beklemede)
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="material-symbols-outlined text-on-surface-variant"
+                style={{ fontSize: 18 }}
+              >
+                radio_button_unchecked
+              </span>
+              CEO
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="material-symbols-outlined text-on-surface-variant"
+                style={{ fontSize: 18 }}
+              >
+                radio_button_unchecked
+              </span>
+              Yönetim Kurulu
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <span className="label-sm">Son Değişiklikler</span>
+          <p className="text-xs text-on-surface-variant mt-2">
+            T. Turan — 14:23 — Oto segmenti Eki ayı: 98M → 112M
+          </p>
+          <p className="text-xs text-on-surface-variant mt-2">
+            M. Yılmaz — 13:45 — Sağlık marjı yeniden fiyatlandı
+          </p>
+          <p className="text-xs text-on-surface-variant mt-2">
+            A. Çelik — 11:02 — Warranty komisyon oranı güncellendi
+          </p>
+        </div>
+      </div>
+    </section>
   )
 }

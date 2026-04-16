@@ -1,164 +1,190 @@
-import { useState } from 'react'
-import {
-  useVarianceSummary,
-  useCustomerVariance,
-  useVarianceHeatmap,
-} from '../hooks/useVariance'
+import '../lib/chart-config'
 import { WaterfallChart } from '../components/variance/WaterfallChart'
-import { VarianceTable } from '../components/variance/VarianceTable'
-import { VarianceHeatmap } from '../components/variance/VarianceHeatmap'
 
-type TabKey = 'waterfall' | 'table' | 'heatmap'
+interface SegmentRow {
+  segment: string
+  plan: string
+  actual: string
+  variance: string
+  variancePct: string
+  direction: 'good' | 'bad'
+  driver: string
+  owner: string
+}
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'waterfall', label: 'Selale Grafik' },
-  { key: 'table', label: 'Musteri Tablosu' },
-  { key: 'heatmap', label: 'Isitma Haritasi' },
+const SEGMENTS: readonly SegmentRow[] = [
+  {
+    segment: 'Oto Asistans',
+    plan: '396,7',
+    actual: '418,2',
+    variance: '+21,5',
+    variancePct: '+5,4%',
+    direction: 'good',
+    driver: 'Sigortacı portföy büyümesi',
+    owner: 'A. Çelik',
+  },
+  {
+    segment: 'Sağlık Asistans',
+    plan: '161,8',
+    actual: '152,4',
+    variance: '-9,4',
+    variancePct: '-5,8%',
+    direction: 'bad',
+    driver: '2 kontrat yenileme gecikti',
+    owner: 'M. Yılmaz',
+  },
+  {
+    segment: 'Konut Asistans',
+    plan: '115,4',
+    actual: '139,6',
+    variance: '+24,2',
+    variancePct: '+21,0%',
+    direction: 'good',
+    driver: 'KonutKonfor kampanya etkisi',
+    owner: 'S. Özkan',
+  },
+  {
+    segment: 'Warranty',
+    plan: '74,5',
+    actual: '80,3',
+    variance: '+5,8',
+    variancePct: '+7,8%',
+    direction: 'good',
+    driver: 'Yeni OEM kontrat',
+    owner: 'B. Demir',
+  },
 ]
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('tr-TR', {
-    style: 'currency',
-    currency: 'TRY',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
-}
-
-function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)}%`
-}
-
 export function VariancePage() {
-  const [activeTab, setActiveTab] = useState<TabKey>('waterfall')
-
-  // TODO: version selector — simdilik hardcoded versionId=1
-  const versionId = 1
-
-  const { data: summary, isLoading: summaryLoading, error: summaryError } = useVarianceSummary(versionId)
-  const { data: customers, isLoading: customersLoading } = useCustomerVariance(versionId)
-  const { data: heatmap, isLoading: heatmapLoading } = useVarianceHeatmap(versionId)
-
-  const isLoading = summaryLoading || customersLoading || heatmapLoading
-
-  const totalRevenueVariance = summary
-    ? summary.totalActualRevenue - summary.totalBudgetRevenue
-    : 0
-  const totalRevenueVariancePct = summary && summary.totalBudgetRevenue !== 0
-    ? totalRevenueVariance / summary.totalBudgetRevenue
-    : 0
-  const totalClaimsVariance = summary
-    ? summary.totalActualClaims - summary.totalBudgetClaims
-    : 0
-  const totalClaimsVariancePct = summary && summary.totalBudgetClaims !== 0
-    ? totalClaimsVariance / summary.totalBudgetClaims
-    : 0
-
-  const criticalCount = customers?.filter((c) => c.alert === 'critical').length ?? 0
-  const highCount = customers?.filter((c) => c.alert === 'high').length ?? 0
-
   return (
-    <div>
-      <header className="mb-8">
-        <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
-          Sapma Analizi
-        </h1>
-        <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
-          Bütçe ve gerçekleşen karşılaştırması — segment, ürün ve müşteri bazında sapma takibi.
-        </p>
-      </header>
-
-      {summaryError && (
-        <div className="mb-12 rounded-lg bg-sl-error-container/30 p-4">
-          <p className="font-body text-sm text-sl-error">
-            Varyans verileri yuklenemedi.
+    <section>
+      <div className="flex justify-between items-end mb-8">
+        <div>
+          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
+            Sapma Analizi
+          </h2>
+          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
+            Plan − Gerçekleşen × Segment × Ay. Waterfall + sürücü ayrıştırması.
           </p>
         </div>
-      )}
-
-      {isLoading && (
-        <div className="flex h-48 items-center justify-center">
-          <p className="font-body text-sl-on-surface-variant">Yukleniyor...</p>
+        <div className="flex gap-3">
+          <select className="select">
+            <option>Dönem: YTD (Oca-Nis)</option>
+            <option>Aylık</option>
+            <option>Çeyreklik</option>
+          </select>
+          <button type="button" className="btn-primary">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              picture_as_pdf
+            </span>
+            Varyans Raporu
+          </button>
         </div>
-      )}
+      </div>
 
-      {summary && (
-        <>
-          <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-              <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
-                Gelir Sapması
-              </p>
-              <p className={`mt-2 font-headline text-2xl font-black tabular-nums tracking-tighter ${totalRevenueVariance >= 0 ? 'text-sl-success' : 'text-sl-error'}`}>
-                {formatCurrency(totalRevenueVariance)}
-              </p>
-              <p className="mt-1 text-xs font-bold text-sl-on-surface-variant">
-                {formatPercent(totalRevenueVariancePct)}
-              </p>
-            </div>
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="card relative">
+          <div className="ribbon-tertiary" />
+          <span className="label-sm">Gelir Sapması</span>
+          <p className="text-2xl font-black num mt-2 text-tertiary">+42,1M</p>
+          <p className="text-xs font-bold mt-1">+%5,9 vs Plan</p>
+        </div>
+        <div className="card relative">
+          <div className="ribbon-warning" />
+          <span className="label-sm">Hasar Sapması</span>
+          <p className="text-2xl font-black num mt-2 text-warning">+38,7M</p>
+          <p className="text-xs font-bold mt-1">+%8,2 vs Plan (olumsuz)</p>
+        </div>
+        <div className="card relative">
+          <div className="ribbon-success" />
+          <span className="label-sm">Teknik Marj Sapması</span>
+          <p className="text-2xl font-black num mt-2 text-success">+3,4M</p>
+          <p className="text-xs font-bold mt-1">+%1,1 vs Plan</p>
+        </div>
+        <div className="card relative">
+          <div className="ribbon-primary" />
+          <span className="label-sm">EBITDA Sapması</span>
+          <p className="text-2xl font-black num mt-2 text-primary">+5,8M</p>
+          <p className="text-xs font-bold mt-1">+%4,7 vs Plan</p>
+        </div>
+      </div>
 
-            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-              <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
-                Hasar Sapması
-              </p>
-              <p className={`mt-2 font-headline text-2xl font-black tabular-nums tracking-tighter ${totalClaimsVariance <= 0 ? 'text-sl-success' : 'text-sl-error'}`}>
-                {formatCurrency(totalClaimsVariance)}
-              </p>
-              <p className="mt-1 text-xs font-bold text-sl-on-surface-variant">
-                {formatPercent(totalClaimsVariancePct)}
-              </p>
-            </div>
-
-            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-              <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
-                Kritik Uyarı
-              </p>
-              <p className="mt-2 font-headline text-2xl font-black tabular-nums tracking-tighter text-sl-error">
-                {criticalCount}
-              </p>
-              <p className="mt-1 text-xs text-sl-on-surface-variant">müşteri</p>
-            </div>
-
-            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-              <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
-                Yüksek Uyarı
-              </p>
-              <p className="mt-2 font-headline text-2xl font-black tabular-nums tracking-tighter text-sl-warning">
-                {highCount}
-              </p>
-              <p className="mt-1 text-xs text-sl-on-surface-variant">müşteri</p>
-            </div>
-          </section>
-
-          <nav className="mb-5 flex gap-1 rounded-lg bg-sl-surface-low p-1">
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`rounded-md px-4 py-2 font-body text-sm font-medium transition-colors ${
-                  activeTab === tab.key
-                    ? 'bg-sl-surface-lowest text-sl-on-surface shadow-[var(--sl-shadow-sm)]'
-                    : 'text-sl-on-surface-variant hover:text-sl-on-surface'
-                }`}
-              >
-                {tab.label}
-              </button>
+      <div className="card p-0 overflow-hidden">
+        <div className="p-6 pb-3 flex justify-between items-center">
+          <h3 className="text-lg font-bold tracking-tight">Segment Bazlı Sapma</h3>
+          <span className="chip chip-neutral">YTD Nisan 2026</span>
+        </div>
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Segment</th>
+              <th className="text-right">Plan (M)</th>
+              <th className="text-right">Actual (M)</th>
+              <th className="text-right">Sapma (M)</th>
+              <th className="text-right">Sapma %</th>
+              <th>Ana Sürücü</th>
+              <th>Sorumlu</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SEGMENTS.map((s) => (
+              <tr key={s.segment}>
+                <td className="font-bold">{s.segment}</td>
+                <td className="text-right num">{s.plan}</td>
+                <td className="text-right num">{s.actual}</td>
+                <td className={`text-right num var-${s.direction}`}>{s.variance}</td>
+                <td className={`text-right num var-${s.direction}`}>{s.variancePct}</td>
+                <td className="text-xs">{s.driver}</td>
+                <td className="text-xs">{s.owner}</td>
+              </tr>
             ))}
-          </nav>
+            <tr className="total-row">
+              <td>TOPLAM GELİR</td>
+              <td className="text-right num">748,4</td>
+              <td className="text-right num">790,5</td>
+              <td className="text-right num">+42,1</td>
+              <td className="text-right num">+5,6%</td>
+              <td />
+              <td />
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-          {activeTab === 'waterfall' && (
-            <WaterfallChart data={summary.monthlyVariances} />
-          )}
-
-          {activeTab === 'table' && customers && (
-            <VarianceTable data={customers} />
-          )}
-
-          {activeTab === 'heatmap' && heatmap && (
-            <VarianceHeatmap data={heatmap} />
-          )}
-        </>
-      )}
-    </div>
+      <div className="grid grid-cols-2 gap-6 mt-6">
+        <div className="card">
+          <h3 className="text-base font-bold tracking-tight mb-4">EBITDA Waterfall (YTD)</h3>
+          <div style={{ height: 260 }}>
+            <WaterfallChart />
+          </div>
+        </div>
+        <div className="card">
+          <h3 className="text-base font-bold tracking-tight mb-4">Yorum &amp; Aksiyon</h3>
+          <div className="space-y-3 text-sm">
+            <div className="relative bg-surface-container-low rounded-lg p-4 pl-5">
+              <div className="ribbon-tertiary" />
+              <p className="font-bold">Oto gelirlerindeki +%5,4 sapma sürdürülebilir mi?</p>
+              <p className="text-xs text-on-surface-variant mt-1">
+                → M. Yılmaz, CFO ofisine 15 Mayıs'a kadar trend teyidi gönderecek.
+              </p>
+            </div>
+            <div className="relative bg-surface-container-low rounded-lg p-4 pl-5">
+              <div className="ribbon-warning" />
+              <p className="font-bold">Sağlık gelir kaybı kontrat yenileme riski</p>
+              <p className="text-xs text-on-surface-variant mt-1">
+                → Mayıs sonuna kadar re-negosiasyon; risk senaryosu 45M TL.
+              </p>
+            </div>
+            <div className="relative bg-surface-container-low rounded-lg p-4 pl-5">
+              <div className="ribbon-primary" />
+              <p className="font-bold">Hasar sapmasında ikame araç başlıca kalem</p>
+              <p className="text-xs text-on-surface-variant mt-1">
+                → RS Otomotiv filo kapasitesi artırılacak, maliyet optimizasyonu.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }

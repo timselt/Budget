@@ -1,273 +1,369 @@
-import { useState } from 'react'
-import { useDashboardKpis } from '../hooks/useDashboardKpis'
-import { ChartErrorBoundary } from '../components/ui/ChartErrorBoundary'
-import { RevenueClaimsChart } from '../components/dashboard/RevenueClaimsChart'
-import { LossRatioChart } from '../components/dashboard/LossRatioChart'
-import { SegmentDonut } from '../components/dashboard/SegmentDonut'
-import { ExpensePie } from '../components/dashboard/ExpensePie'
-import { EbitdaBridge } from '../components/dashboard/EbitdaBridge'
-import { ServiceLinePerformance } from '../components/dashboard/ServiceLinePerformance'
-import { CriticalAlerts } from '../components/dashboard/CriticalAlerts'
-import { MonthlySummaryTable } from '../components/dashboard/MonthlySummaryTable'
+import '../lib/chart-config'
+import { FinOpsTrendChart, FinOpsSegmentDonut } from '../components/dashboard/FinOpsTrendChart'
+import {
+  EbitdaBridgeChart,
+  LossRatioChart,
+  OpexBreakdownChart,
+} from '../components/dashboard/FinOpsSecondaryCharts'
 
-function formatPercent(value: number): string {
-  return `%${(value * 100).toFixed(1)}`
+interface ServiceLine {
+  icon: string
+  title: string
+  subtitle: string
+  amount: string
+  share: string
+  highlighted?: boolean
 }
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('tr-TR', {
-    style: 'currency',
-    currency: 'TRY',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
+const SERVICE_LINES: readonly ServiceLine[] = [
+  {
+    icon: 'directions_car',
+    title: 'Oto Asistans',
+    subtitle: 'Yol yardım, çekici, ikame araç',
+    amount: '1.190,2M',
+    share: '%53 of total',
+    highlighted: true,
+  },
+  {
+    icon: 'medical_services',
+    title: 'Sağlık Asistans',
+    subtitle: 'Tamamlayıcı sağlık, TUR Medical',
+    amount: '485,4M',
+    share: '%22 of total',
+  },
+  {
+    icon: 'home_work',
+    title: 'Konut Asistans',
+    subtitle: 'KonutKonfor, acil bakım',
+    amount: '346,1M',
+    share: '%15 of total',
+  },
+  {
+    icon: 'verified_user',
+    title: 'Warranty & SGK Teşvik',
+    subtitle: 'OEM warranty, teşvik gelirleri',
+    amount: '223,5M',
+    share: '%10 of total',
+  },
+]
+
+interface Alert {
+  ribbon: 'primary' | 'warning' | 'tertiary' | 'success'
+  title: string
+  body: string
+  chip: 'error' | 'warning' | 'info' | 'success'
+  chipLabel: string
+  actionable?: boolean
 }
 
-function formatMillions(value: number): string {
-  return `${(value / 1_000_000).toFixed(1)}M`
-}
+const ALERTS: readonly Alert[] = [
+  {
+    ribbon: 'primary',
+    title: "Oto hasar dosya maliyeti Q1'de +%9",
+    body: 'Tedarikçi fiyat artışı ve ikame araç süresi uzadı',
+    chip: 'error',
+    chipLabel: 'YÜKSEK',
+    actionable: true,
+  },
+  {
+    ribbon: 'warning',
+    title: 'Sağlık Asistans gelirleri %6 planın altında',
+    body: '2 kritik sigortacı yeniden fiyatlama talep ediyor',
+    chip: 'warning',
+    chipLabel: 'ORTA',
+  },
+  {
+    ribbon: 'tertiary',
+    title: 'Konut Asistans dosya sayısı +%21',
+    body: 'Pozitif sapma — KonutKonfor kampanyası',
+    chip: 'info',
+    chipLabel: 'BİLGİ',
+  },
+  {
+    ribbon: 'success',
+    title: 'EBITDA Q1 cumulative planın %3 üstünde',
+    body: 'Personel giderleri ve teknoloji amortismanı tasarrufu',
+    chip: 'success',
+    chipLabel: 'OLUMLU',
+  },
+]
 
-interface KpiCardProps {
-  label: string
-  value: string
-  sub?: string
-  target?: { value: string; percent: number }
-  trend?: { direction: 'up' | 'down'; text: string }
-  accent?: 'primary' | 'tertiary' | 'success' | 'warning'
-}
-
-function KpiMiniCard({ label, value, sub, target, trend, accent = 'primary' }: KpiCardProps) {
-  const accentColor = {
-    primary: 'text-sl-primary',
-    tertiary: 'text-sl-tertiary',
-    success: 'text-sl-success',
-    warning: 'text-sl-warning',
-  }[accent]
-
+export function DashboardPage() {
   return (
-    <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-      <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
-        {label}
-      </p>
-      <p className="mt-2 font-headline text-2xl font-black tracking-tighter text-sl-on-surface">
-        {value}
-      </p>
-      {sub && <p className={`mt-1 text-xs font-bold ${accentColor}`}>{sub}</p>}
-      {target && (
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-[0.6rem]">
-            <span className="text-sl-on-surface-variant">Hedef: {target.value}</span>
-            <span className="font-bold text-sl-on-surface-variant">%{target.percent}</span>
-          </div>
-          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sl-surface-container-high">
-            <div
-              className={`h-full rounded-full ${accent === 'warning' ? 'bg-sl-warning' : accent === 'success' ? 'bg-sl-success' : 'bg-sl-primary'}`}
-              style={{ width: `${Math.min(target.percent, 100)}%` }}
-            />
+    <section>
+      <div className="flex justify-between items-end mb-8">
+        <div>
+          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
+            Executive Dashboard
+          </h2>
+          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
+            Tur Assist Grubu FY26 bütçesinin konsolide performans görünümü — gerçekleşen vs. plan,
+            teknik marj ve EBITDA momentum.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <button type="button" className="btn-secondary">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              tune
+            </span>
+            Filtre
+          </button>
+          <button type="button" className="btn-primary">
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              file_download
+            </span>
+            Dışa Aktar
+          </button>
+        </div>
+      </div>
+
+      {/* KPI BENTO */}
+      <div className="grid grid-cols-12 gap-6 mb-6">
+        <div className="col-span-12 lg:col-span-4 card-tonal kpi-tile">
+          <span className="bg-deco material-symbols-outlined">account_balance</span>
+          <div className="relative z-10">
+            <span className="label-sm block mb-4">Toplam Gelir — FY26 Plan</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-black tracking-display text-on-surface num">2.245,2M</span>
+              <span className="text-sm font-bold text-on-surface-variant">TL</span>
+            </div>
+            <div className="mt-6 flex items-center justify-between">
+              <div className="chip chip-info">
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                  trending_up
+                </span>
+                +18,4% vs FY25
+              </div>
+              <span className="text-[0.65rem] text-on-surface-variant font-semibold">12 aylık</span>
+            </div>
           </div>
         </div>
-      )}
-      {trend && (
-        <div className="mt-2 flex items-center gap-1">
-          <span className={`material-symbols-outlined text-[14px] ${trend.direction === 'up' ? 'text-sl-success' : 'text-sl-primary'}`}>
-            {trend.direction === 'up' ? 'trending_up' : 'trending_down'}
-          </span>
-          <span className="text-[0.65rem] text-sl-on-surface-variant">{trend.text}</span>
+
+        <div className="col-span-6 lg:col-span-2 card relative">
+          <div className="ribbon-primary" />
+          <span className="label-sm">Teknik Marj</span>
+          <p className="text-2xl font-black tracking-display num mt-2">920,6M</p>
+          <p className="text-xs text-on-surface-variant mt-1">%41,0 marj</p>
+          <div className="progress-track mt-3">
+            <div className="progress-fill bg-primary" style={{ width: '82%' }} />
+          </div>
+          <p className="text-[0.65rem] text-on-surface-variant mt-2">Hedef: 1.125M TL</p>
         </div>
-      )}
+
+        <div className="col-span-6 lg:col-span-2 card relative">
+          <div className="ribbon-tertiary" />
+          <span className="label-sm">EBITDA</span>
+          <p className="text-2xl font-black tracking-display num mt-2">360,4M</p>
+          <p className="text-xs text-tertiary font-bold mt-1">%16,1 EBITDA margin</p>
+          <div className="progress-track mt-3">
+            <div className="progress-fill bg-tertiary" style={{ width: '91%' }} />
+          </div>
+          <p className="text-[0.65rem] text-on-surface-variant mt-2">Hedef: 395M TL</p>
+        </div>
+
+        <div className="col-span-6 lg:col-span-2 card relative">
+          <div className="ribbon-warning" />
+          <span className="label-sm">Loss Ratio</span>
+          <p className="text-2xl font-black tracking-display num mt-2">%59,0</p>
+          <p className="text-xs text-on-surface-variant mt-1">Hasar/Prim</p>
+          <div className="progress-track mt-3">
+            <div className="progress-fill bg-warning" style={{ width: '59%' }} />
+          </div>
+          <p className="text-[0.65rem] text-on-surface-variant mt-2">Benchmark: %55</p>
+        </div>
+
+        <div className="col-span-6 lg:col-span-2 card">
+          <span className="label-sm">Toplam Dosya</span>
+          <p className="text-2xl font-black tracking-display num mt-2">1,24M</p>
+          <p className="text-xs text-tertiary font-bold mt-1">+%12,6</p>
+          <div className="progress-track mt-3">
+            <div className="progress-fill bg-tertiary" style={{ width: '65%' }} />
+          </div>
+          <p className="text-[0.65rem] text-on-surface-variant mt-2">Araç + Sağlık + Konut</p>
+        </div>
+      </div>
+
+      {/* Trend + Segment */}
+      <div className="grid grid-cols-12 gap-6 mb-6">
+        <div className="col-span-12 lg:col-span-8 card">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h3 className="text-lg font-bold tracking-tight text-on-surface">
+                Gelir / Hasar / Teknik Marj — Aylık Trend
+              </h3>
+              <p className="text-xs text-on-surface-variant mt-1">FY26 Plan, MTL</p>
+            </div>
+            <div className="flex gap-2">
+              <span className="chip chip-error">Gelir</span>
+              <span className="chip chip-warning">Hasar</span>
+              <span className="chip chip-info">Teknik Marj</span>
+            </div>
+          </div>
+          <div style={{ height: 220 }}>
+            <FinOpsTrendChart />
+          </div>
+        </div>
+        <div className="col-span-12 lg:col-span-4 card">
+          <h3 className="text-lg font-bold tracking-tight text-on-surface mb-4">
+            Gelir Segmentasyonu
+          </h3>
+          <div style={{ height: 180 }}>
+            <FinOpsSegmentDonut />
+          </div>
+          <div className="mt-4 space-y-3">
+            <SegmentRow label="Sigorta Şirketleri" share={62} color="bg-primary" />
+            <SegmentRow label="Banka / Kart Programı" share={18} color="bg-tertiary" />
+            <SegmentRow label="B2B2C Programlar" share={14} color="bg-outline" />
+            <SegmentRow label="B2C Direkt + Ad-Hoc" share={6} color="bg-outline-variant" />
+          </div>
+        </div>
+      </div>
+
+      {/* Second row */}
+      <div className="grid grid-cols-12 gap-6 mb-6">
+        <div className="col-span-12 lg:col-span-4 card">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-base font-bold tracking-tight text-on-surface">EBITDA Köprüsü</h3>
+            <span className="chip chip-info">FY25→FY26</span>
+          </div>
+          <div style={{ height: 220 }}>
+            <EbitdaBridgeChart />
+          </div>
+        </div>
+        <div className="col-span-12 lg:col-span-4 card">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-base font-bold tracking-tight text-on-surface">
+              Loss Ratio (aylık)
+            </h3>
+            <span className="chip chip-warning">%59 ort.</span>
+          </div>
+          <div style={{ height: 220 }}>
+            <LossRatioChart />
+          </div>
+        </div>
+        <div className="col-span-12 lg:col-span-4 card">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-base font-bold tracking-tight text-on-surface">Gider Kırılımı</h3>
+            <span className="chip chip-neutral">FY26</span>
+          </div>
+          <div style={{ height: 220 }}>
+            <OpexBreakdownChart />
+          </div>
+        </div>
+      </div>
+
+      {/* Service Line + Alerts */}
+      <div className="grid grid-cols-12 gap-6">
+        <div className="col-span-12 lg:col-span-7 card p-0 overflow-hidden">
+          <div className="p-6 pb-3">
+            <h3 className="text-lg font-bold tracking-tight text-on-surface">
+              Service Line Performansı
+            </h3>
+            <p className="text-xs text-on-surface-variant mt-1">FY26 Plan, cirodan % pay</p>
+          </div>
+          <div className="flex flex-col">
+            {SERVICE_LINES.map((line, i) => (
+              <ServiceLineRow key={line.title} line={line} zebra={i % 2 === 0} />
+            ))}
+          </div>
+        </div>
+
+        <div className="col-span-12 lg:col-span-5 card">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold tracking-tight text-on-surface">Kritik Uyarılar</h3>
+            <span className="chip chip-error">4 aktif</span>
+          </div>
+          <div className="space-y-3">
+            {ALERTS.map((alert) => (
+              <AlertCard key={alert.title} alert={alert} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function SegmentRow({ label, share, color }: { label: string; share: number; color: string }) {
+  return (
+    <div>
+      <div className="flex justify-between items-end mb-1.5">
+        <span className="text-sm font-bold text-on-surface">{label}</span>
+        <span className="text-sm font-black num">{share}%</span>
+      </div>
+      <div className="progress-track">
+        <div className={`progress-fill ${color}`} style={{ width: `${share}%` }} />
+      </div>
     </div>
   )
 }
 
-export function DashboardPage() {
-  const [versionId] = useState<number>(1)
-  const { data: kpis, isLoading, error } = useDashboardKpis(versionId)
-
+function ServiceLineRow({ line, zebra }: { line: ServiceLine; zebra: boolean }) {
+  const bg = zebra ? 'bg-surface-container-low/50' : 'bg-surface-container-lowest'
   return (
-    <div>
-      <header className="mb-8 flex items-end justify-between">
+    <div
+      className={`flex items-center justify-between p-4 px-6 ${bg} hover:bg-surface-container-low transition-colors group relative`}
+    >
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-1 ${
+          line.highlighted
+            ? 'bg-primary group-hover:w-1.5'
+            : 'bg-tertiary opacity-0 group-hover:opacity-100'
+        } transition-all`}
+      />
+      <div className="flex items-center gap-4">
+        <div
+          className={`w-10 h-10 rounded-full flex items-center justify-center ${
+            line.highlighted
+              ? 'bg-surface text-primary'
+              : 'bg-surface-container text-tertiary'
+          }`}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+            {line.icon}
+          </span>
+        </div>
         <div>
-          <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
-            Dashboard
-          </h1>
-          <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
-            Gelir, hasar, kârlılık ve operasyonel oranlar — FinOpsTur performans özeti.
-          </p>
+          <p className="font-bold text-sm text-on-surface">{line.title}</p>
+          <p className="text-xs text-on-surface-variant mt-0.5">{line.subtitle}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 rounded-md bg-sl-surface-container-high px-3 py-2 font-body text-sm font-medium text-sl-on-surface transition-colors hover:bg-sl-surface-container-highest">
-            <span className="material-symbols-outlined text-[18px]">filter_list</span>
-            Filtrele
-          </button>
-          <button className="flex items-center gap-2 rounded-md bg-gradient-to-br from-sl-primary to-sl-primary-container px-4 py-2 font-body text-sm font-medium text-white shadow-[0_4px_12px_rgba(181,3,3,0.15)] transition-all duration-200 hover:shadow-[0_8px_20px_rgba(181,3,3,0.25)] hover:brightness-110 active:scale-[0.97]">
-            <span className="material-symbols-outlined text-[18px]">download</span>
-            Rapor İndir
-          </button>
+      </div>
+      <div className="text-right">
+        <p className={`${line.highlighted ? 'font-black text-lg' : 'font-bold text-lg'} num`}>
+          {line.amount}
+        </p>
+        <p
+          className={`text-xs ${
+            line.highlighted
+              ? 'font-bold text-tertiary'
+              : 'font-medium text-on-surface-variant'
+          }`}
+        >
+          {line.share}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function AlertCard({ alert }: { alert: Alert }) {
+  return (
+    <div className="relative bg-surface-container-low rounded-lg p-4 pl-5">
+      <div className={`ribbon-${alert.ribbon}`} />
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-bold">{alert.title}</p>
+          <p className="text-xs text-on-surface-variant mt-1">{alert.body}</p>
         </div>
-      </header>
-
-      {isLoading && (
-        <div className="flex h-48 items-center justify-center">
-          <p className="font-body text-sl-on-surface-variant">Yükleniyor...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-xl bg-sl-error-container/30 p-6">
-          <p className="font-body text-sm text-sl-error">KPI verileri yüklenemedi.</p>
-        </div>
-      )}
-
-      {kpis && (
-        <div className="grid grid-cols-12 gap-6">
-          {/* Hero — Toplam Gelir */}
-          <div className="col-span-12 lg:col-span-4 group relative overflow-hidden rounded-xl bg-sl-surface-container-low p-8">
-            <div className="absolute inset-0 bg-gradient-to-br from-sl-primary/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-            <div className="relative z-10 flex h-full flex-col justify-between">
-              <div>
-                <span className="mb-4 block font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
-                  Toplam Gelir
-                </span>
-                <span className="font-headline text-4xl font-black tracking-tighter text-sl-on-surface">
-                  {formatCurrency(kpis.totalRevenue)}
-                </span>
-              </div>
-              <div className="mt-8 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 rounded-full bg-sl-tertiary-container/30 px-3 py-1.5 text-sl-tertiary">
-                  <span className="material-symbols-outlined text-[16px] font-bold">trending_up</span>
-                  <span className="text-sm font-bold">+18,4% vs FY25</span>
-                </div>
-                <span className="material-symbols-outlined text-4xl text-sl-outline-variant/30 font-light">account_balance</span>
-              </div>
-            </div>
-          </div>
-
-          {/* KPI Row — 4 cards */}
-          <div className="col-span-12 lg:col-span-8 grid grid-cols-2 gap-4 xl:grid-cols-4">
-            <KpiMiniCard
-              label="Teknik Marj"
-              value={formatMillions(kpis.technicalMargin)}
-              sub={`Marj: ${formatPercent(kpis.technicalProfitRatio)}`}
-              target={{ value: '1.125M', percent: 82 }}
-              accent="tertiary"
-            />
-            <KpiMiniCard
-              label="EBITDA"
-              value={formatMillions(kpis.ebitda)}
-              sub={`Marj: ${formatPercent(kpis.ebitdaMargin)}`}
-              target={{ value: '395M', percent: 91 }}
-              accent="primary"
-            />
-            <KpiMiniCard
-              label="Loss Ratio"
-              value={formatPercent(kpis.lossRatio)}
-              sub="Hasar / Prim"
-              trend={{ direction: kpis.lossRatio > 0.6 ? 'down' : 'up', text: 'Benchmark: %55' }}
-              accent="warning"
-            />
-            <KpiMiniCard
-              label="Bileşik Oran"
-              value={formatPercent(kpis.combinedRatio)}
-              sub={kpis.combinedRatio < 1 ? 'Hedef altı' : 'Hedef üstü'}
-              trend={{ direction: kpis.combinedRatio < 1 ? 'up' : 'down', text: 'Hedef: %100 altı' }}
-              accent={kpis.combinedRatio < 1 ? 'success' : 'warning'}
-            />
-          </div>
-
-          {/* Gelir / Hasar / Teknik Marj trend */}
-          <div className="col-span-12 lg:col-span-8 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="-ml-2 font-headline text-base font-bold tracking-tight text-sl-on-surface">
-                Gelir / Hasar / Teknik Marj — Aylık Trend
-              </h3>
-              <span className="rounded-md bg-sl-surface px-3 py-1 font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
-                12 Ay
-              </span>
-            </div>
-            <ChartErrorBoundary><RevenueClaimsChart versionId={versionId} /></ChartErrorBoundary>
-          </div>
-
-          {/* Gelir Segmentasyonu donut */}
-          <div className="col-span-12 lg:col-span-4 flex flex-col rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
-            <h3 className="-ml-2 mb-4 font-headline text-base font-bold tracking-tight text-sl-on-surface">
-              Gelir Segmentasyonu
-            </h3>
-            <div className="flex flex-1 flex-col justify-center">
-              <ChartErrorBoundary><SegmentDonut versionId={versionId} /></ChartErrorBoundary>
-            </div>
-          </div>
-
-          {/* EBITDA Bridge + LR + Gider Kırılımı — 3 equal columns */}
-          <div className="col-span-12 lg:col-span-4 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
-            <h3 className="-ml-2 mb-2 font-headline text-base font-bold tracking-tight text-sl-on-surface">
-              EBITDA Köprüsü
-            </h3>
-            <p className="mb-4 text-xs text-sl-on-surface-variant">FY25 → FY26 geçiş analizi</p>
-            <ChartErrorBoundary><EbitdaBridge /></ChartErrorBoundary>
-          </div>
-
-          <div className="col-span-12 lg:col-span-4 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
-            <h3 className="-ml-2 mb-4 font-headline text-base font-bold tracking-tight text-sl-on-surface">
-              Loss Ratio (Aylık)
-            </h3>
-            <ChartErrorBoundary><LossRatioChart versionId={versionId} /></ChartErrorBoundary>
-          </div>
-
-          <div className="col-span-12 lg:col-span-4 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
-            <h3 className="-ml-2 mb-4 font-headline text-base font-bold tracking-tight text-sl-on-surface">
-              Gider Kırılımı
-            </h3>
-            <ChartErrorBoundary><ExpensePie versionId={versionId} /></ChartErrorBoundary>
-          </div>
-
-          {/* Service Lines + Critical Alerts */}
-          <div className="col-span-12 lg:col-span-7">
-            <ServiceLinePerformance />
-          </div>
-          <div className="col-span-12 lg:col-span-5">
-            <CriticalAlerts />
-          </div>
-
-          {/* Operasyonel Oranlar */}
-          <div className="col-span-12">
-            <h2 className="-ml-2 mb-5 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
-              Operasyonel Oranlar
-            </h2>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <KpiMiniCard
-                label="Hasar Prim Oranı"
-                value={formatPercent(kpis.lossRatio)}
-                trend={{ direction: kpis.lossRatio > 0.6 ? 'down' : 'up', text: 'vs FY25' }}
-                accent="warning"
-              />
-              <KpiMiniCard
-                label="Gider Oranı"
-                value={formatPercent(kpis.expenseRatio)}
-                accent="tertiary"
-              />
-              <KpiMiniCard
-                label="Bileşik Oran"
-                value={formatPercent(kpis.combinedRatio)}
-                trend={{ direction: kpis.combinedRatio < 1 ? 'up' : 'down', text: kpis.combinedRatio < 1 ? 'Hedef altı' : 'Hedef üstü' }}
-                accent={kpis.combinedRatio < 1 ? 'success' : 'primary'}
-              />
-              <KpiMiniCard
-                label="Kâr Marjı"
-                value={formatPercent(kpis.profitRatio)}
-                trend={{ direction: kpis.profitRatio > 0.1 ? 'up' : 'down', text: 'Net kâr / gelir' }}
-                accent={kpis.profitRatio > 0.1 ? 'success' : 'warning'}
-              />
-            </div>
-          </div>
-
-          {/* Aylık Özet Tablo */}
-          <div className="col-span-12 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
-            <h3 className="-ml-2 mb-4 font-headline text-base font-bold tracking-tight text-sl-on-surface">
-              Aylık Özet
-            </h3>
-            <ChartErrorBoundary><MonthlySummaryTable versionId={versionId} /></ChartErrorBoundary>
-          </div>
-        </div>
+        <span className={`chip chip-${alert.chip}`}>{alert.chipLabel}</span>
+      </div>
+      {alert.actionable && (
+        <button type="button" className="btn-tertiary mt-3 -ml-2">
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            arrow_outward
+          </span>
+          Aksiyon Planı
+        </button>
       )}
     </div>
   )
