@@ -1,35 +1,26 @@
-import { useAuthStore } from '../../stores/auth'
-
 export function TopNavBar() {
-  const { user } = useAuthStore()
-  const initials = user?.displayName
-    ? user.displayName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-    : '??'
-
   return (
-    <header className="fixed top-0 right-0 left-72 z-50">
-      <div className="flex items-center justify-between bg-sl-glass-bg px-8 py-3 backdrop-blur-[20px]">
-        <div className="relative">
-          <span className="material-symbols-outlined absolute top-1/2 left-3 -translate-y-1/2 text-sl-on-surface-variant text-[20px]">
+    <header className="fixed top-0 right-0 left-72 z-40">
+      <div className="flex h-16 items-center justify-between bg-sl-glass-bg px-8 backdrop-blur-[20px]">
+        <div className="flex max-w-md flex-1 items-center rounded-full bg-sl-surface-container-high px-4 py-2 transition-all focus-within:bg-sl-surface-lowest focus-within:ring-2 focus-within:ring-sl-primary/40">
+          <span className="material-symbols-outlined mr-2 text-sl-secondary text-[20px]">
             search
           </span>
           <input
             type="text"
-            placeholder="Ara..."
-            className="w-64 rounded-full bg-sl-surface-container-low py-2 pr-4 pl-10 font-body text-sm text-sl-on-surface outline-none transition-colors placeholder:text-sl-on-surface-variant/60 focus:bg-sl-surface-lowest"
+            placeholder="Veri ara..."
+            className="w-full border-none bg-transparent p-0 font-body text-sm text-sl-on-surface outline-none placeholder:text-sl-secondary focus:ring-0"
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <button className="rounded-full p-2 text-sl-on-surface-variant transition-colors hover:bg-sl-surface-container-low hover:scale-95 duration-200">
-            <span className="material-symbols-outlined text-[20px]">notifications</span>
+        <div className="flex items-center gap-6">
+          <button className="relative text-sl-on-surface-variant transition-all hover:text-sl-primary">
+            <span className="material-symbols-outlined">notifications</span>
+            <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-sl-primary-container" />
           </button>
-          <button className="rounded-full p-2 text-sl-on-surface-variant transition-colors hover:bg-sl-surface-container-low hover:scale-95 duration-200">
-            <span className="material-symbols-outlined text-[20px]">settings</span>
+          <button className="text-sl-on-surface-variant transition-all hover:text-sl-primary">
+            <span className="material-symbols-outlined">help_outline</span>
           </button>
-          <div className="ml-2 flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sl-primary to-sl-primary-container text-xs font-bold text-white">
-            {initials}
-          </div>
         </div>
       </div>
       <div className="h-px bg-sl-surface-container-highest opacity-50" />
