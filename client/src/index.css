@@ -14,6 +14,9 @@
   --color-sl-primary-fixed: var(--sl-primary-fixed);
   --color-sl-on-primary: var(--sl-on-primary);
   --color-sl-secondary: var(--sl-secondary);
+  --color-sl-secondary-container: var(--sl-secondary-container);
+  --color-sl-on-secondary-container: var(--sl-on-secondary-container);
+  --color-sl-surface-bright: var(--sl-surface-bright);
   --color-sl-error: var(--sl-error);
   --color-sl-error-container: var(--sl-error-container);
   --color-sl-tertiary: var(--sl-tertiary);

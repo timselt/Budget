@@ -24,7 +24,7 @@ function formatDate(iso: string): string {
 
 function StatusBadge({ status }: { status: ImportPeriodStatus }) {
   const styles: Record<ImportPeriodStatus, string> = {
-    Completed: 'bg-emerald-50 text-emerald-700',
+    Completed: 'bg-sl-tertiary-container text-sl-tertiary',
     Processing: 'bg-amber-50 text-amber-700',
     Failed: 'bg-sl-error-container text-sl-error',
   }
@@ -172,7 +172,7 @@ export function CollectionImportPage() {
             <button
               onClick={handleUpload}
               disabled={!selectedFile || importMutation.isPending}
-              className="rounded-lg bg-gradient-to-r from-sl-primary to-sl-secondary px-6 py-2.5 font-body text-sm font-medium text-white shadow-[var(--sl-shadow-sm)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-gradient-to-br from-sl-primary to-sl-secondary px-6 py-2.5 font-body text-sm font-medium text-white shadow-[var(--sl-shadow-sm)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {importMutation.isPending ? 'Yukleniyor...' : 'Yukle'}
             </button>
@@ -192,8 +192,8 @@ export function CollectionImportPage() {
           </div>
 
           {importMutation.isSuccess && (
-            <div className="mt-4 rounded-lg bg-emerald-50 p-4">
-              <p className="font-body text-sm font-medium text-emerald-700">
+            <div className="mt-4 rounded-lg bg-sl-tertiary-container p-4">
+              <p className="font-body text-sm font-medium text-sl-tertiary">
                 Basariyla yuklendi: {importMutation.data.customersProcessed} musteri,{' '}
                 {importMutation.data.invoicesProcessed} fatura islendi.
               </p>

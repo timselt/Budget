@@ -2,18 +2,18 @@ import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '../../stores/auth'
 
 const navItems = [
-  { to: '/', label: 'Dashboard', icon: '◻' },
-  { to: '/budget', label: 'Bütçe', icon: '◻' },
-  { to: '/budget/versions', label: 'Versiyonlar', icon: '◻' },
-  { to: '/customers', label: 'Müşteriler', icon: '◻' },
-  { to: '/expenses', label: 'Giderler', icon: '◻' },
-  { to: '/variance', label: 'BvA Raporu', icon: '◻' },
-  { to: '/scenarios', label: 'Senaryolar', icon: '◻' },
-  { to: '/fx-rates', label: 'Döviz Kurları', icon: '◻' },
-  { to: '/approvals', label: 'Onaylar', icon: '◻' },
-  { to: '/tahsilat', label: 'Tahsilat', icon: '◻' },
-  { to: '/tahsilat/import', label: 'Veri Yukle', icon: '◻' },
-  { to: '/admin', label: 'Ayarlar', icon: '◻' },
+  { to: '/', label: 'Dashboard' },
+  { to: '/budget', label: 'Bütçe' },
+  { to: '/budget/versions', label: 'Versiyonlar' },
+  { to: '/customers', label: 'Müşteriler' },
+  { to: '/expenses', label: 'Giderler' },
+  { to: '/variance', label: 'BvA Raporu' },
+  { to: '/scenarios', label: 'Senaryolar' },
+  { to: '/fx-rates', label: 'Döviz Kurları' },
+  { to: '/approvals', label: 'Onaylar' },
+  { to: '/tahsilat', label: 'Tahsilat' },
+  { to: '/tahsilat/import', label: 'Veri Yükle' },
+  { to: '/admin', label: 'Ayarlar' },
 ]
 
 export function Sidebar() {
@@ -40,7 +40,6 @@ export function Sidebar() {
               }`
             }
           >
-            <span className="text-base">{item.icon}</span>
             {item.label}
           </NavLink>
         ))}

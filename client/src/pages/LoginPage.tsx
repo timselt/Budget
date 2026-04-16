@@ -23,7 +23,7 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-sl-surface">
       <div className="w-full max-w-sm">
-        <div className="rounded-lg border border-sl-outline-variant/15 bg-sl-glass-bg p-8 backdrop-blur-[12px]">
+        <div className="rounded-lg border border-sl-outline-variant/15 bg-sl-glass-bg p-8 backdrop-blur-[20px]">
           <h1 className="mb-1 font-display text-2xl font-bold tracking-tight text-sl-primary">
             BudgetTracker
           </h1>
@@ -42,7 +42,7 @@ export function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border-b border-sl-outline-variant/40 bg-transparent px-0 py-2 font-body text-sm text-sl-on-surface outline-none transition-colors focus:border-b-2 focus:border-sl-primary"
+                className="w-full rounded-md bg-sl-surface-high px-3 py-2.5 font-body text-sm text-sl-on-surface outline-none transition-all focus:bg-sl-surface-lowest focus:ring-2 focus:ring-sl-primary/40"
                 placeholder="admin@tag.local"
               />
             </div>
@@ -57,7 +57,7 @@ export function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full border-b border-sl-outline-variant/40 bg-transparent px-0 py-2 font-body text-sm text-sl-on-surface outline-none transition-colors focus:border-b-2 focus:border-sl-primary"
+                className="w-full rounded-md bg-sl-surface-high px-3 py-2.5 font-body text-sm text-sl-on-surface outline-none transition-all focus:bg-sl-surface-lowest focus:ring-2 focus:ring-sl-primary/40"
               />
             </div>
 
@@ -68,7 +68,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-md bg-gradient-to-r from-sl-primary to-sl-primary-container px-4 py-2.5 font-body text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="w-full rounded-md bg-gradient-to-br from-sl-primary to-sl-primary-container px-4 py-2.5 font-body text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
             </button>

@@ -57,51 +57,51 @@ export function DashboardPage() {
       {kpis && (
         <>
           <section className="mb-12">
-            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+            <h2 className="mb-4 font-display text-xl font-medium text-sl-on-surface">
               Gelir & Hasar
             </h2>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <KpiCard title="Toplam Gelir" value={formatCurrency(kpis.totalRevenue)} />
-              <KpiCard title="Toplam Hasar" value={formatCurrency(kpis.totalClaims)} trend="down" />
-              <KpiCard title="Teknik Marj" value={formatCurrency(kpis.technicalMargin)} trend="up" />
+              <KpiCard title="Toplam Hasar" value={formatCurrency(kpis.totalClaims)} trend={kpis.totalClaims > 0 ? 'down' : undefined} />
+              <KpiCard title="Teknik Marj" value={formatCurrency(kpis.technicalMargin)} trend={kpis.technicalMargin > 0 ? 'up' : kpis.technicalMargin < 0 ? 'down' : undefined} />
               <KpiCard
                 title="Hasar Prim Oranı"
                 value={formatPercent(kpis.lossRatio)}
-                trend={kpis.lossRatio > 0.7 ? 'down' : 'up'}
+                trend={kpis.lossRatio > 0 ? (kpis.lossRatio > 0.7 ? 'down' : 'up') : undefined}
               />
             </div>
           </section>
 
           <section className="mb-12">
-            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+            <h2 className="mb-4 font-display text-xl font-medium text-sl-on-surface">
               Kârlılık
             </h2>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               <KpiCard
                 title="Teknik Kâr"
                 value={formatCurrency(kpis.technicalProfit)}
-                trend={kpis.technicalProfit > 0 ? 'up' : 'down'}
+                trend={kpis.technicalProfit > 0 ? 'up' : kpis.technicalProfit < 0 ? 'down' : undefined}
               />
               <KpiCard
                 title="Net Kâr"
                 value={formatCurrency(kpis.netProfit)}
-                trend={kpis.netProfit > 0 ? 'up' : 'down'}
+                trend={kpis.netProfit > 0 ? 'up' : kpis.netProfit < 0 ? 'down' : undefined}
               />
               <KpiCard
                 title="EBITDA"
                 value={formatCurrency(kpis.ebitda)}
-                trend={kpis.ebitda > 0 ? 'up' : 'down'}
+                trend={kpis.ebitda > 0 ? 'up' : kpis.ebitda < 0 ? 'down' : undefined}
               />
               <KpiCard
                 title="Kâr Marjı"
                 value={formatPercent(kpis.profitRatio)}
-                trend={kpis.profitRatio > 0.1 ? 'up' : 'down'}
+                trend={kpis.profitRatio > 0.1 ? 'up' : kpis.profitRatio < 0 ? 'down' : undefined}
               />
             </div>
           </section>
 
           <section className="mb-12">
-            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+            <h2 className="mb-4 font-display text-xl font-medium text-sl-on-surface">
               Oranlar
             </h2>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -109,7 +109,7 @@ export function DashboardPage() {
               <KpiCard
                 title="Bileşik Oran"
                 value={formatPercent(kpis.combinedRatio)}
-                trend={kpis.combinedRatio < 1 ? 'up' : 'down'}
+                trend={kpis.combinedRatio > 0 ? (kpis.combinedRatio < 1 ? 'up' : 'down') : undefined}
               />
               <KpiCard title="EBITDA Marjı" value={formatPercent(kpis.ebitdaMargin)} />
               <KpiCard title="Muallak Oranı" value={formatPercent(kpis.muallakRatio)} />
@@ -117,7 +117,7 @@ export function DashboardPage() {
           </section>
 
           <section className="mb-12">
-            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+            <h2 className="mb-4 font-display text-xl font-medium text-sl-on-surface">
               Grafikler
             </h2>
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -133,7 +133,7 @@ export function DashboardPage() {
           </section>
 
           <section className="mb-12">
-            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+            <h2 className="mb-4 font-display text-xl font-medium text-sl-on-surface">
               Aylık Özet
             </h2>
             <ChartErrorBoundary><MonthlySummaryTable versionId={versionId} /></ChartErrorBoundary>

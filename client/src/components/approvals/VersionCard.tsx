@@ -40,7 +40,7 @@ function ActionButton({
     danger:
       'border-red-200 text-red-600 hover:bg-red-50',
     success:
-      'border-green-200 text-green-700 hover:bg-green-50',
+      'border-sl-tertiary/30 text-sl-tertiary hover:bg-sl-tertiary-container',
   }
 
   return (
@@ -93,7 +93,7 @@ export function VersionCard({
             </h3>
             <StatusBadge status={status} />
             {isActive && (
-              <span className="inline-flex items-center rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
+              <span className="inline-flex items-center rounded-full bg-sl-tertiary px-2 py-0.5 text-[10px] font-bold tracking-wide text-white uppercase">
                 Aktif
               </span>
             )}

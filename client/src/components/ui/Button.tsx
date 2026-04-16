@@ -8,11 +8,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'bg-gradient-to-r from-sl-primary to-sl-primary-container text-white hover:opacity-90',
+    'bg-gradient-to-br from-sl-primary to-sl-primary-container text-white hover:opacity-90',
   secondary:
-    'bg-sl-surface-high text-sl-on-surface hover:bg-sl-surface-low',
+    'bg-sl-secondary-container text-sl-on-secondary-container hover:opacity-90',
   tertiary:
-    'bg-transparent text-sl-primary hover:bg-sl-surface-low',
+    'bg-transparent text-sl-primary hover:bg-sl-surface-high',
 }
 
 export function Button({

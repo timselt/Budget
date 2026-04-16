@@ -35,7 +35,7 @@ const STATUS_CONFIG: Record<VersionStatus, { label: string; className: string }>
   },
   ACTIVE: {
     label: 'Aktif',
-    className: 'bg-green-100 text-green-700',
+    className: 'bg-sl-tertiary-container text-sl-tertiary',
   },
   ARCHIVED: {
     label: 'Arşiv',

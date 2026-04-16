@@ -39,7 +39,7 @@ function RiskChip({ level }: { level: CollectionRiskLevel }) {
   const styles: Record<CollectionRiskLevel, string> = {
     High: 'bg-sl-error-container text-sl-error',
     Medium: 'bg-amber-100 text-amber-800',
-    Low: 'bg-emerald-50 text-emerald-700',
+    Low: 'bg-sl-tertiary-container text-sl-tertiary',
   }
 
   const labels: Record<CollectionRiskLevel, string> = {

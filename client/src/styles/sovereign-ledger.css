@@ -1,45 +1,48 @@
 :root {
-  /* Tonal Architecture */
-  --sl-surface: #f7f9fb;
-  --sl-surface-low: #f2f4f6;
+  /* Tonal Architecture — Precision Editorial */
+  --sl-surface: #f7f9fe;
+  --sl-surface-low: #f2f4f8;
   --sl-surface-lowest: #ffffff;
-  --sl-surface-high: #e8ebef;
-  --sl-on-surface: #191c1e;
-  --sl-on-surface-variant: #42474f;
-  --sl-primary: #00355f;
-  --sl-primary-container: #0f4c81;
-  --sl-primary-fixed: #d2e4ff;
+  --sl-surface-high: #eceef2;
+  --sl-surface-bright: #f7f9fe;
+  --sl-on-surface: #1b1b1f;
+  --sl-on-surface-variant: #5c403b;
+  --sl-primary: #b50303;
+  --sl-primary-container: #da291c;
+  --sl-primary-fixed: #ffdad6;
   --sl-on-primary: #ffffff;
-  --sl-secondary: #515f74;
+  --sl-secondary: #77574e;
+  --sl-secondary-container: #f5ddd6;
+  --sl-on-secondary-container: #2c150f;
   --sl-error: #ba1a1a;
   --sl-error-container: #ffdad6;
-  --sl-tertiary: #003b35;
-  --sl-on-tertiary-container: #5eccbe;
-  --sl-outline-variant: #c2c7d1;
-  --sl-surface-tint: #00355f;
+  --sl-tertiary: #005b9f;
+  --sl-on-tertiary-container: #d1e4ff;
+  --sl-outline-variant: #e6bdb7;
+  --sl-surface-tint: #b50303;
 
-  /* Typography */
-  --font-display: 'Manrope', system-ui, sans-serif;
+  /* Typography — Inter only */
+  --font-display: 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
 
-  /* Ghost Border (no real borders - use this sparingly) */
-  --sl-ghost-border: rgba(194, 199, 209, 0.15);
+  /* Ghost Border (outline_variant at 15% opacity) */
+  --sl-ghost-border: rgba(230, 189, 183, 0.15);
 
-  /* Glassmorphism */
-  --sl-glass-bg: rgba(255, 255, 255, 0.85);
-  --sl-glass-blur: 12px;
+  /* Glassmorphism — 80% opacity, 20px blur */
+  --sl-glass-bg: rgba(247, 249, 254, 0.80);
+  --sl-glass-blur: 20px;
 
-  /* Ambient Shadow (not drop shadow) */
-  --sl-shadow-ambient: 0 12px 32px -4px rgba(25, 28, 30, 0.08);
-  --sl-shadow-sm: 0 4px 12px -2px rgba(25, 28, 30, 0.05);
+  /* Ambient Shadow — on_surface at 4% alpha, 32px blur, 12px Y-offset */
+  --sl-shadow-ambient: 0 12px 32px 0 rgba(27, 27, 31, 0.04);
+  --sl-shadow-sm: 0 4px 16px 0 rgba(27, 27, 31, 0.03);
 
   /* Spacing */
   --sl-gap-section: 48px;
   --sl-gap-group: 32px;
   --sl-gap-element: 16px;
 
-  /* Radius */
-  --sl-radius-sm: 0.25rem;
+  /* Radius — always at least sm to soften edges */
+  --sl-radius-sm: 0.125rem;
   --sl-radius-md: 0.375rem;
   --sl-radius-lg: 0.5rem;
   --sl-radius-full: 9999px;
