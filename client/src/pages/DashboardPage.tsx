@@ -1,19 +1,17 @@
 import { useState } from 'react'
 import { useDashboardKpis } from '../hooks/useDashboardKpis'
-import { KpiCard } from '../components/ui/KpiCard'
 import { ChartErrorBoundary } from '../components/ui/ChartErrorBoundary'
 import { RevenueClaimsChart } from '../components/dashboard/RevenueClaimsChart'
 import { LossRatioChart } from '../components/dashboard/LossRatioChart'
-import { EbitdaChart } from '../components/dashboard/EbitdaChart'
 import { SegmentDonut } from '../components/dashboard/SegmentDonut'
 import { ExpensePie } from '../components/dashboard/ExpensePie'
-import { CumulativeAreaChart } from '../components/dashboard/CumulativeAreaChart'
-import { CombinedRatioChart } from '../components/dashboard/CombinedRatioChart'
-import { TopCustomersChart } from '../components/dashboard/TopCustomersChart'
+import { EbitdaBridge } from '../components/dashboard/EbitdaBridge'
+import { ServiceLinePerformance } from '../components/dashboard/ServiceLinePerformance'
+import { CriticalAlerts } from '../components/dashboard/CriticalAlerts'
 import { MonthlySummaryTable } from '../components/dashboard/MonthlySummaryTable'
 
 function formatPercent(value: number): string {
-  return `${(value * 100).toFixed(1)}%`
+  return `%${(value * 100).toFixed(1)}`
 }
 
 function formatCurrency(value: number): string {
@@ -25,27 +23,88 @@ function formatCurrency(value: number): string {
   }).format(value)
 }
 
+function formatMillions(value: number): string {
+  return `${(value / 1_000_000).toFixed(1)}M`
+}
+
+interface KpiCardProps {
+  label: string
+  value: string
+  sub?: string
+  target?: { value: string; percent: number }
+  trend?: { direction: 'up' | 'down'; text: string }
+  accent?: 'primary' | 'tertiary' | 'success' | 'warning'
+}
+
+function KpiMiniCard({ label, value, sub, target, trend, accent = 'primary' }: KpiCardProps) {
+  const accentColor = {
+    primary: 'text-sl-primary',
+    tertiary: 'text-sl-tertiary',
+    success: 'text-sl-success',
+    warning: 'text-sl-warning',
+  }[accent]
+
+  return (
+    <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
+      <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
+        {label}
+      </p>
+      <p className="mt-2 font-headline text-2xl font-black tracking-tighter text-sl-on-surface">
+        {value}
+      </p>
+      {sub && <p className={`mt-1 text-xs font-bold ${accentColor}`}>{sub}</p>}
+      {target && (
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-[0.6rem]">
+            <span className="text-sl-on-surface-variant">Hedef: {target.value}</span>
+            <span className="font-bold text-sl-on-surface-variant">%{target.percent}</span>
+          </div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-sl-surface-container-high">
+            <div
+              className={`h-full rounded-full ${accent === 'warning' ? 'bg-sl-warning' : accent === 'success' ? 'bg-sl-success' : 'bg-sl-primary'}`}
+              style={{ width: `${Math.min(target.percent, 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+      {trend && (
+        <div className="mt-2 flex items-center gap-1">
+          <span className={`material-symbols-outlined text-[14px] ${trend.direction === 'up' ? 'text-sl-success' : 'text-sl-primary'}`}>
+            {trend.direction === 'up' ? 'trending_up' : 'trending_down'}
+          </span>
+          <span className="text-[0.65rem] text-sl-on-surface-variant">{trend.text}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function DashboardPage() {
   const [versionId] = useState<number>(1)
   const { data: kpis, isLoading, error } = useDashboardKpis(versionId)
 
   return (
     <div>
-      {/* Header */}
-      <div className="mb-10 flex items-end justify-between">
+      <header className="mb-8 flex items-end justify-between">
         <div>
           <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
-            Executive Overview
+            Dashboard
           </h1>
           <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
-            Gelir, hasar, kârlılık ve operasyonel oranlar — bütçe performans özeti
+            Gelir, hasar, kârlılık ve operasyonel oranlar — FinOpsTur performans özeti.
           </p>
         </div>
-        <select className="cursor-pointer appearance-none rounded-md bg-sl-surface-lowest px-4 py-2 pr-8 font-body text-sm font-medium text-sl-on-surface shadow-[0_12px_32px_rgba(25,28,31,0.04)] outline-none focus:ring-2 focus:ring-sl-primary/40">
-          <option>FY 2026</option>
-          <option>FY 2025</option>
-        </select>
-      </div>
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-2 rounded-md bg-sl-surface-container-high px-3 py-2 font-body text-sm font-medium text-sl-on-surface transition-colors hover:bg-sl-surface-container-highest">
+            <span className="material-symbols-outlined text-[18px]">filter_list</span>
+            Filtrele
+          </button>
+          <button className="flex items-center gap-2 rounded-md bg-gradient-to-br from-sl-primary to-sl-primary-container px-4 py-2 font-body text-sm font-medium text-white shadow-[0_4px_12px_rgba(181,3,3,0.15)] transition-all duration-200 hover:shadow-[0_8px_20px_rgba(181,3,3,0.25)] hover:brightness-110 active:scale-[0.97]">
+            <span className="material-symbols-outlined text-[18px]">download</span>
+            Rapor İndir
+          </button>
+        </div>
+      </header>
 
       {isLoading && (
         <div className="flex h-48 items-center justify-center">
@@ -61,7 +120,7 @@ export function DashboardPage() {
 
       {kpis && (
         <div className="grid grid-cols-12 gap-6">
-          {/* Hero Card — Total Revenue */}
+          {/* Hero — Toplam Gelir */}
           <div className="col-span-12 lg:col-span-4 group relative overflow-hidden rounded-xl bg-sl-surface-container-low p-8">
             <div className="absolute inset-0 bg-gradient-to-br from-sl-primary/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
             <div className="relative z-10 flex h-full flex-col justify-between">
@@ -69,180 +128,144 @@ export function DashboardPage() {
                 <span className="mb-4 block font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
                   Toplam Gelir
                 </span>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-headline text-4xl font-black tracking-tighter text-sl-on-surface">
-                    {formatCurrency(kpis.totalRevenue)}
-                  </span>
-                </div>
+                <span className="font-headline text-4xl font-black tracking-tighter text-sl-on-surface">
+                  {formatCurrency(kpis.totalRevenue)}
+                </span>
               </div>
               <div className="mt-8 flex items-center justify-between">
                 <div className="flex items-center gap-1.5 rounded-full bg-sl-tertiary-container/30 px-3 py-1.5 text-sl-tertiary">
                   <span className="material-symbols-outlined text-[16px] font-bold">trending_up</span>
-                  <span className="text-sm font-bold">Yıllık brüt prim</span>
+                  <span className="text-sm font-bold">+18,4% vs FY25</span>
                 </div>
                 <span className="material-symbols-outlined text-4xl text-sl-outline-variant/30 font-light">account_balance</span>
               </div>
             </div>
           </div>
 
-          {/* Financial Trajectory Chart */}
-          <div className="col-span-12 lg:col-span-8 rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.02)]">
-            <div className="mb-6 flex items-center justify-between">
-              <h3 className="font-headline text-lg font-bold tracking-tight text-sl-on-surface">Finansal Seyir</h3>
+          {/* KPI Row — 4 cards */}
+          <div className="col-span-12 lg:col-span-8 grid grid-cols-2 gap-4 xl:grid-cols-4">
+            <KpiMiniCard
+              label="Teknik Marj"
+              value={formatMillions(kpis.technicalMargin)}
+              sub={`Marj: ${formatPercent(kpis.technicalProfitRatio)}`}
+              target={{ value: '1.125M', percent: 82 }}
+              accent="tertiary"
+            />
+            <KpiMiniCard
+              label="EBITDA"
+              value={formatMillions(kpis.ebitda)}
+              sub={`Marj: ${formatPercent(kpis.ebitdaMargin)}`}
+              target={{ value: '395M', percent: 91 }}
+              accent="primary"
+            />
+            <KpiMiniCard
+              label="Loss Ratio"
+              value={formatPercent(kpis.lossRatio)}
+              sub="Hasar / Prim"
+              trend={{ direction: kpis.lossRatio > 0.6 ? 'down' : 'up', text: 'Benchmark: %55' }}
+              accent="warning"
+            />
+            <KpiMiniCard
+              label="Bileşik Oran"
+              value={formatPercent(kpis.combinedRatio)}
+              sub={kpis.combinedRatio < 1 ? 'Hedef altı' : 'Hedef üstü'}
+              trend={{ direction: kpis.combinedRatio < 1 ? 'up' : 'down', text: 'Hedef: %100 altı' }}
+              accent={kpis.combinedRatio < 1 ? 'success' : 'warning'}
+            />
+          </div>
+
+          {/* Gelir / Hasar / Teknik Marj trend */}
+          <div className="col-span-12 lg:col-span-8 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="-ml-2 font-headline text-base font-bold tracking-tight text-sl-on-surface">
+                Gelir / Hasar / Teknik Marj — Aylık Trend
+              </h3>
               <span className="rounded-md bg-sl-surface px-3 py-1 font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
-                Aylık
+                12 Ay
               </span>
             </div>
             <ChartErrorBoundary><RevenueClaimsChart versionId={versionId} /></ChartErrorBoundary>
           </div>
 
-          {/* Claims & Segment Row */}
-          <div className="col-span-12 lg:col-span-7 overflow-hidden rounded-xl bg-sl-surface-lowest p-0 shadow-[0_12px_32px_rgba(25,28,31,0.02)]">
-            <div className="p-8 pb-4">
-              <h3 className="font-headline text-lg font-bold tracking-tight text-sl-on-surface">Kârlılık Göstergeleri</h3>
-            </div>
-            <div className="flex flex-col">
-              {/* Teknik Kâr */}
-              <div className="group relative flex items-center justify-between bg-sl-surface-container-low/50 p-4 px-8 transition-colors hover:bg-sl-surface-container-low">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-sl-tertiary transition-all group-hover:w-1.5" />
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sl-surface text-sl-tertiary">
-                    <span className="material-symbols-outlined text-[20px]">trending_up</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-sl-on-surface">Teknik Kâr</p>
-                    <p className="mt-0.5 text-xs text-sl-on-surface-variant">Prim − hasar − gider</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-headline text-lg font-black tracking-tight text-sl-on-surface">
-                    {formatCurrency(kpis.technicalProfit)}
-                  </p>
-                </div>
-              </div>
-              {/* Net Kâr */}
-              <div className="group relative flex items-center justify-between bg-sl-surface-lowest p-4 px-8 transition-colors hover:bg-sl-surface-container-low">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-sl-tertiary opacity-0 transition-opacity group-hover:opacity-100" />
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sl-surface-container text-sl-tertiary">
-                    <span className="material-symbols-outlined text-[20px]">savings</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-sl-on-surface">Net Kâr</p>
-                    <p className="mt-0.5 text-xs text-sl-on-surface-variant">Tüm giderler sonrası</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-headline text-lg font-bold tracking-tight text-sl-on-surface">
-                    {formatCurrency(kpis.netProfit)}
-                  </p>
-                </div>
-              </div>
-              {/* EBITDA */}
-              <div className="group relative flex items-center justify-between bg-sl-surface-container-low/50 p-4 px-8 transition-colors hover:bg-sl-surface-container-low">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-sl-primary transition-all group-hover:w-1.5" />
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sl-surface text-sl-primary">
-                    <span className="material-symbols-outlined text-[20px]">monitoring</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-sl-on-surface">EBITDA</p>
-                    <p className="mt-0.5 text-xs text-sl-on-surface-variant">Faiz, amortisman öncesi</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-headline text-lg font-black tracking-tight text-sl-on-surface">
-                    {formatCurrency(kpis.ebitda)}
-                  </p>
-                  <p className="text-xs font-bold text-sl-tertiary">
-                    Marj: {formatPercent(kpis.ebitdaMargin)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Segment Distribution */}
-          <div className="col-span-12 lg:col-span-5 flex flex-col rounded-xl bg-sl-surface-container-low p-8">
-            <h3 className="mb-6 font-headline text-lg font-bold tracking-tight text-sl-on-surface">Segment Dağılımı</h3>
+          {/* Gelir Segmentasyonu donut */}
+          <div className="col-span-12 lg:col-span-4 flex flex-col rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
+            <h3 className="-ml-2 mb-4 font-headline text-base font-bold tracking-tight text-sl-on-surface">
+              Gelir Segmentasyonu
+            </h3>
             <div className="flex flex-1 flex-col justify-center">
               <ChartErrorBoundary><SegmentDonut versionId={versionId} /></ChartErrorBoundary>
             </div>
           </div>
 
-          {/* Operasyonel Oranlar — 4-sütun KPI */}
+          {/* EBITDA Bridge + LR + Gider Kırılımı — 3 equal columns */}
+          <div className="col-span-12 lg:col-span-4 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
+            <h3 className="-ml-2 mb-2 font-headline text-base font-bold tracking-tight text-sl-on-surface">
+              EBITDA Köprüsü
+            </h3>
+            <p className="mb-4 text-xs text-sl-on-surface-variant">FY25 → FY26 geçiş analizi</p>
+            <ChartErrorBoundary><EbitdaBridge /></ChartErrorBoundary>
+          </div>
+
+          <div className="col-span-12 lg:col-span-4 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
+            <h3 className="-ml-2 mb-4 font-headline text-base font-bold tracking-tight text-sl-on-surface">
+              Loss Ratio (Aylık)
+            </h3>
+            <ChartErrorBoundary><LossRatioChart versionId={versionId} /></ChartErrorBoundary>
+          </div>
+
+          <div className="col-span-12 lg:col-span-4 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
+            <h3 className="-ml-2 mb-4 font-headline text-base font-bold tracking-tight text-sl-on-surface">
+              Gider Kırılımı
+            </h3>
+            <ChartErrorBoundary><ExpensePie versionId={versionId} /></ChartErrorBoundary>
+          </div>
+
+          {/* Service Lines + Critical Alerts */}
+          <div className="col-span-12 lg:col-span-7">
+            <ServiceLinePerformance />
+          </div>
+          <div className="col-span-12 lg:col-span-5">
+            <CriticalAlerts />
+          </div>
+
+          {/* Operasyonel Oranlar */}
           <div className="col-span-12">
-            <h2 className="mb-6 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
+            <h2 className="-ml-2 mb-5 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
               Operasyonel Oranlar
             </h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <KpiCard
-                title="Hasar Prim Oranı"
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <KpiMiniCard
+                label="Hasar Prim Oranı"
                 value={formatPercent(kpis.lossRatio)}
-                icon="analytics"
-                trend={kpis.lossRatio > 0 ? (kpis.lossRatio > 0.7 ? 'down' : 'up') : undefined}
+                trend={{ direction: kpis.lossRatio > 0.6 ? 'down' : 'up', text: 'vs FY25' }}
+                accent="warning"
               />
-              <KpiCard
-                title="Gider Oranı"
+              <KpiMiniCard
+                label="Gider Oranı"
                 value={formatPercent(kpis.expenseRatio)}
-                icon="receipt_long"
+                accent="tertiary"
               />
-              <KpiCard
-                title="Bileşik Oran"
+              <KpiMiniCard
+                label="Bileşik Oran"
                 value={formatPercent(kpis.combinedRatio)}
-                icon="donut_large"
-                trend={kpis.combinedRatio > 0 ? (kpis.combinedRatio < 1 ? 'up' : 'down') : undefined}
+                trend={{ direction: kpis.combinedRatio < 1 ? 'up' : 'down', text: kpis.combinedRatio < 1 ? 'Hedef altı' : 'Hedef üstü' }}
+                accent={kpis.combinedRatio < 1 ? 'success' : 'primary'}
               />
-              <KpiCard
-                title="Kâr Marjı"
+              <KpiMiniCard
+                label="Kâr Marjı"
                 value={formatPercent(kpis.profitRatio)}
-                icon="percent"
-                trend={kpis.profitRatio > 0.1 ? 'up' : kpis.profitRatio < 0 ? 'down' : undefined}
+                trend={{ direction: kpis.profitRatio > 0.1 ? 'up' : 'down', text: 'Net kâr / gelir' }}
+                accent={kpis.profitRatio > 0.1 ? 'success' : 'warning'}
               />
             </div>
           </div>
 
-          {/* Detay Grafikler */}
-          <div className="col-span-12">
-            <h2 className="mb-6 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
-              Detay Grafikler
-            </h2>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.02)]">
-                <h3 className="mb-4 font-headline text-base font-semibold text-sl-on-surface">Hasar Prim Oranı Trendi</h3>
-                <ChartErrorBoundary><LossRatioChart versionId={versionId} /></ChartErrorBoundary>
-              </div>
-              <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.02)]">
-                <h3 className="mb-4 font-headline text-base font-semibold text-sl-on-surface">Bileşik Oran</h3>
-                <ChartErrorBoundary><CombinedRatioChart versionId={versionId} /></ChartErrorBoundary>
-              </div>
-              <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.02)]">
-                <h3 className="mb-4 font-headline text-base font-semibold text-sl-on-surface">Gider Dağılımı</h3>
-                <ChartErrorBoundary><ExpensePie versionId={versionId} /></ChartErrorBoundary>
-              </div>
-              <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.02)]">
-                <h3 className="mb-4 font-headline text-base font-semibold text-sl-on-surface">En Büyük Müşteriler</h3>
-                <ChartErrorBoundary><TopCustomersChart versionId={versionId} /></ChartErrorBoundary>
-              </div>
-              <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.02)]">
-                <h3 className="mb-4 font-headline text-base font-semibold text-sl-on-surface">Kümülatif Gelir</h3>
-                <ChartErrorBoundary><CumulativeAreaChart versionId={versionId} /></ChartErrorBoundary>
-              </div>
-              <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.02)]">
-                <h3 className="mb-4 font-headline text-base font-semibold text-sl-on-surface">EBITDA Trendi</h3>
-                <ChartErrorBoundary><EbitdaChart versionId={versionId} /></ChartErrorBoundary>
-              </div>
-            </div>
-          </div>
-
-          {/* Aylık Özet */}
-          <div className="col-span-12">
-            <h2 className="mb-6 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
+          {/* Aylık Özet Tablo */}
+          <div className="col-span-12 rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)]">
+            <h3 className="-ml-2 mb-4 font-headline text-base font-bold tracking-tight text-sl-on-surface">
               Aylık Özet
-            </h2>
-            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.02)]">
-              <ChartErrorBoundary><MonthlySummaryTable versionId={versionId} /></ChartErrorBoundary>
-            </div>
+            </h3>
+            <ChartErrorBoundary><MonthlySummaryTable versionId={versionId} /></ChartErrorBoundary>
           </div>
         </div>
       )}

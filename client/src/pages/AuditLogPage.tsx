@@ -49,13 +49,13 @@ export function AuditLogPage() {
   }, [])
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-6">
       <div>
-        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
-          Denetim Kayitlari
+        <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
+          Audit Log
         </h1>
-        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
-          Sistem uzerindeki tum degisiklikleri inceleyin.
+        <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
+          Sistem üzerindeki tüm değişiklikleri inceleyin — 7 yıl saklama süresi.
         </p>
       </div>
 
@@ -117,7 +117,7 @@ export function AuditLogPage() {
       {data && data.totalCount > PAGE_SIZE && (
         <div className="flex items-center justify-between rounded-xl bg-sl-surface-lowest px-4 py-3 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
           <p className="font-body text-sm text-sl-on-surface-variant">
-            Toplam <span className="font-medium text-sl-on-surface">{data.totalCount}</span> kayit
+            Toplam <span className="font-medium text-sl-on-surface">{data.totalCount}</span> kayıt
           </p>
           <div className="flex gap-2">
             <button

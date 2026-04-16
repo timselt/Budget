@@ -31,7 +31,7 @@ export function KpiCard({ title, value, subtitle, trend, icon, variant = 'defaul
   if (variant === 'gradient') {
     return (
       <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-sl-primary to-sl-primary-container p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
-        <p className="font-label text-xs font-bold uppercase tracking-widest text-white/80">
+        <p className="-ml-2 font-label text-xs font-bold uppercase tracking-widest text-white/80">
           {title}
         </p>
         <p className="mt-3 font-headline text-4xl font-black tracking-tighter text-white">
@@ -54,7 +54,7 @@ export function KpiCard({ title, value, subtitle, trend, icon, variant = 'defaul
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${config.accent}`} />
 
       <div className="flex items-start justify-between">
-        <p className="font-label text-xs font-bold uppercase tracking-widest text-sl-on-surface-variant">
+        <p className="-ml-2 font-label text-xs font-bold uppercase tracking-widest text-sl-on-surface-variant">
           {title}
         </p>
         {icon && (

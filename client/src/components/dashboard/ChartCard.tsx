@@ -7,9 +7,9 @@ interface ChartCardProps {
 export function ChartCard({ title, children, className = '' }: ChartCardProps) {
   return (
     <div
-      className={`rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest p-5 ${className}`}
+      className={`rounded-xl bg-sl-surface-lowest p-6 shadow-[var(--sl-shadow-ambient)] transition-shadow hover:shadow-[var(--sl-shadow-hover)] ${className}`}
     >
-      <h3 className="mb-4 font-display text-base font-semibold text-sl-on-surface">
+      <h3 className="-ml-2 mb-4 font-display text-base font-semibold text-sl-on-surface">
         {title}
       </h3>
       {children}

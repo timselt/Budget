@@ -30,6 +30,15 @@
   --color-sl-surface-tint: var(--sl-surface-tint);
   --color-sl-ghost-border: var(--sl-ghost-border);
   --color-sl-glass-bg: var(--sl-glass-bg);
+  --color-sl-success: var(--sl-success);
+  --color-sl-success-container: var(--sl-success-container);
+  --color-sl-on-success-container: var(--sl-on-success-container);
+  --color-sl-warning: var(--sl-warning);
+  --color-sl-warning-container: var(--sl-warning-container);
+  --color-sl-on-warning-container: var(--sl-on-warning-container);
+  --color-sl-outline: var(--sl-outline);
+  --color-sl-inverse-surface: var(--sl-inverse-surface);
+  --color-sl-inverse-on-surface: var(--sl-inverse-on-surface);
 
   /* --- Legacy palette (kept for existing components) --- */
   --color-primary-50: oklch(97% 0.02 250);
@@ -49,8 +58,8 @@
   --color-text: var(--sl-on-surface);
   --color-text-muted: var(--sl-on-surface-variant);
 
-  --color-success: oklch(65% 0.2 145);
-  --color-warning: oklch(75% 0.18 80);
+  --color-success: var(--sl-success);
+  --color-warning: var(--sl-warning);
   --color-danger: var(--sl-error);
 
   /* --- Font Families --- */

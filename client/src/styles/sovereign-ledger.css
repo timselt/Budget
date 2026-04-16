@@ -7,9 +7,9 @@
   --sl-surface-bright: #f7f9fe;
   --sl-surface-container-low: #f2f4f8;
   --sl-surface-container: #eceef2;
-  --sl-surface-container-high: #e2e4e8;
-  --sl-surface-container-highest: #d6d8dc;
-  --sl-on-surface: #1b1b1f;
+  --sl-surface-container-high: #e6e8ed;
+  --sl-surface-container-highest: #e0e2e7;
+  --sl-on-surface: #191c1f;
   --sl-on-surface-variant: #5c403b;
   --sl-primary: #b50303;
   --sl-primary-container: #da291c;
@@ -25,6 +25,15 @@
   --sl-on-tertiary-container: #001d36;
   --sl-outline-variant: #e6bdb7;
   --sl-surface-tint: #b50303;
+  --sl-success: #006d3e;
+  --sl-success-container: #b8f2c6;
+  --sl-on-success-container: #002110;
+  --sl-warning: #8a5300;
+  --sl-warning-container: #ffddb3;
+  --sl-on-warning-container: #2c1600;
+  --sl-outline: #916f6a;
+  --sl-inverse-surface: #2d3134;
+  --sl-inverse-on-surface: #eff1f5;
 
   /* Typography — Inter only */
   --font-display: 'Inter', system-ui, sans-serif;

@@ -89,7 +89,7 @@ export function WaterfallChart({ data }: WaterfallChartProps) {
   }, [data])
 
   return (
-    <div className="rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
+    <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
       <h3 className="mb-4 text-sm font-semibold text-text-muted">
         Aylik Gelir Sapma Selalesi (TRY)
       </h3>

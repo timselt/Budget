@@ -36,7 +36,7 @@ export function AuditLogTable({ items, isLoading }: AuditLogTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-sl-outline-variant/15">
+    <div className="overflow-x-auto rounded-xl bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-sl-outline-variant/15 bg-surface-alt text-left">

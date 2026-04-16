@@ -59,12 +59,12 @@ export function VariancePage() {
 
   return (
     <div>
-      <header className="mb-12">
-        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
-          Varyans Analizi
+      <header className="mb-8">
+        <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
+          Sapma Analizi
         </h1>
-        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
-          Butce ve gerceklesen karsilastirmasi
+        <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
+          Bütçe ve gerçekleşen karşılaştırması — segment, ürün ve müşteri bazında sapma takibi.
         </p>
       </header>
 
@@ -84,49 +84,49 @@ export function VariancePage() {
 
       {summary && (
         <>
-          <section className="mb-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
-              <p className="font-body text-sm font-medium text-sl-on-surface-variant">
-                Gelir Sapmasi
+          <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
+              <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
+                Gelir Sapması
               </p>
-              <p className={`mt-1 font-headline text-2xl font-semibold tabular-nums tracking-tight ${totalRevenueVariance >= 0 ? 'text-sl-on-tertiary-container' : 'text-sl-error'}`}>
+              <p className={`mt-2 font-headline text-2xl font-black tabular-nums tracking-tighter ${totalRevenueVariance >= 0 ? 'text-sl-success' : 'text-sl-error'}`}>
                 {formatCurrency(totalRevenueVariance)}
               </p>
-              <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">
+              <p className="mt-1 text-xs font-bold text-sl-on-surface-variant">
                 {formatPercent(totalRevenueVariancePct)}
               </p>
             </div>
 
-            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
-              <p className="font-body text-sm font-medium text-sl-on-surface-variant">
-                Hasar Sapmasi
+            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
+              <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
+                Hasar Sapması
               </p>
-              <p className={`mt-1 font-headline text-2xl font-semibold tabular-nums tracking-tight ${totalClaimsVariance <= 0 ? 'text-sl-on-tertiary-container' : 'text-sl-error'}`}>
+              <p className={`mt-2 font-headline text-2xl font-black tabular-nums tracking-tighter ${totalClaimsVariance <= 0 ? 'text-sl-success' : 'text-sl-error'}`}>
                 {formatCurrency(totalClaimsVariance)}
               </p>
-              <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">
+              <p className="mt-1 text-xs font-bold text-sl-on-surface-variant">
                 {formatPercent(totalClaimsVariancePct)}
               </p>
             </div>
 
-            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
-              <p className="font-body text-sm font-medium text-sl-on-surface-variant">
-                Kritik Uyari
+            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
+              <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
+                Kritik Uyarı
               </p>
-              <p className="mt-1 font-headline text-2xl font-semibold tabular-nums tracking-tight text-sl-error">
+              <p className="mt-2 font-headline text-2xl font-black tabular-nums tracking-tighter text-sl-error">
                 {criticalCount}
               </p>
-              <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">musteri</p>
+              <p className="mt-1 text-xs text-sl-on-surface-variant">müşteri</p>
             </div>
 
-            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
-              <p className="font-body text-sm font-medium text-sl-on-surface-variant">
-                Yuksek Uyari
+            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
+              <p className="font-label text-[0.65rem] font-bold uppercase tracking-[0.05em] text-sl-on-surface-variant">
+                Yüksek Uyarı
               </p>
-              <p className="mt-1 font-headline text-2xl font-semibold tabular-nums tracking-tight text-sl-secondary">
+              <p className="mt-2 font-headline text-2xl font-black tabular-nums tracking-tighter text-sl-warning">
                 {highCount}
               </p>
-              <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">musteri</p>
+              <p className="mt-1 text-xs text-sl-on-surface-variant">müşteri</p>
             </div>
           </section>
 

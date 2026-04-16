@@ -73,7 +73,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-lg bg-gradient-to-br from-sl-primary to-sl-primary-container px-4 py-3 font-label text-sm font-bold uppercase tracking-[0.05em] text-white shadow-[0_4px_12px_rgba(181,3,3,0.2)] transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="w-full rounded-lg bg-gradient-to-br from-sl-primary to-sl-primary-container px-4 py-3 font-label text-sm font-bold uppercase tracking-[0.05em] text-white shadow-[0_4px_12px_rgba(181,3,3,0.15)] transition-all duration-200 hover:shadow-[0_8px_20px_rgba(181,3,3,0.25)] hover:brightness-110 active:scale-[0.97] disabled:opacity-50"
             >
               {isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
             </button>

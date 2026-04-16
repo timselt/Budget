@@ -78,17 +78,17 @@ export function ApprovalsPage() {
 
   return (
     <div>
-      <header className="mb-12">
-        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
-          Bekleyen Onaylar
+      <header className="mb-8">
+        <h1 className="font-headline text-3xl font-extrabold tracking-[-0.02em] text-sl-on-surface">
+          Onay Akışı
         </h1>
-        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
-          Onay bekleyen bütçe versiyonlarını inceleyin.
+        <p className="mt-2 max-w-2xl font-body text-sm text-sl-on-surface-variant">
+          Onay bekleyen bütçe versiyonlarını inceleyin ve işlem yapın.
         </p>
       </header>
 
       {/* Year selector */}
-      <div className="mb-12">
+      <div className="mb-6">
         {yearsLoading && (
           <span className="font-body text-sm text-sl-on-surface-variant">
             Yıllar yükleniyor...
@@ -133,7 +133,7 @@ export function ApprovalsPage() {
 
       {/* Pending approvals table */}
       {pendingVersions.length > 0 && (
-        <div className="overflow-hidden rounded-xl bg-sl-surface-lowest shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
+        <div className="overflow-hidden rounded-xl bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
           <table className="w-full text-left font-body text-sm">
             <thead>
               <tr className="bg-sl-surface-low">

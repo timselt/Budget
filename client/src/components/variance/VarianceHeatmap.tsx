@@ -43,14 +43,14 @@ export function VarianceHeatmap({ data }: VarianceHeatmapProps) {
 
   if (grouped.length === 0) {
     return (
-      <div className="rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest p-8 text-center text-text-muted shadow-[var(--sl-shadow-sm)]">
+      <div className="rounded-xl bg-sl-surface-lowest p-8 text-center text-text-muted shadow-[var(--sl-shadow-sm)]">
         Isitma haritasi verisi bulunamadi.
       </div>
     )
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
+    <div className="overflow-x-auto rounded-xl bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-sl-outline-variant/15 bg-slate-50/80">

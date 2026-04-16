@@ -1,29 +1,24 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthGuard } from './components/layout/AuthGuard'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoginPage } from './pages/LoginPage'
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const BudgetEntryPage = lazy(() => import('./pages/BudgetEntryPage').then(m => ({ default: m.BudgetEntryPage })))
-const BudgetVersionsPage = lazy(() => import('./pages/BudgetVersionsPage').then(m => ({ default: m.BudgetVersionsPage })))
-const CustomerListPage = lazy(() => import('./pages/CustomerListPage').then(m => ({ default: m.CustomerListPage })))
-const CustomerDetailPage = lazy(() => import('./pages/CustomerDetailPage').then(m => ({ default: m.CustomerDetailPage })))
-const ExpenseEntryPage = lazy(() => import('./pages/ExpenseEntryPage').then(m => ({ default: m.ExpenseEntryPage })))
+const ActualsPage = lazy(() => import('./pages/ActualsPage').then(m => ({ default: m.ActualsPage })))
+const ForecastPage = lazy(() => import('./pages/ForecastPage').then(m => ({ default: m.ForecastPage })))
 const VariancePage = lazy(() => import('./pages/VariancePage').then(m => ({ default: m.VariancePage })))
-const ScenarioPage = lazy(() => import('./pages/ScenarioPage').then(m => ({ default: m.ScenarioPage })))
-const FxRatesPage = lazy(() => import('./pages/FxRatesPage').then(m => ({ default: m.FxRatesPage })))
+const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })))
+const MasterDataPage = lazy(() => import('./pages/MasterDataPage').then(m => ({ default: m.MasterDataPage })))
+const ConsolidationPage = lazy(() => import('./pages/ConsolidationPage').then(m => ({ default: m.ConsolidationPage })))
 const ApprovalsPage = lazy(() => import('./pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })))
 const AuditLogPage = lazy(() => import('./pages/AuditLogPage').then(m => ({ default: m.AuditLogPage })))
-const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })))
-const CollectionDashboardPage = lazy(() => import('./pages/CollectionDashboardPage').then(m => ({ default: m.CollectionDashboardPage })))
-const CollectionSegmentPage = lazy(() => import('./pages/CollectionSegmentPage').then(m => ({ default: m.CollectionSegmentPage })))
-const CollectionImportPage = lazy(() => import('./pages/CollectionImportPage').then(m => ({ default: m.CollectionImportPage })))
 
 function PageLoader() {
   return (
     <div className="flex h-48 items-center justify-center">
-      <p className="text-sm text-text-muted">Yükleniyor...</p>
+      <p className="text-sm text-sl-on-surface-variant">Yükleniyor...</p>
     </div>
   )
 }
@@ -41,20 +36,28 @@ export function App() {
           }
         >
           <Route index element={<DashboardPage />} />
-          <Route path="budget" element={<BudgetEntryPage />} />
-          <Route path="budget/versions" element={<BudgetVersionsPage />} />
-          <Route path="customers" element={<CustomerListPage />} />
-          <Route path="customers/:id" element={<CustomerDetailPage />} />
-          <Route path="expenses" element={<ExpenseEntryPage />} />
+          <Route path="budget/planning" element={<BudgetEntryPage />} />
+          <Route path="actuals" element={<ActualsPage />} />
+          <Route path="forecast" element={<ForecastPage />} />
           <Route path="variance" element={<VariancePage />} />
-          <Route path="scenarios" element={<ScenarioPage />} />
-          <Route path="fx-rates" element={<FxRatesPage />} />
+          <Route path="reports" element={<ReportsPage />} />
+          <Route path="master-data" element={<MasterDataPage />} />
+          <Route path="consolidation" element={<ConsolidationPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
-          <Route path="tahsilat" element={<CollectionDashboardPage />} />
-          <Route path="tahsilat/segment/:id" element={<CollectionSegmentPage />} />
-          <Route path="tahsilat/import" element={<CollectionImportPage />} />
-          <Route path="admin" element={<AdminPage />} />
-          <Route path="admin/audit" element={<AuditLogPage />} />
+          <Route path="audit" element={<AuditLogPage />} />
+
+          {/* Eski route'lardan yönlendirmeler */}
+          <Route path="budget" element={<Navigate to="/budget/planning" replace />} />
+          <Route path="budget/versions" element={<Navigate to="/budget/planning" replace />} />
+          <Route path="customers" element={<Navigate to="/" replace />} />
+          <Route path="customers/:id" element={<Navigate to="/" replace />} />
+          <Route path="expenses" element={<Navigate to="/budget/planning" replace />} />
+          <Route path="scenarios" element={<Navigate to="/variance" replace />} />
+          <Route path="fx-rates" element={<Navigate to="/master-data" replace />} />
+          <Route path="tahsilat" element={<Navigate to="/" replace />} />
+          <Route path="tahsilat/*" element={<Navigate to="/" replace />} />
+          <Route path="admin" element={<Navigate to="/master-data" replace />} />
+          <Route path="admin/audit" element={<Navigate to="/audit" replace />} />
         </Route>
       </Routes>
     </Suspense>
