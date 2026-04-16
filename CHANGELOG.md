@@ -4,6 +4,48 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### S7 — Frontend İskeleti: React + Vite + Tailwind (2026-04-16)
+
+#### Eklendi
+
+- **Vite + React 19 + TypeScript scaffold:**
+  - `vite.config.ts` — Tailwind CSS 4 plugin, API proxy (3000→5000)
+  - `tsconfig.json` strict mode
+
+- **Tailwind CSS 4 tema sistemi (`index.css`):**
+  - oklch renk paleti: primary (indigo), surface, border, text, success/warning/danger
+  - CSS custom properties ile tutarlı tasarım token'ları
+
+- **Routing + Layout:**
+  - `App.tsx` — React Router v7 route tanımları
+  - `AppLayout.tsx` — Sidebar + Outlet layout wrapper
+  - `AuthGuard.tsx` — isAuthenticated kontrolü, login redirect
+  - `Sidebar.tsx` — NavLink tabanlı navigasyon (Dashboard, Bütçe, Müşteriler, Giderler, Döviz Kurları)
+
+- **Auth entegrasyonu:**
+  - `stores/auth.ts` — Zustand store: login (OpenIddict password grant), logout, fetchUser (userinfo)
+  - `lib/api.ts` — Axios instance: bearer token interceptor, 401 refresh token akışı
+
+- **TanStack Query setup:**
+  - `lib/query.ts` — QueryClient (staleTime 30s, retry 1)
+  - `main.tsx` — QueryClientProvider + BrowserRouter provider zinciri
+
+- **Login sayfası (`LoginPage.tsx`):**
+  - E-posta/şifre formu, hata mesajı, yükleniyor state
+
+- **Dashboard sayfası (`DashboardPage.tsx`):**
+  - KPI kartları: 3 bölüm (Gelir & Hasar, Kârlılık, Oranlar), 12 KPI
+  - `KpiCard.tsx` — Trend göstergeli yeniden kullanılabilir kart
+  - `useDashboardKpis.ts` — TanStack Query hook
+
+- **Placeholder sayfaları:** Bütçe, Müşteriler, Giderler, Döviz Kurları
+
+#### Build
+- JS: 100.75kb gzipped (budget: <300kb) ✓
+- CSS: 3.69kb gzipped (budget: <50kb) ✓
+
+---
+
 ### S6 — API Hardening: Exception Handler, Validation Pipeline, TCMB (2026-04-16)
 
 #### Eklendi
