@@ -72,10 +72,10 @@ export function BudgetEntryPage() {
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+          <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
             Bütçe Girişi
           </h1>
-          <p className="mt-0.5 font-body text-sm text-sl-on-surface-variant">
+          <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
             Müşteri bazlı aylık bütçe verilerini girin ve kaydedin.
           </p>
         </div>

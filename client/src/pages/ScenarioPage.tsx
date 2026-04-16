@@ -54,11 +54,11 @@ export function ScenarioPage() {
 
   return (
     <div>
-      <header className="mb-10">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+      <header className="mb-12">
+        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
           Senaryo Simulasyonu
         </h1>
-        <p className="font-body text-sm text-sl-on-surface-variant">
+        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
           Gelir, hasar ve gider parametrelerini degistirerek farkli senaryolari karsilastirin.
         </p>
       </header>
@@ -79,8 +79,8 @@ export function ScenarioPage() {
           )}
 
           {scenarioList.length > 0 && (
-            <div className="rounded-xl bg-sl-surface-lowest p-4 shadow-[var(--sl-shadow-sm)]">
-              <h3 className="mb-3 font-display text-base font-semibold tracking-tight text-sl-on-surface">
+            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
+              <h3 className="mb-3 font-headline text-base font-semibold tracking-tight text-sl-on-surface">
                 Senaryolar ({scenarioList.length}/5)
               </h3>
               <ul className="space-y-2">
@@ -176,7 +176,7 @@ export function ScenarioPage() {
           )}
 
           {isCompareMode && comparisonData && (
-            <div className="overflow-x-auto rounded-xl bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
+            <div className="overflow-x-auto rounded-xl bg-sl-surface-lowest shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
               <table className="w-full font-body text-sm">
                 <thead>
                   <tr className="bg-sl-surface-low">

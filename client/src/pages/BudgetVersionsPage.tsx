@@ -73,17 +73,17 @@ export function BudgetVersionsPage() {
 
   return (
     <div>
-      <header className="mb-10">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+      <header className="mb-12">
+        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
           Bütçe Versiyonları
         </h1>
-        <p className="font-body text-sm text-sl-on-surface-variant">
+        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
           Versiyon oluşturun, onay akışını yönetin.
         </p>
       </header>
 
       {/* Year selector + create */}
-      <div className="mb-8 flex flex-wrap items-center gap-3">
+      <div className="mb-12 flex flex-wrap items-center gap-3">
         {yearsLoading && (
           <span className="font-body text-sm text-sl-on-surface-variant">
             Yıllar yükleniyor...
@@ -217,8 +217,8 @@ export function BudgetVersionsPage() {
         {/* Detail sidebar */}
         {versionDetail && (
           <aside className="hidden w-80 shrink-0 lg:block">
-            <div className="sticky top-6 rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-ambient)]">
-              <h2 className="font-display text-sm font-semibold text-sl-on-surface">
+            <div className="sticky top-6 rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
+              <h2 className="font-headline text-xl font-bold tracking-tight text-sl-on-surface">
                 Onay Geçmişi
               </h2>
               <p className="mb-4 font-body text-xs text-sl-on-surface-variant">

@@ -49,12 +49,12 @@ export function AuditLogPage() {
   }, [])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
           Denetim Kayitlari
         </h1>
-        <p className="mt-1 font-body text-sm text-sl-on-surface-variant">
+        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
           Sistem uzerindeki tum degisiklikleri inceleyin.
         </p>
       </div>
@@ -115,7 +115,7 @@ export function AuditLogPage() {
       <AuditLogTable items={data?.items ?? []} isLoading={isLoading} />
 
       {data && data.totalCount > PAGE_SIZE && (
-        <div className="flex items-center justify-between rounded-xl bg-sl-surface-lowest px-4 py-3 shadow-[var(--sl-shadow-sm)]">
+        <div className="flex items-center justify-between rounded-xl bg-sl-surface-lowest px-4 py-3 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
           <p className="font-body text-sm text-sl-on-surface-variant">
             Toplam <span className="font-medium text-sl-on-surface">{data.totalCount}</span> kayit
           </p>

@@ -68,11 +68,11 @@ export function CustomerListPage() {
 
   return (
     <div>
-      <header className="mb-10">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+      <header className="mb-12">
+        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
           Müşteri Analizi
         </h1>
-        <p className="font-body text-sm text-sl-on-surface-variant">
+        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
           Kârlılık sıralaması, segment karşılaştırma ve yoğunlaşma analizi
         </p>
       </header>
@@ -95,7 +95,7 @@ export function CustomerListPage() {
         <>
           {/* Profitability Table */}
           <section className="mb-12">
-            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+            <h2 className="mb-4 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
               Kârlılık Sıralaması
             </h2>
             <CustomerTable customers={customers} segments={segmentNames} />

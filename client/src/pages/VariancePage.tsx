@@ -59,17 +59,17 @@ export function VariancePage() {
 
   return (
     <div>
-      <header className="mb-10">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+      <header className="mb-12">
+        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
           Varyans Analizi
         </h1>
-        <p className="font-body text-sm text-sl-on-surface-variant">
+        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
           Butce ve gerceklesen karsilastirmasi
         </p>
       </header>
 
       {summaryError && (
-        <div className="mb-8 rounded-lg bg-sl-error-container/30 p-4">
+        <div className="mb-12 rounded-lg bg-sl-error-container/30 p-4">
           <p className="font-body text-sm text-sl-error">
             Varyans verileri yuklenemedi.
           </p>
@@ -84,12 +84,12 @@ export function VariancePage() {
 
       {summary && (
         <>
-          <section className="mb-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
+          <section className="mb-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
               <p className="font-body text-sm font-medium text-sl-on-surface-variant">
                 Gelir Sapmasi
               </p>
-              <p className={`mt-1 font-display text-2xl font-semibold tabular-nums tracking-tight ${totalRevenueVariance >= 0 ? 'text-sl-on-tertiary-container' : 'text-sl-error'}`}>
+              <p className={`mt-1 font-headline text-2xl font-semibold tabular-nums tracking-tight ${totalRevenueVariance >= 0 ? 'text-sl-on-tertiary-container' : 'text-sl-error'}`}>
                 {formatCurrency(totalRevenueVariance)}
               </p>
               <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">
@@ -97,11 +97,11 @@ export function VariancePage() {
               </p>
             </div>
 
-            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
+            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
               <p className="font-body text-sm font-medium text-sl-on-surface-variant">
                 Hasar Sapmasi
               </p>
-              <p className={`mt-1 font-display text-2xl font-semibold tabular-nums tracking-tight ${totalClaimsVariance <= 0 ? 'text-sl-on-tertiary-container' : 'text-sl-error'}`}>
+              <p className={`mt-1 font-headline text-2xl font-semibold tabular-nums tracking-tight ${totalClaimsVariance <= 0 ? 'text-sl-on-tertiary-container' : 'text-sl-error'}`}>
                 {formatCurrency(totalClaimsVariance)}
               </p>
               <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">
@@ -109,21 +109,21 @@ export function VariancePage() {
               </p>
             </div>
 
-            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
+            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
               <p className="font-body text-sm font-medium text-sl-on-surface-variant">
                 Kritik Uyari
               </p>
-              <p className="mt-1 font-display text-2xl font-semibold tabular-nums tracking-tight text-sl-error">
+              <p className="mt-1 font-headline text-2xl font-semibold tabular-nums tracking-tight text-sl-error">
                 {criticalCount}
               </p>
               <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">musteri</p>
             </div>
 
-            <div className="rounded-xl bg-sl-surface-lowest p-5 shadow-[var(--sl-shadow-sm)]">
+            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
               <p className="font-body text-sm font-medium text-sl-on-surface-variant">
                 Yuksek Uyari
               </p>
-              <p className="mt-1 font-display text-2xl font-semibold tabular-nums tracking-tight text-sl-secondary">
+              <p className="mt-1 font-headline text-2xl font-semibold tabular-nums tracking-tight text-sl-secondary">
                 {highCount}
               </p>
               <p className="mt-0.5 font-body text-xs text-sl-on-surface-variant">musteri</p>

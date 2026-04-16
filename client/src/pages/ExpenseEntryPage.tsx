@@ -136,12 +136,12 @@ export function ExpenseEntryPage() {
 
   return (
     <div>
-      <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+          <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
             Gider Girisi
           </h1>
-          <p className="mt-1 font-body text-sm text-sl-on-surface-variant">
+          <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
             Aylik gider kalemlerini girin ve ozel kalemleri tanimlayin.
           </p>
         </div>
@@ -169,7 +169,7 @@ export function ExpenseEntryPage() {
       </header>
 
       {selectedVersionId === null ? (
-        <div className="flex h-48 items-center justify-center rounded-xl border border-sl-outline-variant/15 bg-sl-surface-lowest">
+        <div className="flex h-48 items-center justify-center rounded-xl bg-sl-surface-lowest shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
           <p className="font-body text-sm text-sl-on-surface-variant">
             Devam etmek icin bir butce versiyonu secin.
           </p>

@@ -17,12 +17,12 @@ export function AdminPage() {
   }, [])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       <div>
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
           Yonetim Paneli
         </h1>
-        <p className="mt-1 font-body text-sm text-sl-on-surface-variant">
+        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
           Kullanici ve sirket yonetimi.
         </p>
       </div>

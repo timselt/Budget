@@ -7,6 +7,10 @@
   --color-sl-surface-low: var(--sl-surface-low);
   --color-sl-surface-lowest: var(--sl-surface-lowest);
   --color-sl-surface-high: var(--sl-surface-high);
+  --color-sl-surface-container-low: var(--sl-surface-container-low);
+  --color-sl-surface-container: var(--sl-surface-container);
+  --color-sl-surface-container-high: var(--sl-surface-container-high);
+  --color-sl-surface-container-highest: var(--sl-surface-container-highest);
   --color-sl-on-surface: var(--sl-on-surface);
   --color-sl-on-surface-variant: var(--sl-on-surface-variant);
   --color-sl-primary: var(--sl-primary);
@@ -20,6 +24,7 @@
   --color-sl-error: var(--sl-error);
   --color-sl-error-container: var(--sl-error-container);
   --color-sl-tertiary: var(--sl-tertiary);
+  --color-sl-tertiary-container: var(--sl-tertiary-container);
   --color-sl-on-tertiary-container: var(--sl-on-tertiary-container);
   --color-sl-outline-variant: var(--sl-outline-variant);
   --color-sl-surface-tint: var(--sl-surface-tint);
@@ -50,6 +55,8 @@
 
   /* --- Font Families --- */
   --font-display: var(--font-display);
+  --font-headline: var(--font-headline);
+  --font-label: var(--font-label);
   --font-body: var(--font-body);
   --font-sans: var(--font-body);
 
@@ -57,11 +64,13 @@
   --radius-sm: var(--sl-radius-sm);
   --radius-md: var(--sl-radius-md);
   --radius-lg: var(--sl-radius-lg);
+  --radius-xl: var(--sl-radius-xl);
   --radius-full: var(--sl-radius-full);
 
   /* --- Box Shadows --- */
   --shadow-ambient: var(--sl-shadow-ambient);
   --shadow-sm: var(--sl-shadow-sm);
+  --shadow-hover: var(--sl-shadow-hover);
 }
 
 body {

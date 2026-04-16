@@ -5,6 +5,10 @@
   --sl-surface-lowest: #ffffff;
   --sl-surface-high: #eceef2;
   --sl-surface-bright: #f7f9fe;
+  --sl-surface-container-low: #f2f4f8;
+  --sl-surface-container: #eceef2;
+  --sl-surface-container-high: #e2e4e8;
+  --sl-surface-container-highest: #d6d8dc;
   --sl-on-surface: #1b1b1f;
   --sl-on-surface-variant: #5c403b;
   --sl-primary: #b50303;
@@ -17,13 +21,16 @@
   --sl-error: #ba1a1a;
   --sl-error-container: #ffdad6;
   --sl-tertiary: #005b9f;
-  --sl-on-tertiary-container: #d1e4ff;
+  --sl-tertiary-container: #d1e4ff;
+  --sl-on-tertiary-container: #001d36;
   --sl-outline-variant: #e6bdb7;
   --sl-surface-tint: #b50303;
 
   /* Typography — Inter only */
   --font-display: 'Inter', system-ui, sans-serif;
   --font-body: 'Inter', system-ui, sans-serif;
+  --font-headline: 'Inter', system-ui, sans-serif;
+  --font-label: 'Inter', system-ui, sans-serif;
 
   /* Ghost Border (outline_variant at 15% opacity) */
   --sl-ghost-border: rgba(230, 189, 183, 0.15);
@@ -35,6 +42,7 @@
   /* Ambient Shadow — on_surface at 4% alpha, 32px blur, 12px Y-offset */
   --sl-shadow-ambient: 0 12px 32px 0 rgba(27, 27, 31, 0.04);
   --sl-shadow-sm: 0 4px 16px 0 rgba(27, 27, 31, 0.03);
+  --sl-shadow-hover: 0 12px 32px 0 rgba(27, 27, 31, 0.06);
 
   /* Spacing */
   --sl-gap-section: 48px;
@@ -45,5 +53,14 @@
   --sl-radius-sm: 0.125rem;
   --sl-radius-md: 0.375rem;
   --sl-radius-lg: 0.5rem;
+  --sl-radius-xl: 0.75rem;
   --sl-radius-full: 9999px;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }

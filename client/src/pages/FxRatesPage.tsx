@@ -62,16 +62,16 @@ export function FxRatesPage() {
 
   return (
     <div>
-      <header className="mb-10">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+      <header className="mb-12">
+        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
           Döviz Kurları
         </h1>
-        <p className="font-body text-sm text-sl-on-surface-variant">
+        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
           TCMB kurları ve manuel giriş
         </p>
       </header>
 
-      <div className="mb-8 flex flex-wrap items-end gap-4">
+      <div className="mb-12 flex flex-wrap items-end gap-4">
         <div>
           <label htmlFor="fx-filter-date" className="mb-1 block font-body text-xs font-medium text-sl-on-surface-variant">
             Tarih
@@ -133,7 +133,7 @@ export function FxRatesPage() {
       {isLoading ? (
         <p className="font-body text-sm text-sl-on-surface-variant">Yükleniyor...</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg bg-sl-surface-lowest shadow-[var(--sl-shadow-sm)]">
+        <div className="overflow-x-auto rounded-xl bg-sl-surface-lowest shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
           <table className="w-full font-body text-sm">
             <thead>
               <tr className="bg-sl-surface-low">
@@ -177,7 +177,7 @@ export function FxRatesPage() {
       )}
 
       <section className="mt-12">
-        <h2 className="mb-4 font-display text-lg font-semibold text-sl-on-surface">
+        <h2 className="mb-4 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
           Manuel Kur Girişi
         </h2>
 

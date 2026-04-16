@@ -227,11 +227,11 @@ export function CollectionSegmentPage() {
 
   return (
     <div>
-      <header className="mb-10">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+      <header className="mb-12">
+        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
           {data?.summary.segmentName ?? 'Segment Detay'}
         </h1>
-        <p className="font-body text-sm text-sl-on-surface-variant">
+        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
           Segment bazli tahsilat analizi
         </p>
       </header>
@@ -276,10 +276,10 @@ export function CollectionSegmentPage() {
           </section>
 
           <section className="mb-12">
-            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+            <h2 className="mb-4 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
               Yonetim Raporu
             </h2>
-            <div className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest p-5">
+            <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
               <CustomerTable customers={data.customers} />
             </div>
           </section>
@@ -292,7 +292,7 @@ export function CollectionSegmentPage() {
           </section>
 
           <section className="mb-12">
-            <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+            <h2 className="mb-4 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
               Yogunlasma Metrikleri
             </h2>
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

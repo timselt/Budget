@@ -21,19 +21,24 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-sl-surface">
+    <div className="flex min-h-screen items-center justify-center bg-sl-surface-container-low">
       <div className="w-full max-w-sm">
-        <div className="rounded-lg border border-sl-outline-variant/15 bg-sl-glass-bg p-8 backdrop-blur-[20px]">
-          <h1 className="mb-1 font-display text-2xl font-bold tracking-tight text-sl-primary">
-            BudgetTracker
-          </h1>
-          <p className="mb-6 font-body text-sm text-sl-on-surface-variant">
+        <div className="rounded-xl bg-sl-glass-bg p-10 shadow-[0_12px_32px_rgba(25,28,31,0.04)] backdrop-blur-[20px]">
+          <div className="mb-2 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-sl-primary to-sl-primary-container">
+              <span className="material-symbols-outlined filled text-white text-[22px]">account_balance</span>
+            </div>
+            <h1 className="font-headline text-2xl font-black tracking-tighter text-sl-on-surface">
+              BudgetTracker
+            </h1>
+          </div>
+          <p className="mb-8 font-label text-xs uppercase tracking-widest text-sl-on-surface-variant">
             Tur Assist Group Bütçe Takip
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="mb-2 block font-body text-xs uppercase tracking-wider text-sl-on-surface-variant">
+              <label htmlFor="email" className="mb-2 block font-label text-xs font-bold uppercase tracking-widest text-sl-on-surface-variant">
                 E-posta
               </label>
               <input
@@ -48,7 +53,7 @@ export function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-2 block font-body text-xs uppercase tracking-wider text-sl-on-surface-variant">
+              <label htmlFor="password" className="mb-2 block font-label text-xs font-bold uppercase tracking-widest text-sl-on-surface-variant">
                 Şifre
               </label>
               <input
@@ -68,7 +73,7 @@ export function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-md bg-gradient-to-br from-sl-primary to-sl-primary-container px-4 py-2.5 font-body text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="w-full rounded-lg bg-gradient-to-br from-sl-primary to-sl-primary-container px-4 py-3 font-label text-sm font-bold uppercase tracking-[0.05em] text-white shadow-[0_4px_12px_rgba(181,3,3,0.2)] transition-opacity hover:opacity-90 disabled:opacity-50"
             >
               {isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
             </button>

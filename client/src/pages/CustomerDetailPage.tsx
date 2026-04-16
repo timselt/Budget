@@ -122,7 +122,7 @@ function TahsilatTab({ customerId }: TahsilatTabProps) {
 
   if (!invoices || invoices.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest">
+      <div className="flex h-48 items-center justify-center rounded-xl bg-sl-surface-lowest shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
         <p className="font-body text-sm text-sl-on-surface-variant">
           Bu müşteriye ait fatura bulunamadı.
         </p>
@@ -164,10 +164,10 @@ function TahsilatTab({ customerId }: TahsilatTabProps) {
 
       {/* Invoice table */}
       <section>
-        <h2 className="mb-4 font-display text-lg font-semibold tracking-tight text-sl-on-surface">
+        <h2 className="mb-4 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
           Fatura Detayları
         </h2>
-        <div className="overflow-x-auto rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest">
+        <div className="overflow-x-auto rounded-xl bg-sl-surface-lowest shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
           <table className="w-full text-left font-body text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-wider text-sl-on-surface-variant">
@@ -272,11 +272,11 @@ export function CustomerDetailPage() {
         &larr; Müşteri Listesi
       </Link>
 
-      <header className="mb-8">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+      <header className="mb-12">
+        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
           {customer.name}
         </h1>
-        <p className="mt-1 font-body text-sm text-sl-on-surface-variant">
+        <p className="mt-2 font-body text-lg text-sl-on-surface-variant">
           <span className="inline-block rounded-full bg-sl-primary-fixed px-2.5 py-0.5 text-xs font-medium text-sl-primary-container">
             {customer.segment}
           </span>

@@ -99,17 +99,17 @@ export function CollectionImportPage() {
 
   return (
     <div>
-      <header className="mb-10">
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-sl-on-surface">
+      <header className="mb-12">
+        <h1 className="font-headline text-4xl font-bold tracking-[-0.02em] text-sl-on-surface">
           Veri Yukle
         </h1>
-        <p className="font-body text-sm text-sl-on-surface-variant">
+        <p className="font-body text-lg text-sl-on-surface-variant mt-2 max-w-2xl">
           Excel dosyalarindan tahsilat verisi aktarimi
         </p>
       </header>
 
       <section className="mb-12">
-        <div className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest p-6">
+        <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
           <div className="mb-5">
             <label
               htmlFor="segment-select"
@@ -225,7 +225,7 @@ export function CollectionImportPage() {
       </section>
 
       <section className="mb-12">
-        <h2 className="mb-4 font-display text-lg font-medium text-sl-on-surface">
+        <h2 className="mb-4 font-headline text-xl font-bold tracking-tight text-sl-on-surface">
           Yukleme Gecmisi
         </h2>
 
@@ -236,7 +236,7 @@ export function CollectionImportPage() {
         )}
 
         {!periodsLoading && (!Array.isArray(periods) || periods.length === 0) && (
-          <div className="rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest p-8">
+          <div className="rounded-xl bg-sl-surface-lowest p-8 shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
             <p className="text-center font-body text-sm text-sl-on-surface-variant">
               Henuz yukleme yapilmamis.
             </p>
@@ -244,7 +244,7 @@ export function CollectionImportPage() {
         )}
 
         {Array.isArray(periods) && periods.length > 0 && (
-          <div className="overflow-x-auto rounded-lg border border-sl-outline-variant/15 bg-sl-surface-lowest">
+          <div className="overflow-x-auto rounded-xl bg-sl-surface-lowest shadow-[0_12px_32px_rgba(25,28,31,0.04)]">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-sl-outline-variant/15">
