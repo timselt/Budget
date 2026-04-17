@@ -176,7 +176,10 @@ dotnet test --filter Category=GoldenScenario
 
 ## Açık Doğrulama Bekleyen Maddeler
 
-_Tümü kapandı — 2026-04-17 muhasebe seansı. Detaylı karar metni: `docs/accounting-session-decisions-2026-04-17.md`._
+_2026-04-17 muhasebe seansındakiler kapandı — detay: `docs/accounting-session-decisions-2026-04-17.md`._
+
+**Yeni açık (sonraki muhasebe seansı için):**
+- **Expense kategori seed + adjustment domain bucket uyumlama** — `docs/reference/butce_schema_v1.sql` (Excel türevi) ile mevcut backend arasında 8 eksik kategori + SpecialItem semantik çakışması. Karar metni: `docs/architecture.md` ADR-0012. Detay: `docs/schema-mapping.md`.
 
 _Kapandı — artık açık olmayan:_
 - ~~Excel şablon başlık dili~~ → **Türkçe sabit başlıklar** (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`). Detay: ADR-0008 §2.4.

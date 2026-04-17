@@ -988,6 +988,93 @@ F4 Part 2'de uygulanmama gerekçesi: F4 bütçesinin önemli kısmını (~1 gün
 
 ---
 
+## ADR-0012 — Expense Kategori + Adjustment Domain Bucket Uyumlama (Aday)
+
+**Tarih:** 2026-04-18
+**Statü:** Önerildi (muhasebe seansı sonrası karara bağlanacak)
+**Karar Sahibi:** Timur Turan + muhasebe ekibi (CFO seansı)
+
+### 1. Bağlam
+
+`docs/reference/butce_schema_v1.sql` (Excel "Bütçe 2026.xlsx" türevi PostgreSQL DDL) ile mevcut `BudgetTracker.Core` domain modeli arasında iki noktada **semantik bucket farkı** tespit edildi (`docs/schema-mapping.md` §3.2).
+
+**1.1 Expense kategori seed eksikliği**
+
+| Kaynak | Kategori sayısı | Seed listesi |
+|---|---|---|
+| Schema | 17 | PERSONEL, SEYAHAT, SIRKET_GENEL, IT, PAZARLAMA, DANISMANLIK, AGIRLAMA, ARAC, ARAC_TURFILO, KONUT_KONFOR, FINANSMAN, HOLDING, DIGER_OLAGAN, FINANSAL_GELIR, T_KATILIM, AMORTISMAN, YATIRIM |
+| Mevcut (`InitialSchema` migration) | 9 | PERSONEL, SIRKET_GENEL, IT, ARAC, FINANSMAN, HOLDING, DIGER, FINANSAL_GELIR, AMORTISMAN |
+
+Eksik 8 kategori: `SEYAHAT, PAZARLAMA, DANISMANLIK, AGIRLAMA, ARAC_TURFILO, KONUT_KONFOR, DIGER_OLAGAN, T_KATILIM, YATIRIM`. Mevcut seed'deki `DIGER` kategorisi schema'daki `DIGER_OLAGAN`'a karşılık geliyor olabilir (isim drift) — doğrulanmalı.
+
+**1.2 SpecialItem ↔ adjustment_entries semantik çakışması**
+
+| | Schema (`adjustment_type_enum`) | Mevcut (`SpecialItemType`) |
+|---|---|---|
+| 1 | IADE | MuallakHasar |
+| 2 | TURFILO_PROVIZYON | DemoFilo |
+| 3 | MUALLAK_KAYDI | FinansalGelir |
+| 4 | MUALLAK_HESAPLAMA_DISI | TKatilim |
+| 5 | — | Amortisman |
+
+- Schema'nın "adjustment" kavramı **yalnızca sigorta hasar düzeltmeleri** (iade, provizyon, muallak ayrımı).
+- Mevcut "SpecialItem" kavramı hem sigorta-spesifik (Muallak/DemoFilo) hem de **genel finansal kalemler** (FinansalGelir, TKatilim, Amortisman) içeriyor.
+- Schema'da bu son üç kalem `expense_categories` tablosunda (FINANSAL_GELIR, T_KATILIM, AMORTISMAN); mevcut'ta `SpecialItem` tablosunda. **Aynı veri farklı domain bucket'larında**.
+- Schema'daki MUALLAK_KAYDI vs MUALLAK_HESAPLAMA_DISI ayrımı mevcut'ta yok (tek `MuallakHasar`).
+- Schema'daki IADE mevcut'ta hiç yok.
+
+### 2. Karar (Karara Bağlanacak — Muhasebe Seansı)
+
+Üç olası yön:
+
+**Seçenek A — Schema domain ayrımına refactor (muhasebe-uyumlu)**
+- `SpecialItemType` 4 değere indirilir: `IADE, TURFILO_PROVIZYON, MUALLAK_KAYDI, MUALLAK_HESAPLAMA_DISI`.
+- Mevcut `FinansalGelir / TKatilim / Amortisman` SpecialItem kayıtları `ExpenseEntry` altına taşınır (data migration: yeni `ExpenseCategory` satırları + ETL).
+- `expense_categories` seed eksik 8 kalemle tamamlanır.
+- **Sonuç:** Schema ile birebir uyum, muhasebe terminolojisi.
+
+**Seçenek B — Mevcut domain ayrımını koru**
+- `SpecialItemType` 5 değer kalır.
+- Schema sadece referans, eşleşmeyen kavramlar `docs/schema-mapping.md`'de açıklanmış halde tutulur.
+- Eksik 8 expense kategori sadece muhasebe doğrularsa eklenir.
+- **Sonuç:** Migration overhead yok, ama schema ↔ kod terminoloji ayrı kalır.
+
+**Seçenek C — Hibrit: kategori tamamla + SpecialItem'ı koru**
+- `expense_categories` seed eksik 8 kalemle tamamlanır.
+- `SpecialItemType` 5 değer kalır (kavramsal ayrımı muhasebe ile teyit ettikten sonra).
+- IADE, TURFILO_PROVIZYON, MUALLAK_KAYDI, MUALLAK_HESAPLAMA_DISI domain'de gerekli mi sorgulanır.
+- **Sonuç:** Düşük risk, kademeli uyumlama.
+
+### 3. Reddedilen Alternatifler
+
+- **Tüm SpecialItem'ları kaldır + her şeyi `ExpenseEntry`'ye taşı:** Mevcut MuallakHasar/DemoFilo davranışı sigorta hasar düzeltmesi (negatif/pozitif yön + muallak hesaplama dışı bırakılabilirlik) — bunu generic expense tablosunda modellemek query karmaşıklığı yaratır.
+- **Schema'yı tamamen göz ardı et:** Excel formül zinciri kaynağı (O63, O127, O145 vs.) regression fixture için kritik — kanonik referans olarak kalmalı.
+
+### 4. Sonuçlar
+
+**Pozitif (Seçenek A veya C):**
+- Muhasebe ekibi ile aynı dilden konuşma.
+- Excel modeli ile bire bir aritmetik doğrulama (regression fixture daha sıkı).
+- 17 kategori uzun vadede dashboard kategori chip'leri ve raporlama gruplaması için zenginlik.
+
+**Negatif (Seçenek A):**
+- Data migration karmaşası (mevcut SpecialItem kayıtları ExpenseEntry'ye port).
+- API contract değişikliği (frontend SpecialItem endpoint'leri etkilenebilir).
+- Geçiş dönemi backward compatibility shim'i gerekebilir.
+
+**Negatif (Seçenek B):**
+- Schema vs kod terminoloji farkı süreklilik kazanır → onboarding'de karışıklık.
+- Excel-türevi yeni domain ihtiyaçları (örn. IADE) ortaya çıkarsa ayrı entity gerekir.
+
+### 5. Eylem Maddeleri (Karar Öncesi)
+
+- [ ] Muhasebe ekibinden eksik 8 expense kategori için doğrulama (her satırın `ExpenseClassification` mapping'i ile)
+- [ ] Muhasebe ekibinden adjustment kavram ayrımı doğrulaması (IADE / TURFILO_PROVIZYON / MUALLAK_KAYDI vs MUALLAK_HESAPLAMA_DISI domain'de gerçekten ayrı kalemler mi?)
+- [ ] FinansalGelir / TKatilim / Amortisman'ın muhasebe açısından "expense kategori" mi yoksa "özel kalem" mi olduğu netleştirilmeli
+- [ ] Karar sonrası bu ADR statüsü "Kabul edildi" olarak güncellenecek + uygulama ADR'ı (data migration planı dahil) yazılacak
+
+---
+
 ## ADR-XXXX — [Başlık]
 
 **Tarih:** YYYY-MM-DD
