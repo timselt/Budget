@@ -111,6 +111,29 @@ public sealed class ExcelImportServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CommitAsync_WhenBudgetYearLocked_ThrowsClosedPeriodConflict()
+    {
+        // Arrange — seed as usual, then flip the BudgetYear.IsLocked flag.
+        var seed = await SeedAsync(customerNames: new[] { "Sirket A" });
+        await using (var ctx = _fixture.CreateSuperuserContext())
+        {
+            await ctx.Database.ExecuteSqlRawAsync(
+                "UPDATE budget_years SET is_locked = TRUE WHERE id = {0}",
+                (await ctx.BudgetVersions.FirstAsync(v => v.Id == seed.VersionId)).BudgetYearId);
+        }
+
+        using var stream = BuildWorkbook(new[] { ("Sirket A", new decimal?[] { 1m }) });
+        var sut = BuildService();
+
+        var act = async () =>
+            await sut.CommitAsync(seed.VersionId, stream, stream.Length, seed.UserId, CancellationToken.None);
+
+        // GlobalExceptionHandler maps "cannot be edited" → 409.
+        (await act.Should().ThrowAsync<InvalidOperationException>())
+            .WithMessage("*kilitli*");
+    }
+
+    [Fact]
     public async Task CommitAsync_WhenConcurrentImportInProgress_ThrowsConcurrencyConflict()
     {
         // Arrange — seed once so two parallel commits race on the same (tenant, resource).

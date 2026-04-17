@@ -228,6 +228,19 @@ public sealed class ExcelImportService : IExcelImportService
             throw new InvalidOperationException("Sadece taslak durumundaki versiyonlara içe aktarım yapılabilir.");
         }
 
+        // Closed-period guard: once the enclosing BudgetYear is locked, no import
+        // can add or modify rows under any of its versions — even a Draft. Exports
+        // remain allowed (read-only). Message uses "cannot be edited" so
+        // GlobalExceptionHandler maps it to HTTP 409 (Conflict).
+        var year = await _db.BudgetYears
+            .AsNoTracking()
+            .FirstOrDefaultAsync(y => y.Id == version.BudgetYearId, ct);
+        if (year?.IsLocked == true)
+        {
+            throw new InvalidOperationException(
+                $"Bütçe yılı {year.Year} kilitli; kapalı dönemler cannot be edited.");
+        }
+
         return version;
     }
 
