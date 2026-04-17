@@ -48,7 +48,6 @@ const SERVICE_LINES: readonly ServiceLine[] = [
 ]
 
 interface Alert {
-  ribbon: 'primary' | 'warning' | 'tertiary' | 'success'
   title: string
   body: string
   chip: 'error' | 'warning' | 'info' | 'success'
@@ -58,7 +57,6 @@ interface Alert {
 
 const ALERTS: readonly Alert[] = [
   {
-    ribbon: 'primary',
     title: "Oto hasar dosya maliyeti Q1'de +%9",
     body: 'Tedarikçi fiyat artışı ve ikame araç süresi uzadı',
     chip: 'error',
@@ -66,21 +64,18 @@ const ALERTS: readonly Alert[] = [
     actionable: true,
   },
   {
-    ribbon: 'warning',
     title: 'Sağlık Asistans gelirleri %6 planın altında',
     body: '2 kritik sigortacı yeniden fiyatlama talep ediyor',
     chip: 'warning',
     chipLabel: 'ORTA',
   },
   {
-    ribbon: 'tertiary',
     title: 'Konut Asistans dosya sayısı +%21',
     body: 'Pozitif sapma — KonutKonfor kampanyası',
     chip: 'info',
     chipLabel: 'BİLGİ',
   },
   {
-    ribbon: 'success',
     title: 'EBITDA Q1 cumulative planın %3 üstünde',
     body: 'Personel giderleri ve teknoloji amortismanı tasarrufu',
     chip: 'success',
@@ -93,7 +88,7 @@ export function DashboardPage() {
     <section>
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
+          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
             Executive Dashboard
           </h2>
           <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
@@ -117,32 +112,30 @@ export function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI BENTO */}
+      {/* KPI BENTO — tonal cards, no border accents (No-Line Rule) */}
       <div className="grid grid-cols-12 gap-6 mb-6">
-        <div className="col-span-12 lg:col-span-4 card-tonal kpi-tile">
-          <span className="bg-deco material-symbols-outlined">account_balance</span>
-          <div className="relative z-10">
-            <span className="label-sm block mb-4">Toplam Gelir — FY26 Plan</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-black tracking-display text-on-surface num">2.245,2M</span>
-              <span className="text-sm font-bold text-on-surface-variant">TL</span>
-            </div>
-            <div className="mt-6 flex items-center justify-between">
-              <div className="chip chip-info">
-                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                  trending_up
-                </span>
-                +18,4% vs FY25
-              </div>
-              <span className="text-[0.65rem] text-on-surface-variant font-semibold">12 aylık</span>
-            </div>
+        <div className="col-span-12 lg:col-span-4 card-tonal">
+          <span className="label-sm block mb-4">Toplam Gelir — FY26 Plan</span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-[3.5rem] font-extrabold tracking-display leading-none text-[#002366] num">
+              2.245,2M
+            </span>
+            <span className="text-sm font-bold text-on-surface-variant">TL</span>
+          </div>
+          <div className="mt-6 flex items-center justify-between">
+            <span className="chip chip-success">
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                trending_up
+              </span>
+              +18,4% vs FY25
+            </span>
+            <span className="text-[0.65rem] text-on-surface-variant font-semibold">12 aylık</span>
           </div>
         </div>
 
-        <div className="col-span-6 lg:col-span-2 card relative">
-          <div className="ribbon-primary" />
+        <div className="col-span-6 lg:col-span-2 card">
           <span className="label-sm">Teknik Marj</span>
-          <p className="text-2xl font-black tracking-display num mt-2">920,6M</p>
+          <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">920,6M</p>
           <p className="text-xs text-on-surface-variant mt-1">%41,0 marj</p>
           <div className="progress-track mt-3">
             <div className="progress-fill bg-primary" style={{ width: '82%' }} />
@@ -150,21 +143,19 @@ export function DashboardPage() {
           <p className="text-[0.65rem] text-on-surface-variant mt-2">Hedef: 1.125M TL</p>
         </div>
 
-        <div className="col-span-6 lg:col-span-2 card relative">
-          <div className="ribbon-tertiary" />
+        <div className="col-span-6 lg:col-span-2 card">
           <span className="label-sm">EBITDA</span>
-          <p className="text-2xl font-black tracking-display num mt-2">360,4M</p>
-          <p className="text-xs text-tertiary font-bold mt-1">%16,1 EBITDA margin</p>
+          <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">360,4M</p>
+          <p className="text-xs text-success font-bold mt-1">%16,1 EBITDA margin</p>
           <div className="progress-track mt-3">
-            <div className="progress-fill bg-tertiary" style={{ width: '91%' }} />
+            <div className="progress-fill bg-success" style={{ width: '91%' }} />
           </div>
           <p className="text-[0.65rem] text-on-surface-variant mt-2">Hedef: 395M TL</p>
         </div>
 
-        <div className="col-span-6 lg:col-span-2 card relative">
-          <div className="ribbon-warning" />
+        <div className="col-span-6 lg:col-span-2 card">
           <span className="label-sm">Loss Ratio</span>
-          <p className="text-2xl font-black tracking-display num mt-2">%59,0</p>
+          <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">%59,0</p>
           <p className="text-xs text-on-surface-variant mt-1">Hasar/Prim</p>
           <div className="progress-track mt-3">
             <div className="progress-fill bg-warning" style={{ width: '59%' }} />
@@ -174,10 +165,10 @@ export function DashboardPage() {
 
         <div className="col-span-6 lg:col-span-2 card">
           <span className="label-sm">Toplam Dosya</span>
-          <p className="text-2xl font-black tracking-display num mt-2">1,24M</p>
-          <p className="text-xs text-tertiary font-bold mt-1">+%12,6</p>
+          <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">1,24M</p>
+          <p className="text-xs text-success font-bold mt-1">+%12,6</p>
           <div className="progress-track mt-3">
-            <div className="progress-fill bg-tertiary" style={{ width: '65%' }} />
+            <div className="progress-fill bg-success" style={{ width: '65%' }} />
           </div>
           <p className="text-[0.65rem] text-on-surface-variant mt-2">Araç + Sağlık + Konut</p>
         </div>
@@ -188,7 +179,7 @@ export function DashboardPage() {
         <div className="col-span-12 lg:col-span-8 card">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="text-lg font-bold tracking-tight text-on-surface">
+              <h3 className="text-lg font-bold tracking-tight text-[#002366]">
                 Gelir / Hasar / Teknik Marj — Aylık Trend
               </h3>
               <p className="text-xs text-on-surface-variant mt-1">FY26 Plan, MTL</p>
@@ -204,7 +195,7 @@ export function DashboardPage() {
           </div>
         </div>
         <div className="col-span-12 lg:col-span-4 card">
-          <h3 className="text-lg font-bold tracking-tight text-on-surface mb-4">
+          <h3 className="text-lg font-bold tracking-tight text-[#002366] mb-4">
             Gelir Segmentasyonu
           </h3>
           <div style={{ height: 180 }}>
@@ -212,7 +203,7 @@ export function DashboardPage() {
           </div>
           <div className="mt-4 space-y-3">
             <SegmentRow label="Sigorta Şirketleri" share={62} color="bg-primary" />
-            <SegmentRow label="Banka / Kart Programı" share={18} color="bg-tertiary" />
+            <SegmentRow label="Banka / Kart Programı" share={18} color="bg-secondary" />
             <SegmentRow label="B2B2C Programlar" share={14} color="bg-outline" />
             <SegmentRow label="B2C Direkt + Ad-Hoc" share={6} color="bg-outline-variant" />
           </div>
@@ -223,7 +214,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-12 gap-6 mb-6">
         <div className="col-span-12 lg:col-span-4 card">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-bold tracking-tight text-on-surface">EBITDA Köprüsü</h3>
+            <h3 className="text-base font-bold tracking-tight text-[#002366]">EBITDA Köprüsü</h3>
             <span className="chip chip-info">FY25→FY26</span>
           </div>
           <div style={{ height: 220 }}>
@@ -232,7 +223,7 @@ export function DashboardPage() {
         </div>
         <div className="col-span-12 lg:col-span-4 card">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-bold tracking-tight text-on-surface">
+            <h3 className="text-base font-bold tracking-tight text-[#002366]">
               Loss Ratio (aylık)
             </h3>
             <span className="chip chip-warning">%59 ort.</span>
@@ -243,7 +234,7 @@ export function DashboardPage() {
         </div>
         <div className="col-span-12 lg:col-span-4 card">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-bold tracking-tight text-on-surface">Gider Kırılımı</h3>
+            <h3 className="text-base font-bold tracking-tight text-[#002366]">Gider Kırılımı</h3>
             <span className="chip chip-neutral">FY26</span>
           </div>
           <div style={{ height: 220 }}>
@@ -256,7 +247,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-12 lg:col-span-7 card p-0 overflow-hidden">
           <div className="p-6 pb-3">
-            <h3 className="text-lg font-bold tracking-tight text-on-surface">
+            <h3 className="text-lg font-bold tracking-tight text-[#002366]">
               Service Line Performansı
             </h3>
             <p className="text-xs text-on-surface-variant mt-1">FY26 Plan, cirodan % pay</p>
@@ -270,7 +261,7 @@ export function DashboardPage() {
 
         <div className="col-span-12 lg:col-span-5 card">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold tracking-tight text-on-surface">Kritik Uyarılar</h3>
+            <h3 className="text-lg font-bold tracking-tight text-[#002366]">Kritik Uyarılar</h3>
             <span className="chip chip-error">4 aktif</span>
           </div>
           <div className="space-y-3">
@@ -289,7 +280,7 @@ function SegmentRow({ label, share, color }: { label: string; share: number; col
     <div>
       <div className="flex justify-between items-end mb-1.5">
         <span className="text-sm font-bold text-on-surface">{label}</span>
-        <span className="text-sm font-black num">{share}%</span>
+        <span className="text-sm font-extrabold num">{share}%</span>
       </div>
       <div className="progress-track">
         <div className={`progress-fill ${color}`} style={{ width: `${share}%` }} />
@@ -299,24 +290,22 @@ function SegmentRow({ label, share, color }: { label: string; share: number; col
 }
 
 function ServiceLineRow({ line, zebra }: { line: ServiceLine; zebra: boolean }) {
+  // Zebra alternating row fills replace divider lines (No-Line Rule)
   const bg = zebra ? 'bg-surface-container-low/50' : 'bg-surface-container-lowest'
+  // Highlighted row uses a stronger tonal step (recessed bg) instead of a left
+  // accent stripe — brand bans 1px/4px borders for emphasis.
+  const highlightBg = line.highlighted ? 'bg-surface-container-high/60' : bg
+
   return (
     <div
-      className={`flex items-center justify-between p-4 px-6 ${bg} hover:bg-surface-container-low transition-colors group relative`}
+      className={`flex items-center justify-between p-4 px-6 ${highlightBg} hover:bg-surface-container-high transition-colors group`}
     >
-      <div
-        className={`absolute left-0 top-0 bottom-0 w-1 ${
-          line.highlighted
-            ? 'bg-primary group-hover:w-1.5'
-            : 'bg-tertiary opacity-0 group-hover:opacity-100'
-        } transition-all`}
-      />
       <div className="flex items-center gap-4">
         <div
           className={`w-10 h-10 rounded-full flex items-center justify-center ${
             line.highlighted
               ? 'bg-surface text-primary'
-              : 'bg-surface-container text-tertiary'
+              : 'bg-surface-container text-on-secondary-container'
           }`}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
@@ -329,14 +318,12 @@ function ServiceLineRow({ line, zebra }: { line: ServiceLine; zebra: boolean }) 
         </div>
       </div>
       <div className="text-right">
-        <p className={`${line.highlighted ? 'font-black text-lg' : 'font-bold text-lg'} num`}>
+        <p className={`${line.highlighted ? 'font-extrabold text-lg' : 'font-bold text-lg'} num text-[#002366]`}>
           {line.amount}
         </p>
         <p
           className={`text-xs ${
-            line.highlighted
-              ? 'font-bold text-tertiary'
-              : 'font-medium text-on-surface-variant'
+            line.highlighted ? 'font-bold text-success' : 'font-medium text-on-surface-variant'
           }`}
         >
           {line.share}
@@ -347,18 +334,16 @@ function ServiceLineRow({ line, zebra }: { line: ServiceLine; zebra: boolean }) 
 }
 
 function AlertCard({ alert }: { alert: Alert }) {
+  // Severity expressed via leading chip + tonal recessed bg — no ribbon stripe.
   return (
-    <div className="relative bg-surface-container-low rounded-lg p-4 pl-5">
-      <div className={`ribbon-${alert.ribbon}`} />
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-bold">{alert.title}</p>
-          <p className="text-xs text-on-surface-variant mt-1">{alert.body}</p>
-        </div>
+    <div className="bg-surface-container-low rounded-lg p-4">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <p className="text-sm font-bold text-[#002366]">{alert.title}</p>
         <span className={`chip chip-${alert.chip}`}>{alert.chipLabel}</span>
       </div>
+      <p className="text-xs text-on-surface-variant">{alert.body}</p>
       {alert.actionable && (
-        <button type="button" className="btn-tertiary mt-3 -ml-2">
+        <button type="button" className="btn-ghost mt-3 -ml-3">
           <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
             arrow_outward
           </span>
