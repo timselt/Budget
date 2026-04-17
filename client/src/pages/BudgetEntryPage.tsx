@@ -1,4 +1,29 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { BudgetGrid, type BudgetRow as GridRow } from '../shared/ui/BudgetGrid'
+
+const SAMPLE_GRID_ROWS: GridRow[] = [
+  {
+    customer: 'AK Sigorta',
+    segment: 'SIGORTA',
+    jan: 1200, feb: 1350, mar: 1400, apr: 1450, may: 1500, jun: 1600,
+    jul: 1700, aug: 1750, sep: 1800, oct: 1850, nov: 1900, dec: 2000,
+    total: 19500,
+  },
+  {
+    customer: 'Koç Holding',
+    segment: 'OTOMOTIV',
+    jan: 2100, feb: 2200, mar: 2250, apr: 2300, may: 2400, jun: 2500,
+    jul: 2600, aug: 2700, sep: 2800, oct: 2900, nov: 3000, dec: 3100,
+    total: 30850,
+  },
+  {
+    customer: 'Turkcell Finansman',
+    segment: 'FILO',
+    jan: 800, feb: 820, mar: 840, apr: 860, may: 880, jun: 900,
+    jul: 920, aug: 940, sep: 960, oct: 980, nov: 1000, dec: 1020,
+    total: 10920,
+  },
+]
 
 interface BudgetRow {
   name: string
@@ -78,6 +103,7 @@ function fmt(v: number): string {
 
 export function BudgetEntryPage() {
   const rendered = useMemo(() => buildRows(), [])
+  const [gridRows, setGridRows] = useState<GridRow[]>(SAMPLE_GRID_ROWS)
 
   return (
     <section>
@@ -203,6 +229,21 @@ export function BudgetEntryPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* AG-Grid data-entry surface — ADR-0009 §2.4. The custom table above
+          stays in place as the summary/formula view; this grid carries the
+          Excel-style paste flow (non-contiguous → contiguous block + toast). */}
+      <div className="card mt-6 p-0 overflow-hidden">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-on-surface">Müşteri Bazlı Giriş</h3>
+            <p className="text-xs text-on-surface-variant mt-1">
+              Excel'den kopyala-yapıştır desteklenir. Non-contiguous seçim contiguous blok olarak yapışır.
+            </p>
+          </div>
+        </div>
+        <BudgetGrid rows={gridRows} onRowsChange={setGridRows} />
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-4">
