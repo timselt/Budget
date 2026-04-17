@@ -72,8 +72,10 @@ Kaynak: Timur tarafından 2026-04-17'de paylaşılan resmi Design System Documen
 
 ## Stitch Design System Asset
 
-- Asset ID: `assets/6964990626239659350` (güncellenmesi gerekli — ilk oluşturulan yanlış tokenlarla)
-- Güncellendikten sonra `apply_design_system` ile "FinOps Tur" projesine bağlanmalı
+- Asset ID (canlı): `assets/198b2a38bf384c4b931d15183a332aba` — FinOps Tur projesi (`projects/10132860177847584046`) ile bağlı
+- Display name: "Tur Assist — Architectural Precision"
+- Font: Manrope (headline + body + label)
+- Tokenlar bu dokümana bire bir hizalı (2026-04-17 itibarıyla)
 
 ## Uygulama Noktaları
 
