@@ -17,6 +17,7 @@ using BudgetTracker.Infrastructure.BackgroundJobs;
 using BudgetTracker.Infrastructure.Common;
 using BudgetTracker.Infrastructure.FxRates;
 using BudgetTracker.Infrastructure.Identity;
+using BudgetTracker.Infrastructure.Observability;
 using BudgetTracker.Infrastructure.Persistence;
 using BudgetTracker.Infrastructure.Persistence.Interceptors;
 using BudgetTracker.Infrastructure.Reports;
@@ -46,6 +47,13 @@ public static class DependencyInjection
         services.AddSingleton<TenantConnectionInterceptor>();
         services.AddSingleton<IClock, SystemClock>();
 
+        // ADR-0007 §2.3 + §2.4 — structured log enrichers. HttpContextAccessor is
+        // registered by ASP.NET but we add it explicitly so enrichers remain safe in
+        // non-web hosts (tests, CLI seeders) where the accessor is absent.
+        services.AddHttpContextAccessor();
+        services.AddSingleton<Serilog.Core.ILogEventEnricher, BudgetTrackerLogEnricher>();
+        services.AddSingleton<Serilog.Core.ILogEventEnricher, PiiMaskingEnricher>();
+
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             options.UseNpgsql(connectionString, npgsql =>
@@ -56,6 +64,22 @@ public static class DependencyInjection
             options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>());
             options.UseOpenIddict();
         });
+
+        // ADR-0007 §2.6 — isolated context factory for audit writes. Shares the
+        // Npgsql + snake-case + interceptor surface with the scoped context, but
+        // deliberately omits UseOpenIddict(): the audit factory context only ever
+        // writes to audit_logs and never touches OpenIddict tables, and running
+        // OpenIddict's model configuration twice against the same entity types
+        // risks duplicate-entity-type conflicts between the two model caches.
+        services.AddDbContextFactory<ApplicationDbContext>((sp, options) =>
+        {
+            options.UseNpgsql(connectionString, npgsql =>
+            {
+                npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+            });
+            options.UseSnakeCaseNamingConvention();
+            options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>());
+        }, lifetime: ServiceLifetime.Singleton);
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 

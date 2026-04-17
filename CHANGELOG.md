@@ -4,6 +4,58 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### FAZ 2 — Hangfire Dashboard + Seq Observability + F1 Ertelenen (2026-04-17)
+
+MIGRATION_PLAN.md §3 FAZ 2 + ADR-0007 kapsamında gözlemlenebilirlik katmanı + F1 review'dan ertelenen iki HIGH kalemi teslim edildi. Tüm işler `feat/f2-hangfire-seq-observability` branch'inde; ADR-0007 ince ayar #1 gereği F2 başında "Önerildi" olarak açıldı (commit `78c5032`), F2 sonunda "Kabul edildi"ye çevrildi (commit `244419f`).
+
+#### Eklendi
+
+- **Hangfire Dashboard** — `/hangfire` endpoint, `HangfireDashboardAuthorizationFilter` ile Admin veya Cfo rolü zorunlu. Anonim `401`, authenticated wrong-role `403`, Admin/Cfo `200` (ADR-0007 §2.1). Default `LocalRequestsOnlyAuthorizationFilter` Railway'de anlamsız olduğu için kaldırıldı. 10 unit test (anon/Viewer/Finance/Admin/Cfo/multi-role + status code kanıtları).
+
+- **Serilog + Seq sink** — `Program.cs` bootstrap logger + `Host.UseSerilog` (`ReadFrom.Configuration` + `ReadFrom.Services`). `appsettings.Development.json` Console + Seq sink (`http://localhost:5341`). **Production appsettings dosyası yok** — Railway env ile `Serilog__WriteTo__1__Args__serverUrl` inject edilir (ince ayar #3: F1 rotate-db-password ile aynı secret disiplini). `app.UseSerilogRequestLogging` her HTTP request için structured özet satırı. `Log.CloseAndFlush()` top-level finally ile garanti. `Serilog.Debugging.SelfLog.Enable(Console.Error)` enricher/sink hatalarını stderr'e yansıtır.
+
+- **Structured enricher'lar** (ADR-0007 §2.3) — `BudgetTrackerLogEnricher`:
+  - HTTP path → `tenant_id`, `user_id`, `request_id`
+  - Background-job path (HttpContext null) → `job_context=hangfire` + ambient `tenant_id`
+  - Null-safe: `IHttpContextAccessor`/`ITenantContext` yoksa exception yok
+  - `user_id` claim '@' içeriyorsa `***` ile değiştirilir (custom OpenIddict mapping bypass koruması)
+  - 5 unit test.
+
+- **PII masking enricher** (ADR-0007 §2.4, **log-only**) — `PiiMaskingEnricher`:
+  - `Email`/`email` → `u***@domain.tld`
+  - `IpAddress`/`ip_address`/`ClientIp`/`client_ip` → IPv4 son oktet veya IPv6 son grup maskelenir
+  - Tip-bypass koruması: property string değilse `***` sentinel
+  - `try/catch` + `SelfLog` (enricher never throws)
+  - **Kapsam:** sadece Seq'e giden log; `audit_logs` tablosu ham IP ile kalır (KVKK meşru menfaat — F6 `docs/kvkk-uyum.md`'de dokümante edilecek)
+  - 17 unit test.
+
+- **Health checks** — `/health/live` (process, değişmedi) + `/health/ready` (`DbContextCheck` + yeni `HangfireStorageHealthCheck`). Hangfire storage probe senkron `IMonitoringApi` çağrısını `Task.Run` ile thread pool'a offload eder (thread-pool açlığı koruması). Response body minimal (`"ok"` / `"unreachable"`); istatistikler sadece `ILogger`'a — anonim erişime stats sızdırılmaz.
+
+#### Değişti (F1 ertelenen HIGH fix'ler)
+
+- **`AuditLogger` → `IDbContextFactory<ApplicationDbContext>`** (ADR-0007 §2.6 / F1 csharp-reviewer HIGH) — `services.AddDbContextFactory<ApplicationDbContext>(..., Singleton)` eklendi; `AuditLogger` her `LogAsync`'te kısa-ömürlü context açar. Business `SaveChanges` rollback'i audit satırını etkileyemez. Factory context `UseOpenIddict()` çağırmaz (duplicate model registration riski giderildi). `CreateDbContextAsync` + `SaveChangesAsync` birlikte `try/catch` içinde (pool exhaustion logging). **1 yeni izolasyon integration testi** (business rollback → audit satırı yaşar).
+
+- **`TenantConnectionInterceptor` async fix** (ADR-0007 §2.7 / F1 csharp-reviewer HIGH) — sync override artık `.GetAwaiter().GetResult()` kullanmıyor; sync ve async path kendi ADO.NET komutlarını çalıştırıyor. Exception durumunda connection kapatılıp rethrow — silent RLS bypass koruması (empty-string default-deny'a düşme engellendi). **4 yeni integration testi** (sync/async + tenant/bypass kombinasyonları).
+
+#### Paketler
+
+- `Serilog` 4.2.0, `Serilog.AspNetCore` 9.0.0, `Serilog.Sinks.Seq` 9.0.0, `Serilog.Sinks.Console` 6.0.0, `Serilog.Enrichers.Environment` 3.0.1, `Serilog.Enrichers.Thread` 4.0.0. `Hangfire.AspNetCore` Infrastructure csproj'una taşındı (dashboard filter için).
+
+#### Test Kapsamı
+
+- Unit: **96 → 128** (+32). Enricher/PII: 22, Dashboard filter: 10.
+- Integration: **14 → 19** (+5). Interceptor sync/async: 4, AuditLogger izolasyon: 1.
+- Toplam: **147 yeşil, 0 fail.**
+
+#### Ertelenen (F3+)
+
+- **CSRF / SameSite=Strict** (security-reviewer MEDIUM) — OpenIddict SSO redirect flow'u etkilenebilir; SPA tarafında doğrulama sonrası F3/F5.
+- **Serilog sink index fragility** (security-reviewer LOW) — **ince ayar #3 direktifi gereği Railway env pattern'i korundu**; named-section'a geçiş F3+ opsiyonel hardening.
+- **Exception message redaction** (security-reviewer LOW) — `Log.Fatal(ex, ...)` connection-string parçaları sızdırabilir; geniş stratejisi F3.
+- **`appsettings.Development.json` dev password** (csharp-reviewer MEDIUM) — F6 UserSecrets geçişi.
+
+---
+
 ### FAZ 1 — Operasyonel Kapanış (2026-04-17)
 
 MIGRATION_PLAN.md §3 FAZ 1 kapsamında ADR-0002/0003/0006 açık aksiyonları kapatıldı. Tüm işler `feat/f1-operational-closure` branch'inde; F2'de Hangfire Dashboard + Seq entegrasyonu birleşik ADR-0007'de belgelenecek.

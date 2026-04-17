@@ -1,7 +1,9 @@
 using BudgetTracker.Application.Audit;
+using BudgetTracker.Core.Entities;
 using BudgetTracker.Infrastructure.Audit;
 using BudgetTracker.IntegrationTests.Fixtures;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 
@@ -23,8 +25,8 @@ public sealed class AuditLoggerIntegrationTests : IAsyncLifetime
     {
         // Arrange
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 15, 12, 30, 0, TimeSpan.Zero));
-        await using var ctx = _fixture.CreateSuperuserContext();
-        var sut = new AuditLogger(ctx, clock, NullLogger<AuditLogger>.Instance);
+        var factory = new TestDbContextFactory(() => _fixture.CreateSuperuserContext());
+        var sut = new AuditLogger(factory, clock, NullLogger<AuditLogger>.Instance);
 
         var evt = new AuditEvent(
             EntityName: AuditEntityNames.UserAccount,
@@ -53,8 +55,8 @@ public sealed class AuditLoggerIntegrationTests : IAsyncLifetime
     {
         // Arrange
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 17, 8, 0, 0, TimeSpan.Zero));
-        await using var ctx = _fixture.CreateSuperuserContext();
-        var sut = new AuditLogger(ctx, clock, NullLogger<AuditLogger>.Instance);
+        var factory = new TestDbContextFactory(() => _fixture.CreateSuperuserContext());
+        var sut = new AuditLogger(factory, clock, NullLogger<AuditLogger>.Instance);
 
         // Act
         await sut.LogAsync(new AuditEvent(AuditEntityNames.UserAccount, "42", AuditActions.AuthRegister, UserId: 42), CancellationToken.None);
@@ -77,12 +79,57 @@ public sealed class AuditLoggerIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task LogAsync_IsolatedFromBusinessContext_AuditSurvivesBusinessRollback()
+    {
+        // ADR-0007 §2.6 guarantee: audit_logs writes run on a short-lived context
+        // produced by IDbContextFactory. A business transaction rolling back on a
+        // *different* context must not take the audit row with it.
+        var clock = new FixedClock(new DateTimeOffset(2026, 4, 17, 10, 0, 0, TimeSpan.Zero));
+        var factory = new TestDbContextFactory(() => _fixture.CreateSuperuserContext());
+        var sut = new AuditLogger(factory, clock, NullLogger<AuditLogger>.Instance);
+
+        // Arrange — open a business transaction on a separate context and mutate a row.
+        await using var businessCtx = _fixture.CreateSuperuserContext();
+        await using var businessTx = await businessCtx.Database.BeginTransactionAsync();
+
+        var company = await businessCtx.Companies.FirstAsync(c => c.Code == "TAG");
+        businessCtx.BudgetYears.Add(BudgetYear.Create(company.Id, 2099, clock.UtcNow));
+        await businessCtx.SaveChangesAsync();
+
+        // Act — audit write lands while the business tx is still open.
+        await sut.LogAsync(new AuditEvent(
+            AuditEntityNames.UserAccount, "555",
+            AuditActions.AuthSignIn,
+            UserId: 555),
+            CancellationToken.None);
+
+        // Business rolls back — its budget_years row disappears.
+        await businessTx.RollbackAsync();
+
+        // Assert — audit row still exists because the factory-produced context
+        // committed to a separate transaction.
+        await using var conn = new NpgsqlConnection(_fixture.SuperuserConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+            SELECT count(*) FROM audit_logs_2026_04
+            WHERE action = 'AUTH_SIGN_IN' AND user_id = 555
+            """;
+        var auditCount = (long)(await cmd.ExecuteScalarAsync())!;
+        auditCount.Should().Be(1, "audit must survive unrelated business rollback");
+
+        // And the business change genuinely rolled back — sanity check.
+        await using var verifyCtx = _fixture.CreateSuperuserContext();
+        (await verifyCtx.BudgetYears.AnyAsync(y => y.Year == 2099)).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task LogAsync_WithNullableFields_PersistsNullColumns()
     {
         // Arrange
         var clock = new FixedClock(new DateTimeOffset(2026, 4, 17, 8, 0, 0, TimeSpan.Zero));
-        await using var ctx = _fixture.CreateSuperuserContext();
-        var sut = new AuditLogger(ctx, clock, NullLogger<AuditLogger>.Instance);
+        var factory = new TestDbContextFactory(() => _fixture.CreateSuperuserContext());
+        var sut = new AuditLogger(factory, clock, NullLogger<AuditLogger>.Instance);
 
         // Act — minimal required fields only.
         await sut.LogAsync(
