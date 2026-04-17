@@ -130,9 +130,9 @@
 
 ---
 
-### FAZ 2 — Hangfire UI + Seq Logging (1 gün)
+### FAZ 2 — Hangfire UI + Seq Logging + F1 İzleme (1.5 gün)
 
-**Amaç:** Gözlemlenebilirlik + background operation UI'ı.
+**Amaç:** Gözlemlenebilirlik + background operation UI'ı + F1 review ajanlarının "HIGH → ertelendi" notları.
 
 **İşler:**
 1. `HangfireDashboardAuthorizationFilter` — OpenIddict JWT ile Admin/GroupCfo rolü check.
@@ -140,13 +140,19 @@
 3. Health check: `/health/live` (process), `/health/ready` (DB + Hangfire storage).
 4. Structured log enricher: `tenant_id`, `user_id`, `request_id` otomatik.
 5. PII masking enricher: `EmailAddress`, `TaxId`, `PhoneNumber` → `****` (Serilog `Destructure.ByTransforming`).
+6. **`AuditLogger` → `IDbContextFactory<ApplicationDbContext>` geçişi** _(F1 csharp-reviewer HIGH)_. Audit yazımı scoped DbContext'i paylaşmayacak; her audit call kendi kısa ömürlü context'ini açıp kapatacak. Uncommitted iş verisinin audit `SaveChangesAsync`'ine "binme" riski kapanır.
+7. **`TenantConnectionInterceptor` sync-over-async düzeltmesi** _(F1 csharp-reviewer HIGH; pre-existing kod)_. Mevcut `ConnectionOpened` override'ındaki `.GetAwaiter().GetResult()` deadlock riski — `ConnectionOpenedAsync` async override'a taşınacak. Hangfire job'ları ve auth flow'u bu path'i aktif kullandığından F2 kapsamında gerekli.
+8. **ADR-0007 finalizasyonu** — F1+F2 birleşik "Hangfire + Seq + Operasyonel Kapanış" kararı yazılır. Referanslar: CLAUDE.md §Bilinen Tuzaklar #2 (dashboard auth), #3 (TCMB drift — F1'de kapandı), #5 (audit partition overflow — F1'de kapandı). F1 CHANGELOG girdisi ADR'de "kanıt kaydı" olarak atıfla belirtilir.
 
 **Kabul:**
 - `/hangfire` → Admin 200, anonim 401.
 - Seq UI'da yapılandırılmış log (tenant_id ve user_id ile filtrelenebilir).
 - `/health/ready` — Postgres yokken 503, varken 200.
+- `AuditLoggerIntegrationTests` yeni senaryo: aynı scope'ta ongoing business transaction'ın rollback'i audit kaydını etkilemiyor (context izolasyonu kanıtı).
+- `TenantConnectionInterceptor` integration testi async yoldan çalışıyor; eski sync-over-async çağrısı analyzer ile engelli.
+- `docs/architecture.md` içinde **ADR-0007 — Hangfire + Seq + Operasyonel Kapanış** onaylı ("Accepted") state'te.
 
-**Ajan:** `security-reviewer`, `code-reviewer`
+**Ajan:** `security-reviewer`, `code-reviewer`, `csharp-reviewer`
 
 ---
 
