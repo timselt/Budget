@@ -45,9 +45,9 @@ public sealed class ReportsController : ControllerBase
         return File(bytes, "application/pdf", $"yonetim_raporu_v{versionId}.pdf");
     }
 
-    [HttpPost("budget/import")]
+    [HttpPost("budget/import/preview")]
     [Authorize(Policy = "RequireFinanceRole")]
-    public async Task<IActionResult> ImportBudgetExcel(
+    public async Task<IActionResult> PreviewBudgetExcel(
         [FromQuery] int versionId,
         IFormFile file,
         CancellationToken cancellationToken)
@@ -60,7 +60,29 @@ public sealed class ReportsController : ControllerBase
         var userId = GetUserId();
 
         await using var stream = file.OpenReadStream();
-        var result = await _excelImport.ImportBudgetEntriesAsync(versionId, stream, userId, cancellationToken);
+        var preview = await _excelImport.PreviewAsync(
+            versionId, stream, file.Length, userId, cancellationToken);
+
+        return Ok(preview);
+    }
+
+    [HttpPost("budget/import/commit")]
+    [Authorize(Policy = "RequireFinanceRole")]
+    public async Task<IActionResult> CommitBudgetExcel(
+        [FromQuery] int versionId,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { error = "Dosya yüklenmedi." });
+        }
+
+        var userId = GetUserId();
+
+        await using var stream = file.OpenReadStream();
+        var result = await _excelImport.CommitAsync(
+            versionId, stream, file.Length, userId, cancellationToken);
 
         return Ok(result);
     }

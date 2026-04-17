@@ -1,3 +1,5 @@
+using BudgetTracker.Application.Imports;
+using BudgetTracker.Application.Reports;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,6 +21,8 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
     {
         var (statusCode, title) = exception switch
         {
+            ImportFileTooLargeException => (StatusCodes.Status422UnprocessableEntity, "Import Too Large"),
+            ImportConcurrencyConflictException => (StatusCodes.Status409Conflict, "Import In Progress"),
             ArgumentException => (StatusCodes.Status422UnprocessableEntity, "Validation Error"),
             InvalidOperationException e when e.Message.Contains("not found", StringComparison.OrdinalIgnoreCase)
                 => (StatusCodes.Status404NotFound, "Not Found"),
