@@ -28,6 +28,7 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         b.Property(x => x.AccountNo).HasMaxLength(30);
         b.Property(x => x.FullTitle).HasMaxLength(500);
         b.Property(x => x.IsActive).IsRequired();
+        b.Property(x => x.IsOtherFlag).IsRequired().HasDefaultValue(false);
         b.Property(x => x.CreatedAt).IsRequired();
 
         b.HasIndex(x => new { x.CompanyId, x.Code }).IsUnique();

@@ -15,6 +15,13 @@ public sealed class Customer : TenantEntity
     public string? FullTitle { get; private set; }
     public bool IsActive { get; private set; }
 
+    /// <summary>
+    /// Excel "Diğer" alt-kırılım göstergesi (bkz. docs/reference/butce_schema_v1.sql §2.3
+    /// `is_other_flag`). Bir müşteri segment içinde kendi satırı yerine "Diğer" toplam
+    /// satırına dahil ediliyorsa true. Excel import sırasında set edilir.
+    /// </summary>
+    public bool IsOtherFlag { get; private set; }
+
     private Customer() { }
 
     public static Customer Create(
@@ -27,7 +34,8 @@ public sealed class Customer : TenantEntity
         DateOnly? startDate = null,
         DateOnly? endDate = null,
         string? sourceSheet = null,
-        string? notes = null)
+        string? notes = null,
+        bool isOtherFlag = false)
     {
         if (companyId <= 0) throw new ArgumentOutOfRangeException(nameof(companyId));
         if (segmentId <= 0) throw new ArgumentOutOfRangeException(nameof(segmentId));
@@ -47,6 +55,7 @@ public sealed class Customer : TenantEntity
             SourceSheet = sourceSheet,
             Notes = notes,
             IsActive = true,
+            IsOtherFlag = isOtherFlag,
             CreatedAt = createdAt,
             CreatedByUserId = createdByUserId
         };
@@ -60,7 +69,8 @@ public sealed class Customer : TenantEntity
         string? notes,
         bool isActive,
         int actorUserId,
-        DateTimeOffset updatedAt)
+        DateTimeOffset updatedAt,
+        bool? isOtherFlag = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         if (name.Length > 200) throw new ArgumentException("name max 200 characters", nameof(name));
@@ -72,6 +82,7 @@ public sealed class Customer : TenantEntity
         EndDate = endDate;
         Notes = notes;
         IsActive = isActive;
+        if (isOtherFlag.HasValue) IsOtherFlag = isOtherFlag.Value;
         UpdatedAt = updatedAt;
         UpdatedByUserId = actorUserId;
     }
