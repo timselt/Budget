@@ -14,5 +14,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Exclude Playwright specs (under e2e/) so `pnpm test` only runs Vitest;
+    // Playwright has its own harness (`pnpm e2e`).
+    exclude: ['node_modules', 'dist', 'e2e/**'],
   },
 })

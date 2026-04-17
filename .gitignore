@@ -98,3 +98,6 @@ logs/
 *.log
 local/
 .local/
+client/test-results/
+client/playwright-report/
+client/e2e-results/
