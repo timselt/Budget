@@ -4,6 +4,29 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### FAZ 8 Shadow Run Başlangıcı — Hafta 1 raporu açıldı (2026-04-17)
+
+F7 staging deploy altyapısı main'de (PR #13). Muhasebe seansı kararları (PR #12) uygulandı. F8 Shadow Run aşaması resmi olarak başladı — muhasebe ekibi ilk haftalık rapor dosyasını (`docs/shadow-run-report-2026-16.md`) doldurmaya başlayabilir.
+
+#### Eklendi
+
+- **`docs/shadow-run-report-2026-16.md`** — Hafta 1 (ISO 2026-W16, 2026-04-13 → 2026-04-19) shadow run raporu. Template'ten türetildi; §0 ön-koşul kontrolü (ilk staging deploy + smoke + muhasebe kararları + SGK Teşvik müşteri kaydı + master data init) şadow karşılaştırması başlamadan önce yeşil olmalı.
+
+#### Süreç
+
+1. **Kullanıcı Railway hesabını bağlar** → staging deploy otomatik tetiklenir (ilk `main` push'ta, zaten bu PR merge sonrası çalışır).
+2. **Ön-koşul kontrolü** (rapor §0) doğrulanır — smoke testi, Seq ingest, muhasebe kararları, SGK Teşvik müşteri kaydı.
+3. **Paralel çalışma başlar** — muhasebe ekibi Excel + sistem bütçesini birlikte yürütür; haftalık karşılaştırma tablosu §1 doldurulur.
+4. **2 consecutive zero-variance hafta** → F9 Excel Emekliliği PR'ı açılır. Tolerans dışı fark tespit edilirse counter sıfırlanır, patch deploy + yeni hafta.
+
+#### Beklenen İlk Hafta Odağı
+
+İlk hafta muhtemelen sıfır fark yerine küçük master data init farkları bekleniyor (müşteri kodu, segment atamaları, OpEx kategori eşleşmeleri). Bu farklar tolerans dışı sayılsa bile **root cause → master data** kategorisinde toplanır ve kullanıcı eğitimi + data clean-up ile kapanır; kod patch'i gerekmez.
+
+Sistemsel hatalar (KPI formülü farkı, FX round-trip kayıp, audit log eksikliği) tolerans dışı = prod patch + counter reset. F4 Part 1'deki bankacılık doğruluğu testleri (`parseTrNumber` 26 assertion) bu riski minimize ediyor ancak production load'da sürprizler olabilir.
+
+---
+
 ### FAZ 4 Kapanış — ADR-0009 Kabul edildi (2026-04-17)
 
 F4 Frontend Baseline tüm alt-kararlar kabul edilerek kapandı. Kapanış kapsamı:
