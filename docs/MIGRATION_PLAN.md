@@ -158,22 +158,27 @@
 
 ### FAZ 3 — Excel Import/Export + PDF (3 gün)
 
-**Amaç:** Mevcut interface'leri doldur.
+**Amaç:** Mevcut interface'leri doldur + F2'den taşınan log hijyeni.
 
 **İşler:**
 1. **Import şablonu** (`docs/templates/budget-import-template.xlsx`) — 3 sheet. `ClosedXML.Excel.XLWorkbook` ile yazma.
 2. **ExcelImportService** — Preview endpoint (sadece validation raporu), Commit endpoint (transactional + row-level error toleransı → `import_errors` tablosu). Türkçe hata mesajları.
-3. **ExcelExportService** — P&L (12 ay × kategori), Varyans (bütçe vs gerçek), kapalı dönem read-only kilidi.
-4. **PdfReportService** (QuestPDF) — Executive summary (header + 4 KPI + 2 chart placeholder + footer KVKK damgası).
-5. `ReportsController` endpoint'leri (rol policy: FinanceManager, CFO).
-6. Integration test: 50 satır Excel → 50 DB row + 50 audit entry. PDF binary byte count > 0 ve fontlar gömülü.
+3. **Tenant-aware stream limiti** — tenant başına max **50 000 satır** veya **10 MB** upload. Aşılırsa 422 `ImportFileTooLarge`; `audit_logs` event `IMPORT_REJECTED_LIMIT` ile yazılır. `IFormFile.Length` ön-kontrol + `XLWorkbook` satır sayımı post-kontrol.
+4. **ExcelExportService** — P&L (12 ay × kategori), Varyans (bütçe vs gerçek), kapalı dönem read-only kilidi.
+5. **PdfReportService** (QuestPDF) — Executive summary (header + 4 KPI + 2 chart placeholder + footer KVKK damgası). **Türkçe font subsetting:** Lato TTF `src/BudgetTracker.Infrastructure/Resources/Fonts/` altında embed; QuestPDF `FontManager.RegisterFont` ile yüklenir, subset yalnız kullanılan glyph'ler (PDF boyut <200 KB hedef).
+6. `ReportsController` endpoint'leri (rol policy: FinanceManager, CFO).
+7. Integration test: 50 satır Excel → 50 DB row + 50 audit entry. PDF binary byte count > 0, Lato fontu subset gömülü, ğ/ü/ş/ı/ç/ö glyph'leri PDF bytes'ında var (PdfPig ile inspection).
+8. **Log hijyeni** _(F2 security-reviewer LOW carry-over)_ — `Log.Fatal(ex, ...)` ve kullanıcıya dönen ProblemDetails mesajlarında connection string + cert path sızmasını engellemek için `ExceptionMessageSanitizer` helper. 3 regex mask (Npgsql connection fragments, file paths, OpenIddict secret). Unit test.
 
 **Kabul:**
 - `docs/templates/` altında 2 şablon.
 - 50-row round-trip testi yeşil.
-- PDF açıldığında Türkçe karakterler doğru, KVKK damgası footer'da.
+- 50 001 satırlık dosya upload'u 422 ile reddedilir, audit'e düşer.
+- PDF açıldığında Türkçe karakterler doğru, KVKK damgası footer'da, font subset kanıtı.
+- `ExceptionMessageSanitizer` connection string içeren test exception mesajını temizler.
+- ADR-0008 "Excel/PDF reporting + tenant stream limits + font strategy" F3 başında **Önerildi**, F3 sonunda **Kabul edildi** (ince ayar #1 disiplini).
 
-**Ajan:** `csharp-reviewer`, `code-architect`
+**Ajan:** `csharp-reviewer`, `code-architect`, `security-reviewer` (tenant stream limit + log redaction için)
 
 ---
 
@@ -196,14 +201,16 @@
 5. `MoneyInput` — TR format (`1.234,56`), `PeriodPicker` (yıl + ay).
 6. Anti-template design (CLAUDE.md `web/design-quality` kuralı — default Tailwind/shadcn görünümünden kaç).
 7. Performance bütçesi: LCP < 2.5s, INP < 200ms, JS bundle < 300kb (app), < 150kb (landing/login).
+8. **Cookie hardening + Hangfire dashboard CSRF** _(F2 security-reviewer MEDIUM carry-over)_ — OpenIddict cookie'sini `SameSite=Strict`'e almak SPA redirect akışını etkileyebilir; F4 SPA ile birlikte `/connect/authorize` → SPA redirect path'ini uçtan uca test et. Strict uyumluysa `AuthenticationExtensions.AddCookie` güncellenir; değilse `/hangfire` için ayrı anti-CSRF token (header-based double-submit) yazılır. Seçimin gerekçesi ADR-0009'a kayıt.
 
 **Kabul:**
 - `pnpm build` → bundle < 300kb (app).
 - 6 sayfa navigable, 401 → login, 403 → forbidden.
 - `pnpm lint` yeşil, TS strict mode.
 - Lighthouse Performance ≥ 90.
+- Cookie `SameSite` kararı ADR-0009'da belgelenmiş + `/hangfire` CSRF test'i (cross-origin form POST reddedilir).
 
-**Ajan:** `typescript-reviewer` (ZORUNLU her commit), `code-reviewer`
+**Ajan:** `typescript-reviewer` (ZORUNLU her commit), `code-reviewer`, `security-reviewer` (cookie/CSRF için)
 
 ---
 
