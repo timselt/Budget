@@ -1,5 +1,4 @@
 interface PendingItem {
-  ribbon: 'primary' | 'warning' | 'tertiary'
   title: string
   chip: 'error' | 'warning' | 'info'
   chipLabel: string
@@ -9,7 +8,6 @@ interface PendingItem {
 
 const PENDING: readonly PendingItem[] = [
   {
-    ribbon: 'primary',
     title: 'FY26 Bütçe v3 — Sağlık Segmenti',
     chip: 'error',
     chipLabel: 'YÜKSEK',
@@ -17,14 +15,12 @@ const PENDING: readonly PendingItem[] = [
     actions: true,
   },
   {
-    ribbon: 'warning',
     title: 'Q2 Forecast Revizyonu',
     chip: 'warning',
     chipLabel: 'ORTA',
     meta: 'S. Öz • 12 Nis 2026 • EBITDA +18M revize',
   },
   {
-    ribbon: 'tertiary',
     title: 'Konut Segmenti Sermaye Talebi',
     chip: 'info',
     chipLabel: 'BİLGİ',
@@ -51,9 +47,9 @@ const TIMELINE: readonly TimelineStep[] = [
     meta: 'A. Koç • 11 Nis 09:15 • Gerçekleşen sapma kontrolü: tamam',
   },
   {
-    dotClass: 'bg-warning animate-pulse',
+    dotClass: 'bg-warning pulse-ring',
     title: 'CFO Onayı (Beklemede)',
-    titleClass: 'text-tertiary',
+    titleClass: 'text-warning',
     meta: "B. Ayhan • Beklemede — 14 Nis'ten beri",
   },
   {
@@ -69,7 +65,7 @@ export function ApprovalsPage() {
     <section>
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Onay Akışı</h2>
+          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">Onay Akışı</h2>
           <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
             Bütçe ve forecast versiyonlarının çok seviyeli onay sistemi (Departman → CFO → CEO →
             YK).
@@ -80,18 +76,17 @@ export function ApprovalsPage() {
       <div className="grid grid-cols-2 gap-6">
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold tracking-tight">Bekleyen Onaylar (3)</h3>
+            <h3 className="text-base font-bold tracking-tight text-[#002366]">
+              Bekleyen Onaylar (3)
+            </h3>
             <span className="chip chip-warning">Aksiyon Gerekli</span>
           </div>
           <div className="space-y-4">
             {PENDING.map((p) => (
-              <div
-                key={p.title}
-                className="relative bg-surface-container-low rounded-lg p-4 pl-5"
-              >
-                <div className={`ribbon-${p.ribbon}`} />
-                <div className="flex items-start justify-between mb-2">
-                  <p className="font-bold text-sm">{p.title}</p>
+              <div key={p.title} className="bg-surface-container-low rounded-lg p-4">
+                {/* Severity expressed via leading chip — no ribbon stripe (No-Line Rule) */}
+                <div className="flex items-start justify-between mb-2 gap-3">
+                  <p className="font-bold text-sm text-[#002366]">{p.title}</p>
                   <span className={`chip chip-${p.chip}`}>{p.chipLabel}</span>
                 </div>
                 <p className="text-xs text-on-surface-variant">{p.meta}</p>
@@ -119,7 +114,7 @@ export function ApprovalsPage() {
                     </button>
                     <button
                       type="button"
-                      className="btn-tertiary"
+                      className="btn-ghost"
                       style={{ padding: '.4rem .5rem', fontSize: '.75rem' }}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
@@ -135,15 +130,18 @@ export function ApprovalsPage() {
         </div>
 
         <div className="card">
-          <h3 className="text-base font-bold tracking-tight mb-4">Onay Akışı Görünümü</h3>
+          <h3 className="text-base font-bold tracking-tight text-[#002366] mb-4">
+            Onay Akışı Görünümü
+          </h3>
           <div className="space-y-4">
             {TIMELINE.map((t) => (
               <div key={t.title} className="relative pl-6">
-                <div className="absolute left-0 top-0 bottom-0 w-px bg-surface-container-high" />
+                {/* Tonal navy ghost connector — explicit div, no border (No-Line Rule) */}
+                <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-on-secondary-fixed/15" />
                 <div
                   className={`absolute -left-1 top-1 w-2.5 h-2.5 rounded-full ${t.dotClass}`}
                 />
-                <p className={`text-sm font-bold ${t.titleClass ?? ''}`}>{t.title}</p>
+                <p className={`text-sm font-bold ${t.titleClass ?? 'text-[#002366]'}`}>{t.title}</p>
                 <p className="text-xs text-on-surface-variant">{t.meta}</p>
               </div>
             ))}
