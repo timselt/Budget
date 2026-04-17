@@ -4,6 +4,48 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### FAZ 1 — Operasyonel Kapanış (2026-04-17)
+
+MIGRATION_PLAN.md §3 FAZ 1 kapsamında ADR-0002/0003/0006 açık aksiyonları kapatıldı. Tüm işler `feat/f1-operational-closure` branch'inde; F2'de Hangfire Dashboard + Seq entegrasyonu birleşik ADR-0007'de belgelenecek.
+
+#### Eklendi
+
+- **Audit yazıcı (`IAuditLogger`)** — `BudgetTracker.Application.Audit.IAuditLogger` + `AuditEvent` record + `AuditActions`/`AuditEntityNames` sabitleri; Infrastructure'da `AuditLogger` implementation'ı. Controller entegrasyonları: `AuthController` (`AUTH_SIGN_IN` + `AUTH_SIGN_IN_FAILED`), `AccountController.Register` (`AUTH_REGISTER`), yeni `POST /api/v1/account/logout` (`AUTH_SIGN_OUT`). Audit çağrıları best-effort sarmalandı; DB hatası HTTP 500 yerine sadece log'a yazılır. `unknown:{username}` key'i 128 karakterle kesilir.
+
+- **Arkaplan görevleri (Hangfire 1.8.20 + Polly 8.5.2):**
+  - `AuditPartitionMaintenanceJob` — Cron `0 2 1 * *` Europe/Istanbul. Mevcut ay + 3 ileri ay partition `CREATE TABLE ... PARTITION OF` (DO block, `pg_class`/`pg_namespace`'te public schema kontrollü). 84 ay+ eski partition'lar için `DETACH PARTITION` + `DROP TABLE IF EXISTS` (CLAUDE.md §Bilinen Tuzaklar #5 kurtarma penceresi). `GRANT INSERT, SELECT ... TO budget_app` her run'da re-apply (idempotent onarım). Per-partition try/catch — bir partition'da hata diğerlerini atlamaz.
+  - `TcmbFxSyncJob` — Cron `45 15 * * 1-5` Europe/Istanbul. Polly v8 `ResiliencePipelineBuilder<int>` ile 3 retry exponential backoff (yalnız `HttpRequestException` handle); tüm retry'lar tükenirse önceki iş günü fallback (hafta sonu atlama). Pipeline options tuple'ına göre cache'lenir. `TcmbFxSyncOptions` config `Tcmb:Sync`.
+  - `HangfireRecurringJobs.Register()` startup'ta 2 recurring job kaydeder; Testing env'de atlanır.
+  - Hangfire storage + in-process server `Program.cs`'te; Dashboard UI **F2'ye ertelendi**.
+
+- **TCMB servis davranış değişikliği (breaking):** `TcmbFxService.SyncRatesAsync` HTTP 4xx/5xx'de `HttpRequestException` fırlatır (eskiden `return 0`). `ParseTcmbXml` XML/decimal parse hatalarında `InvalidOperationException` fırlatır (eskiden silent swallow). Silent-failure yasağı (CLAUDE.md §Bilinen Tuzaklar #3). Job wrapper retry + fallback uyguluyor.
+
+- **Production OIDC sertifika yüklemesi:** `OpenIddictCertificateOptions` (`OpenIddict:Certificates:{Encryption,Signing}:{Path,Password}`), `ProductionCertificateLoader.Load()` (`X509CertificateLoader.LoadPkcs12FromFile` + `EphemeralKeySet` — container'da filesystem yazma yok). `AuthenticationExtensions.AddBudgetTrackerAuthentication()` opsiyonel cert parametreleri alır; yoksa dev ephemeral. `disableTransportSecurity` default `false` (güvenli taraf). Hata mesajları iç path'i sızdırmaz.
+
+- **Production OIDC SPA client seed:** `ProductionOidcClientSeeder` + `--seed-prod-oidc-client` CLI flag'i. `budget-tracker-spa` public client + PKCE zorunlu, absolute HTTPS redirect URI validasyonu. Mevcut client'ın redirect URI konfigürasyonla uyuşmuyorsa `LogWarning` (silent mismatch engellendi). Development env'de refüze edilir.
+
+- **Release scriptleri ve runbook (`infra/release/`):** `rotate-db-password.sh` (`ALTER ROLE budget_app PASSWORD`, psql `-v` değişken binding — shell-level escape yok), `README.md` (password rotation, prod OIDC client seed, X509 cert üretimi/mount, release sıralaması).
+
+- **Test kapsamı:**
+  - Unit: **86 → 96** (+10). TcmbFxSyncJob retry/fallback/weekend-skip (7), TCMB XML silent-failure koruması (2), TcmbFxService HTTP non-success exception (1 güncellendi).
+  - Integration: **6 → 14** (+8). AuditLogger round-trip + partition routing + nullable (3), AuditPartitionMaintenanceJob create/drop/retention/grant/index-inheritance (5). Gerçek Postgres 16 Testcontainers.
+  - Toplam: **110 test yeşil, 0 fail.**
+
+#### Değişti
+
+- `DependencyInjection.AddInfrastructure()` imzası: opsiyonel `X509Certificate2?` cert parametreleri + `disableTransportSecurity` (Program.cs env-bazlı doldurur).
+- `Program.cs`: Hangfire storage+server bootstrap, X509 cert koşullu yüklemesi, `--seed-prod-oidc-client` mode, recurring job register.
+- Unit test `SyncRatesAsync_WhenHttpFails_ReturnsZero` → `SyncRatesAsync_WhenHttpReturnsNonSuccess_ThrowsHttpRequestException` (davranış değişikliğine uyumlu).
+
+#### Takip Notları (F2+'ya taşındı)
+
+- Hangfire Dashboard UI + OpenIddict-backed auth filter → **F2 / ADR-0007**.
+- Seq sink + structured log enricher'lar (tenant_id, user_id, request_id) + PII masking → **F2**.
+- Auth endpoint'leri için rate limit → **F5 veya F6** (genel policy).
+- KVKK IP maskeleme — **F6 docs/kvkk-uyum.md** içinde policy kararı sonrası.
+- `AuditLogger` için bağımsız `IDbContextFactory<ApplicationDbContext>` — scoped DbContext paylaşım riski (csharp-reviewer HIGH) → **F2/F3**.
+- `TenantConnectionInterceptor` sync-over-async (pre-existing kod) → ayrı refactor kalemi.
+
 ### S18 — Code Splitting, Dashboard Entegrasyon, E2E Testler (2026-04-16)
 
 #### Eklendi

@@ -49,5 +49,16 @@
 
     <!-- PDF report generation -->
     <PackageVersion Include="QuestPDF" Version="2025.1.2" />
+
+    <!-- Background jobs (F1) — Hangfire core + PostgreSQL storage.
+         Dashboard UI and OpenIddict-backed auth filter land in F2 (ADR-0007). -->
+    <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.20" />
+    <PackageVersion Include="Hangfire.Core" Version="1.8.20" />
+    <PackageVersion Include="Hangfire.PostgreSql" Version="1.20.12" />
+
+    <!-- Resilience (F1) — Polly v8 pipeline API.
+         Used by TcmbFxSyncJob for retry + fallback to previous-day rates. -->
+    <PackageVersion Include="Polly" Version="8.5.2" />
+    <PackageVersion Include="Polly.Extensions" Version="8.5.2" />
   </ItemGroup>
 </Project>

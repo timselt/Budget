@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Security.Claims;
+using BudgetTracker.Application.Audit;
 using BudgetTracker.Infrastructure.Authentication;
 using BudgetTracker.Infrastructure.Identity;
 using BudgetTracker.Infrastructure.Persistence;
@@ -9,6 +10,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 
@@ -21,15 +24,18 @@ public sealed class AuthController : ControllerBase
     private readonly UserManager<User> _userManager;
     private readonly SignInManager<User> _signInManager;
     private readonly ApplicationDbContext _dbContext;
+    private readonly IAuditLogger _auditLogger;
 
     public AuthController(
         UserManager<User> userManager,
         SignInManager<User> signInManager,
-        ApplicationDbContext dbContext)
+        ApplicationDbContext dbContext,
+        IAuditLogger auditLogger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _dbContext = dbContext;
+        _auditLogger = auditLogger;
     }
 
     [HttpPost("token")]
@@ -99,9 +105,12 @@ public sealed class AuthController : ControllerBase
 
     private async Task<IActionResult> HandlePasswordGrantAsync(OpenIddictRequest request)
     {
-        var user = await _userManager.FindByNameAsync(request.Username ?? string.Empty);
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var username = request.Username ?? string.Empty;
+        var user = await _userManager.FindByNameAsync(username);
         if (user is null || !user.IsActive)
         {
+            await TryLogSignInFailureAsync(user?.Id, username, ipAddress);
             return Forbid(
                 authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
                 properties: new AuthenticationProperties(new Dictionary<string, string?>
@@ -114,6 +123,7 @@ public sealed class AuthController : ControllerBase
         var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password ?? string.Empty, lockoutOnFailure: true);
         if (!result.Succeeded)
         {
+            await TryLogSignInFailureAsync(user.Id, username, ipAddress);
             return Forbid(
                 authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
                 properties: new AuthenticationProperties(new Dictionary<string, string?>
@@ -126,9 +136,48 @@ public sealed class AuthController : ControllerBase
         user.LastLoginAt = DateTimeOffset.UtcNow;
         await _userManager.UpdateAsync(user);
 
+        await _auditLogger.LogAsync(new AuditEvent(
+            EntityName: AuditEntityNames.UserAccount,
+            EntityKey: user.Id.ToString(),
+            Action: AuditActions.AuthSignIn,
+            UserId: user.Id,
+            IpAddress: ipAddress),
+            HttpContext.RequestAborted);
+
         var principal = await CreatePrincipalAsync(user);
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
+
+    // Audit on the sign-in-failure path is best-effort: if the database write fails we
+    // still want the client to receive the invalid_grant response rather than a 500 from
+    // GlobalExceptionHandler. The DB outage is surfaced via ILogger.
+    private async Task TryLogSignInFailureAsync(int? userId, string attemptedUsername, string? ipAddress)
+    {
+        try
+        {
+            await _auditLogger.LogAsync(new AuditEvent(
+                EntityName: AuditEntityNames.UserAccount,
+                // Unknown users still need an entity_key; store the attempted username
+                // (truncated) so security operators can correlate brute-force patterns.
+                EntityKey: userId?.ToString() ?? $"unknown:{TruncateForKey(attemptedUsername)}",
+                Action: AuditActions.AuthSignInFailed,
+                UserId: userId,
+                IpAddress: ipAddress),
+                HttpContext.RequestAborted);
+        }
+        catch (Exception ex)
+        {
+            var failureLogger = HttpContext.RequestServices
+                .GetService(typeof(ILogger<AuthController>)) as ILogger<AuthController>;
+            failureLogger?.LogError(ex, "Best-effort sign-in-failure audit write failed");
+        }
+    }
+
+    private const int MaxAttemptedUsernameLength = 128;
+    private static string TruncateForKey(string value) =>
+        value.Length <= MaxAttemptedUsernameLength
+            ? value
+            : value[..MaxAttemptedUsernameLength];
 
     private async Task<IActionResult> HandleRefreshGrantAsync()
     {

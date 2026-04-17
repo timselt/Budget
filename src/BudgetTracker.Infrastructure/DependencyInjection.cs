@@ -1,4 +1,5 @@
 using BudgetTracker.Application.Audit;
+using BudgetTracker.Application.BackgroundJobs;
 using BudgetTracker.Application.BudgetEntries;
 using BudgetTracker.Application.Collections;
 using BudgetTracker.Application.Common.Abstractions;
@@ -10,7 +11,9 @@ using BudgetTracker.Application.Scenarios;
 using BudgetTracker.Application.SpecialItems;
 using BudgetTracker.Application.Variance;
 using BudgetTracker.Core.Common;
+using BudgetTracker.Infrastructure.Audit;
 using BudgetTracker.Infrastructure.Authentication;
+using BudgetTracker.Infrastructure.BackgroundJobs;
 using BudgetTracker.Infrastructure.Common;
 using BudgetTracker.Infrastructure.FxRates;
 using BudgetTracker.Infrastructure.Identity;
@@ -18,6 +21,7 @@ using BudgetTracker.Infrastructure.Persistence;
 using BudgetTracker.Infrastructure.Persistence.Interceptors;
 using BudgetTracker.Infrastructure.Reports;
 using BudgetTracker.Infrastructure.Services;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -27,7 +31,12 @@ namespace BudgetTracker.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        X509Certificate2? openIddictEncryptionCert = null,
+        X509Certificate2? openIddictSigningCert = null,
+        bool disableTransportSecurity = false)
     {
         var connectionString = configuration.GetConnectionString("Default")
             ?? throw new InvalidOperationException("ConnectionStrings:Default is not configured.");
@@ -71,6 +80,12 @@ public static class DependencyInjection
         services.AddScoped<IExcelImportService, ExcelImportService>();
         services.AddScoped<IPdfReportService, PdfReportService>();
 
+        // F1 — Operational closure: audit logger + recurring jobs.
+        services.AddScoped<IAuditLogger, AuditLogger>();
+        services.Configure<TcmbFxSyncOptions>(configuration.GetSection(TcmbFxSyncOptions.SectionName));
+        services.AddScoped<IAuditPartitionMaintenanceJob, AuditPartitionMaintenanceJob>();
+        services.AddScoped<ITcmbFxSyncJob, TcmbFxSyncJob>();
+
         services.AddIdentity<User, Role>(options =>
             {
                 options.Password.RequiredLength = 12;
@@ -86,7 +101,10 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
-        services.AddBudgetTrackerAuthentication();
+        services.AddBudgetTrackerAuthentication(
+            openIddictEncryptionCert,
+            openIddictSigningCert,
+            disableTransportSecurity);
 
         return services;
     }

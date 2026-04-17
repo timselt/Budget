@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using BudgetTracker.Core.Identity;
 using BudgetTracker.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -12,7 +13,16 @@ namespace BudgetTracker.Infrastructure.Authentication;
 
 public static class AuthenticationExtensions
 {
-    public static IServiceCollection AddBudgetTrackerAuthentication(this IServiceCollection services)
+    /// <summary>
+    /// Registers OpenIddict server + validation. When <paramref name="encryptionCertificate"/>
+    /// and <paramref name="signingCertificate"/> are supplied (production) the certs are used;
+    /// otherwise ephemeral development certificates are generated.
+    /// </summary>
+    public static IServiceCollection AddBudgetTrackerAuthentication(
+        this IServiceCollection services,
+        X509Certificate2? encryptionCertificate = null,
+        X509Certificate2? signingCertificate = null,
+        bool disableTransportSecurity = false)
     {
         services.AddOpenIddict()
             .AddCore(options =>
@@ -40,19 +50,33 @@ public static class AuthenticationExtensions
                     OpenIddictConstants.Scopes.OfflineAccess,
                     "api");
 
-                // Dev-only ephemeral keys; production must load X509 certs from a secret store.
-                options.AddDevelopmentEncryptionCertificate()
-                    .AddDevelopmentSigningCertificate();
+                // Certificates: production supplies X509 via Railway volume mount; development
+                // falls back to ephemeral in-memory certs regenerated each start.
+                if (encryptionCertificate is not null && signingCertificate is not null)
+                {
+                    options.AddEncryptionCertificate(encryptionCertificate)
+                        .AddSigningCertificate(signingCertificate);
+                }
+                else
+                {
+                    options.AddDevelopmentEncryptionCertificate()
+                        .AddDevelopmentSigningCertificate();
+                }
 
                 options.SetAccessTokenLifetime(TimeSpan.FromMinutes(30))
                     .SetRefreshTokenLifetime(TimeSpan.FromDays(14));
 
-                options.UseAspNetCore()
+                var aspNetCore = options.UseAspNetCore()
                     .EnableTokenEndpointPassthrough()
                     .EnableAuthorizationEndpointPassthrough()
                     .EnableEndSessionEndpointPassthrough()
-                    .EnableUserInfoEndpointPassthrough()
-                    .DisableTransportSecurityRequirement(); // dev only — remove in prod
+                    .EnableUserInfoEndpointPassthrough();
+
+                // HTTPS is enforced in production; local dev runs over plain HTTP.
+                if (disableTransportSecurity)
+                {
+                    aspNetCore.DisableTransportSecurityRequirement();
+                }
             })
             .AddValidation(options =>
             {
