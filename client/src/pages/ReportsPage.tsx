@@ -56,7 +56,7 @@ export function ReportsPage() {
     <section>
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Raporlar</h2>
+          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">Raporlar</h2>
           <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
             Yönetim Kurulu, CFO, Departman ve BDDK/SPK formatlı standart raporlar.
           </p>

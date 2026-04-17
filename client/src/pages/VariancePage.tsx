@@ -60,7 +60,7 @@ export function VariancePage() {
     <section>
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
+          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
             Sapma Analizi
           </h2>
           <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
