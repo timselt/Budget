@@ -1,6 +1,33 @@
 # FinOps Tur — Production Release Runbook
 
-Bu dizin her prod release'de elle çalıştırılan operasyonel adımları içerir. **F1 (Operasyonel Kapanış)** kapsamında üretilen scriptler şunlardır.
+Bu dizin her prod release'de elle veya CI üzerinden çalıştırılan operasyonel adımları içerir. F1 (Operasyonel Kapanış) + F7 (Production Deploy) kapsamında üretilen scriptler şunlardır.
+
+## 0. F7 Otomatik Deploy Akışı (CI'dan)
+
+`.github/workflows/deploy.yml` her push'ta ilgili environment'a deploy eder:
+
+- `develop` → **dev** (auto deploy)
+- `main` → **staging** (auto deploy) → **production** (manual approval gate)
+
+CI sırası her environment için:
+1. Checkout + Railway CLI
+2. `dotnet ef database update` (staging + prod, migration delta'sı varsa)
+3. `rotate-db-password.sh` — `budget_app` rolü her deploy'da yeni secret alır (idempotent)
+4. `railway up --service api` + `railway up --service web`
+5. `prod-smoke.sh <url>` — /health/live + /health/ready + /hangfire 401 gate
+6. `seq-ingest-check.sh` (sadece production) — son 2 dakika içinde Seq'e event geldi mi
+
+Manuel tetikleme: GitHub Actions → "Deploy" workflow → Run workflow → target = dev | staging | production.
+
+**Gerekli GitHub secrets:**
+- `RAILWAY_TOKEN`
+- `STAGING_CONN_STRING_SUPERUSER`, `STAGING_BUDGET_APP_PASSWORD`
+- `PROD_CONN_STRING_SUPERUSER`, `PROD_BUDGET_APP_PASSWORD`
+- `PROD_SEQ_URL`, `PROD_SEQ_API_KEY`
+
+**Gerekli GitHub environments:** `dev`, `staging`, `production`. `production` environment'ında "Required reviewers" = 1 (manuel approval gate).
+
+## 1. budget_app DB şifre rotasyonu — `rotate-db-password.sh`
 
 ## 1. budget_app DB şifre rotasyonu — `rotate-db-password.sh`
 

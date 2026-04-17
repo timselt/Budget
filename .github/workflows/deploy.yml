@@ -1,0 +1,141 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Deployment target (dev | staging | production)'
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - production
+
+# MIGRATION_PLAN §FAZ 7:
+#   develop → dev        (auto)
+#   main    → staging    (auto)
+#   staging → production (manual approval, 1 reviewer — GitHub environment gate)
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-dev:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+      url: https://dev.finopstur.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: railwayapp/railway-cli-action@v1
+        with:
+          token: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Deploy API
+        run: railway up --service api --environment dev --detach
+      - name: Deploy Web
+        run: railway up --service web --environment dev --detach
+      - name: Smoke test
+        run: ./infra/release/prod-smoke.sh https://dev.finopstur.com
+
+  deploy-staging:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.finopstur.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: railwayapp/railway-cli-action@v1
+        with:
+          token: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Apply EF migrations
+        env:
+          ConnectionStrings__Default: ${{ secrets.STAGING_CONN_STRING_SUPERUSER }}
+        run: |
+          dotnet tool install --global dotnet-ef
+          dotnet ef database update \
+            --project src/BudgetTracker.Infrastructure \
+            --startup-project src/BudgetTracker.Api
+      - name: Rotate budget_app password (post-migration)
+        env:
+          DATABASE_URL: ${{ secrets.STAGING_CONN_STRING_SUPERUSER }}
+          BUDGET_APP_DB_PASSWORD: ${{ secrets.STAGING_BUDGET_APP_PASSWORD }}
+        run: ./infra/release/rotate-db-password.sh
+      - name: Deploy API
+        run: railway up --service api --environment staging --detach
+      - name: Deploy Web
+        run: railway up --service web --environment staging --detach
+      - name: Smoke test (staging)
+        run: ./infra/release/prod-smoke.sh https://staging.finopstur.com
+
+  deploy-production:
+    # Staging must complete; GitHub environment `production` enforces
+    # the manual-approval reviewer gate (configured in repo settings).
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://app.finopstur.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: railwayapp/railway-cli-action@v1
+        with:
+          token: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Apply EF migrations
+        env:
+          ConnectionStrings__Default: ${{ secrets.PROD_CONN_STRING_SUPERUSER }}
+        run: |
+          dotnet tool install --global dotnet-ef
+          dotnet ef database update \
+            --project src/BudgetTracker.Infrastructure \
+            --startup-project src/BudgetTracker.Api
+      - name: Rotate budget_app password
+        env:
+          DATABASE_URL: ${{ secrets.PROD_CONN_STRING_SUPERUSER }}
+          BUDGET_APP_DB_PASSWORD: ${{ secrets.PROD_BUDGET_APP_PASSWORD }}
+        run: ./infra/release/rotate-db-password.sh
+      - name: Deploy API
+        run: railway up --service api --environment production --detach
+      - name: Deploy Web
+        run: railway up --service web --environment production --detach
+      - name: Smoke test (production)
+        run: ./infra/release/prod-smoke.sh https://app.finopstur.com
+      - name: Post-deploy Seq ingest verification
+        env:
+          SEQ_URL: ${{ secrets.PROD_SEQ_URL }}
+          SEQ_API_KEY: ${{ secrets.PROD_SEQ_API_KEY }}
+        run: |
+          # Confirm the API sent at least one event to Seq within the last 2
+          # minutes. If Seq ingest is broken the deploy is technically
+          # successful but observability is blind — treat as failure.
+          echo "Verifying Seq ingest against $SEQ_URL"
+          ./infra/release/seq-ingest-check.sh "$SEQ_URL" "$SEQ_API_KEY"
+
+  manual-dispatch:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: railwayapp/railway-cli-action@v1
+        with:
+          token: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Deploy ${{ inputs.target }}
+        run: |
+          railway up --service api --environment ${{ inputs.target }} --detach
+          railway up --service web --environment ${{ inputs.target }} --detach
+      - name: Smoke test
+        run: |
+          case "${{ inputs.target }}" in
+            dev)        URL="https://dev.finopstur.com" ;;
+            staging)    URL="https://staging.finopstur.com" ;;
+            production) URL="https://app.finopstur.com" ;;
+          esac
+          ./infra/release/prod-smoke.sh "$URL"

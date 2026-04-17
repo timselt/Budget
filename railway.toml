@@ -1,0 +1,83 @@
+# FinOps Tur — Railway infrastructure-as-code (ADR-0001 hosting).
+#
+# Three services + one managed Postgres add-on. Region is pinned to Frankfurt
+# so data at rest + in transit stays inside the EU (KVKK m.9 yurt dışı
+# transfer kısıtlamaları için docs/kvkk-uyum.md §Teknik Tedbirler).
+
+[environments]
+
+[environments.staging]
+
+[environments.production]
+
+# --------------------------------------------------------------------
+# Service: budget-tracker-api (.NET 10 ASP.NET Core)
+# --------------------------------------------------------------------
+[[services]]
+name = "api"
+
+[services.build]
+# Railway auto-detects .NET via nixpacks; explicit root path gives it the
+# correct project. ASPNETCORE_ENVIRONMENT is set per environment below.
+rootDirectory = "src/BudgetTracker.Api"
+
+[services.deploy]
+# Zero-downtime: Railway keeps the previous revision warm until the new
+# revision passes the healthcheck.
+startCommand = "dotnet BudgetTracker.Api.dll"
+healthcheckPath = "/health/ready"
+healthcheckTimeout = 30
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+
+[services.api.environments.staging]
+region = "eu-central"
+numReplicas = 1
+
+[services.api.environments.production]
+region = "eu-central"
+numReplicas = 2
+
+# --------------------------------------------------------------------
+# Service: budget-tracker-web (Vite static SPA)
+# --------------------------------------------------------------------
+[[services]]
+name = "web"
+
+[services.build]
+rootDirectory = "client"
+# Railway's nixpacks will run `pnpm install && pnpm build`; the static
+# `dist/` is served by a lightweight caddy reverse proxy.
+builder = "nixpacks"
+
+[services.deploy]
+startCommand = "pnpm preview --host 0.0.0.0 --port ${PORT}"
+healthcheckPath = "/"
+healthcheckTimeout = 15
+
+[services.web.environments.staging]
+region = "eu-central"
+
+[services.web.environments.production]
+region = "eu-central"
+
+# --------------------------------------------------------------------
+# Managed Postgres 16 (Railway add-on, defined externally — referenced
+# here for documentation only). The connection string is injected as
+# DATABASE_URL; the application reads ConnectionStrings__Default.
+# --------------------------------------------------------------------
+# Variables expected on every environment (set in Railway dashboard):
+#
+#   ConnectionStrings__Default            postgres://…        (from Postgres add-on)
+#   BUDGET_APP_DB_PASSWORD                 rotate-db-password.sh target
+#   ASPNETCORE_ENVIRONMENT                 Staging | Production
+#   OpenIddict__Certificates__Encryption__Path      /etc/secrets/openiddict-encryption.pfx
+#   OpenIddict__Certificates__Encryption__Password  (secret)
+#   OpenIddict__Certificates__Signing__Path         /etc/secrets/openiddict-signing.pfx
+#   OpenIddict__Certificates__Signing__Password     (secret)
+#   OpenIddict__ProdClient__RedirectUri             https://app.finopstur.com/auth/callback
+#   OpenIddict__ProdClient__PostLogoutRedirectUri   https://app.finopstur.com/
+#   Serilog__WriteTo__1__Args__serverUrl            https://seq.finopstur.com (Seq Cloud)
+#   Serilog__WriteTo__1__Args__apiKey               (secret)
+#   Tcmb__Sync__MaxRetryAttempts                    3
+#   Tcmb__Sync__InitialRetryDelay                   00:00:02
