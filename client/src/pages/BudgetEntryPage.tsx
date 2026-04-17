@@ -109,7 +109,7 @@ export function BudgetEntryPage() {
     <section>
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
+          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
             Bütçe Planlama
           </h2>
           <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
@@ -178,7 +178,7 @@ export function BudgetEntryPage() {
                     {m}
                   </th>
                 ))}
-                <th className="text-right" style={{ background: '#191c1f', color: '#fff' }}>
+                <th className="text-right bg-surface-container-high text-[#002366]">
                   Toplam
                 </th>
               </tr>
@@ -203,8 +203,7 @@ export function BudgetEntryPage() {
                       return (
                         <td key={i} className="text-right">
                           <input
-                            className="cell-edit"
-                            style={{ color: '#005b9f' }}
+                            className="cell-edit text-on-secondary-container"
                             defaultValue={fmt(v)}
                           />
                         </td>
@@ -237,7 +236,7 @@ export function BudgetEntryPage() {
       <div className="card mt-6 p-0 overflow-hidden">
         <div className="px-4 py-3 flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-on-surface">Müşteri Bazlı Giriş</h3>
+            <h3 className="text-lg font-bold text-[#002366]">Müşteri Bazlı Giriş</h3>
             <p className="text-xs text-on-surface-variant mt-1">
               Excel'den kopyala-yapıştır desteklenir. Non-contiguous seçim contiguous blok olarak yapışır.
             </p>
@@ -269,7 +268,7 @@ export function BudgetEntryPage() {
               Departman Müdürü
             </div>
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-tertiary" style={{ fontSize: 18 }}>
+              <span className="material-symbols-outlined text-on-secondary-container" style={{ fontSize: 18 }}>
                 pending
               </span>
               CFO (beklemede)
