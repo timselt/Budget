@@ -700,12 +700,12 @@ Bu ADR **F2 başında Önerildi** statüsünde açılır ve kararlar kod yazılm
 ## ADR-0008 — Excel/PDF Raporlama, Tenant Stream Limiti, Türkçe Font ve Import Concurrency Guard
 
 **Tarih:** 2026-04-17
-**Statü:** Kabul edildi — §2.1/§2.2/§2.3/§2.5 F3 kapanışı itibarıyla uygulandı ve test edildi. **§2.4 (Excel başlık dili) muhasebe ekibi yazılı teyidine koşullu kalmaya devam ediyor**; teyit gelinceye kadar Türkçe sabit başlıklar uygulamada kullanılıyor ancak karar kilitlenmemiştir.
+**Statü:** Kabul edildi (tüm alt-kararlar). §2.4 için muhasebe ekibinin yazılı teyidi **2026-04-17 tarihinde alındı**: Türkçe sabit başlıklar onaylandı — koşul kaldırıldı.
 **Karar Sahibi:** Timur Selçuk Turan
 **İlgili Belgeler:**
 - ADR-0002 (audit_logs partitioning — `import_errors` tablosu buradan bağımsız)
 - ADR-0007 (observability — import audit event'leri Seq'e akacak)
-- CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #5 (Excel şablon başlık dili)
+- ~~CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #5~~ _(2026-04-17 kapandı — muhasebe onayı)_
 
 ### 1. Bağlam
 
@@ -795,13 +795,125 @@ F3 kapsamı tek bir karar yüzeyinde birleştirilir, çünkü beş alt-problem b
 | §2.1 ClosedXML + tenant limiti | `ExcelImportService.PreviewAsync` / `CommitAsync`; `ImportLimits.MaxBytes = 10 MB`, `MaxRows = 50 000`; `ImportFileTooLargeException` → HTTP 422 | 5 integration (preview, commit, byte limit, year lock, concurrency) |
 | §2.2 QuestPDF + Lato TTF subset | `QuestPdfFontBootstrap` + static ctor `PdfReportService`; embed via `EmbeddedResource`; KVKK footer satırı | 3 integration (generate <200 KB + Lato byte scan + source KVKK guard) |
 | §2.3 Import concurrency guard | `IImportGuard` + `PgAdvisoryImportGuard` (`pg_try_advisory_xact_lock(hashtextextended(...))`); `ImportConcurrencyConflictException` → HTTP 409 | 6 integration (solo/contend/cross-tenant/cross-resource/auto-release/no-tx) |
-| §2.4 Excel başlık dili (TR sabit) | `ExcelExportService`/`ExcelImportService` sabit `Müşteri`/`Ocak`…`Aralık`/`Toplam` | Kapsandı ancak karar muhasebe teyidine kadar koşullu |
+| §2.4 Excel başlık dili (TR sabit) | `ExcelExportService`/`ExcelImportService` sabit `Müşteri`/`Ocak`…`Aralık`/`Toplam` | **Muhasebe teyidi 2026-04-17'de alındı — Fully Accepted.** |
 | §2.5 Log hijyeni | `ExceptionMessageSanitizer` 4 regex mask + `GlobalExceptionHandler.Detail` entegrasyonu | 16 unit test (conn-string, POSIX path, Win path, cert ref, combined) |
 
 **Test kapsamı:** F2 sonu 147 → F3 sonu **178** (+31 test). 144 unit + 34 integration, 0 fail.
 
-**Muhasebe teyit bekleyen madde:**
-- §2.4 — Türkçe sabit başlık listesi (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`). Muhasebe ekibi yazılı onay verdiğinde ADR bu not silinerek fully-accepted statüsüne geçecek; onay reddedilirse F4 SPA i18n framework ile TR/EN alias sistemine migrasyon (≈0.5 gün).
+**Muhasebe teyit durumu:** _(2026-04-17 kapandı — onaylandı)_
+- §2.4 Türkçe sabit başlık listesi muhasebe ekibinden yazılı onay aldı. ADR fully-accepted statüsüne geçti; i18next migration iptal edildi. `ExcelExportService` mevcut sabit Türkçe başlıklarla kalır.
+
+---
+
+## ADR-0009 — Frontend Baseline: SPA Stack + OIDC PKCE + SameSite + i18n + §2.4 Finalize
+
+**Tarih:** 2026-04-17
+**Statü:** Önerildi (F4 kapanışında Kabul edildi'ye güncellenecek)
+**Karar Sahibi:** Timur Selçuk Turan
+**İlgili Belgeler:**
+- ADR-0001 (stack — Chart.js vs Recharts sapması burada çözülür)
+- ADR-0007 (Hangfire dashboard auth — SameSite kararı bu dashboard'u etkiler)
+- ADR-0008 §2.4 (Excel başlık dili muhasebe koşullu — F4'te final'ize edilir)
+- CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #5 (§2.4 ile aynı madde)
+
+### 1. Bağlam
+
+F1-F3 backend + operasyonel altyapıyı tesliım etti. `client/` dizini kısmen kurulmuş durumda (Vite + React 19 + Tailwind 4 + TanStack Query + Zustand + Chart.js + Router 7 paketleri pin'li, basic iskelet var). F4 bu iskeleti 6-sayfalık MVP'ye çevirir ve 4 bağımsız karar yüzeyini aynı anda kapatır:
+
+1. SPA OIDC flow yönü (backend-redirect vs client-redirect)
+2. Cookie `SameSite` davranışı (F2 carry-over güvenlik kararı)
+3. i18n stratejisi (ADR-0008 §2.4 fallback altyapısı)
+4. AG-Grid clipboard semantiği (Excel kullanıcı alışkanlığı kritik — CLAUDE.md Bilinen Tuzak #4)
+
+Ek olarak ADR-0008 §2.4 muhasebe teyit yolu F4 içinde final'ize edilir; teyit gelirse ADR-0008 fully-accepted'a, gelmezse i18next migration'a.
+
+### 2. Karar
+
+#### 2.1. SPA Stack
+
+Mevcut `client/package.json` üzerine şu eklemeler pin'lenir:
+- AG-Grid Community 32+ — budget-entries spreadsheet UI
+- React Hook Form + Zod — form validation
+- date-fns — tarih biçimlendirme (TR locale)
+- i18next + react-i18next — TR default + EN mirror
+- Lucide React — ikon seti
+
+ADR-0001'de "Recharts" olarak geçen frontend chart kütüphanesi burada resmi olarak **superseded**: Chart.js + react-chartjs-2 5.3 bağlayıcı (CLAUDE.md §Stack).
+
+#### 2.2. OIDC Code + PKCE Flow (1A)
+
+- SPA `/login` → `window.location.href = '/connect/authorize?...'` yönlendirir; OpenIddict cookie akışı + server-rendered consent sayfası kullanılır.
+- Alternatif (1B — SPA programmatic redirect) reddedildi: PKCE akışının server-tarafında cookie+CSRF ile entegrasyonu basitleşiyor, SPA'da iki katmanlı auth state yönetimi gerekmez.
+- Token interceptor `shared/api/http.ts` Axios instance'ına bağlanır; 401 → refresh attempt → fail ise `/login`; 403 → `/forbidden` route.
+
+#### 2.3. i18n (2A — TR Default)
+
+- Default dili Türkçe, EN mirror olarak destek; toggle kullanıcı ayarında.
+- `shared/i18n/tr.json` primary, `shared/i18n/en.json` mirror.
+- Key-count parity Vitest unit test — bir dosyada key eksikse build fail.
+- Browser language detect (2B) reddedildi: kullanıcı tabanı homojen Türkçe.
+
+#### 2.4. AG-Grid Clipboard Semantics (İnce Ayar #1)
+
+- **AG-Grid Community** (Enterprise lisansı maliyeti gereksiz) + `useClipboardRange.ts` custom hook.
+- Davranışlar:
+  - Tek hücre kopya/yapıştır — native.
+  - Contiguous range — native.
+  - **Non-contiguous clipboard kopya** (Excel'de Ctrl+click ile birden fazla range seçilmiş) → **contiguous block olarak yapışır, seçili hücreden başlayarak**. Kullanıcı toast uyarısı: "Non-contiguous aralık contiguous olarak yapıştırıldı." — sessiz yapıştırma yok.
+  - Dış kaynak kopya (Excel, Sheets) → hücre başına parse.
+  - Read-only cells → yapıştırma atlanır + toast uyarısı.
+  - Undo/redo — komut stack.
+- Enterprise'a geçiş için rezerve tutulur; F8+'de kullanıcı ihtiyacı çıkarsa değerlendirilir.
+
+#### 2.5. TR Locale Decimal Parse (İnce Ayar #2)
+
+- **Açık Vitest assertion:** `"1.234,56"` → `1234.56` (JavaScript `Number`). Nokta binlik ayırıcı, virgül ondalık ayırıcı.
+- Yanlış parse pathı (`parseFloat("1.234")` = 1.234 JS default) için regex-bazlı TR parser: önce virgül ondalık → nokta, binlik nokta silinir.
+- Bankacılık doğruluğu açısından kritik — `decimal` round-trip testleri ExcelImportService TRY tutarlarıyla uyumlu kalmalı.
+- `shared/lib/parseTrNumber.ts` helper + 10+ assertion Vitest testi (edge cases: negative, scientific notation, leading zero, trailing comma).
+
+#### 2.6. SameSite=Strict Decision Flow (F2 Carry-over)
+
+- `AuthenticationExtensions.AddCookie` → `SameSiteMode.Strict` denenir.
+- E2E test (Playwright): `/connect/authorize` → SPA callback → token alma akışı Strict modda çalışıyor mu?
+- **Çalışıyorsa**: Strict'e geçilir, `/hangfire` CSRF native korumalı.
+- **Bozulursa**: Lax'ta kalınır + `/hangfire` için header-based double-submit CSRF token (SPA `X-CSRF-Token` header attığında sunucu cookie vs header eşleşme kontrolü). Gerekçe F4 PR açıklamasında + bu ADR §4 sonuçlarında belgelenir.
+
+#### 2.7. Muhasebe §2.4 Teyit — _KAPANDI 2026-04-17 (onaylandı)_
+
+- Muhasebe ekibi Türkçe sabit başlıkları yazılı olarak onayladı (F4 Gün-0'da teyit geldi — deadline (2026-04-20) beklenmeden).
+- ADR-0008 §2.4 "Fully Accepted"; `ExcelExportService` TR sabit başlıklarla kalır.
+- CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #5 kapatıldı.
+- i18n seed (tr.json + en.json) F4 foundation commit'inde teslim edildi; ExcelExportService bu seed'e bağlanmıyor (ölü kod değil — gelecek EN locale taleplerine hazır altyapı).
+- F4 içindeki i18next migration iş paketi (Task #9) iptal edildi.
+
+### 3. Reddedilen Alternatifler
+
+| Alternatif | Red Nedeni |
+|---|---|
+| 1B SPA programmatic redirect | İki katmanlı auth state yönetimi; server-rendered consent daha temiz |
+| 2B Browser language detect | Homojen Türkçe kullanıcı tabanı; TR default yeterli |
+| AG-Grid Enterprise | Lisans maliyeti gereksiz; Community + custom hook yeterli |
+| Non-contiguous paste native desteği | AG-Grid Community sınırı; silent behavior yerine açık kullanıcı uyarısı seçildi |
+| `parseFloat` direct TR string | Nokta binlik ayırıcıyı ondalık olarak yorumlar — bankacılık doğruluğu zarar görür |
+| Recharts (ADR-0001) | CLAUDE.md §Stack Chart.js bağlayıcı; ADR-0001 §Frontend Chart Library superseded by ADR-0009 §2.1 |
+
+### 4. Sonuçlar
+
+**Olumlu:**
+- 6 sayfalık MVP muhasebe ekibinin günlük iş akışını kapsıyor.
+- AG-Grid + `useClipboardRange` Excel alışkanlığı ile uyumlu; non-contiguous edge case sessiz davranmıyor.
+- i18next seed §2.4 teyit gecikse bile F4 Excel cephesini bloklamaz.
+- SameSite kararı E2E test ile empirik olarak doğrulanır, ADR-based varsayım değildir.
+
+**Olumsuz:**
+- AG-Grid Enterprise olmadığı için büyük range paste senaryolarında kullanıcı uyarı toast'ı çıkar; UX ek adım.
+- i18n seed altyapısı (tr.json + en.json) muhasebe onayı sonrası ExcelExportService tarafından tüketilmiyor; gelecek EN locale taleplerine hazır dokümantasyon altyapısı olarak korundu.
+- Lighthouse ≥90 hedefi AG-Grid bundle size ile çekişebilir; chunked dynamic import gerekebilir.
+
+**Koşullu:**
+- §2.6 SameSite=Strict — Playwright E2E sonucu ile dallanır.
+- ~~§2.7 §2.4 muhasebe teyit — 2026-04-20 deadline~~ _(2026-04-17 kapandı — onaylandı, koşul düştü)_
 
 ---
 

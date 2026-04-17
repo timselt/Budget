@@ -1,0 +1,56 @@
+{
+  "app": {
+    "title": "FinOps Tur",
+    "loading": "Yükleniyor..."
+  },
+  "nav": {
+    "dashboard": "Özet",
+    "budgetEntries": "Bütçe Girişi",
+    "scenarios": "Senaryolar",
+    "approvals": "Onaylar",
+    "variance": "Sapma",
+    "reports": "Raporlar",
+    "masterData": "Ana Veri",
+    "auditLog": "Denetim Kaydı"
+  },
+  "auth": {
+    "signIn": "Giriş Yap",
+    "signOut": "Çıkış Yap",
+    "invalidCredentials": "Kullanıcı adı veya şifre hatalı.",
+    "sessionExpired": "Oturum süreniz doldu, lütfen tekrar giriş yapın."
+  },
+  "budget": {
+    "headers": {
+      "customer": "Müşteri",
+      "segment": "Segment",
+      "january": "Ocak",
+      "february": "Şubat",
+      "march": "Mart",
+      "april": "Nisan",
+      "may": "Mayıs",
+      "june": "Haziran",
+      "july": "Temmuz",
+      "august": "Ağustos",
+      "september": "Eylül",
+      "october": "Ekim",
+      "november": "Kasım",
+      "december": "Aralık",
+      "total": "Toplam"
+    }
+  },
+  "clipboard": {
+    "nonContiguousWarning": "Non-contiguous aralık contiguous olarak yapıştırıldı.",
+    "payloadTooLargeWarning": "Yapıştırılan aralık maksimum boyutu aştı; kesilerek yapıştırıldı.",
+    "readOnlyWarning": "Salt okunur hücreler atlandı."
+  },
+  "import": {
+    "fileTooLarge": "Dosya boyutu sınırı aşıldı.",
+    "concurrencyConflict": "Bu şirket için zaten bir yükleme devam ediyor.",
+    "periodLocked": "Bütçe dönemi kilitli; içe aktarım yapılamaz."
+  },
+  "errors": {
+    "forbidden": "Bu sayfayı görüntüleme yetkiniz yok.",
+    "notFound": "Sayfa bulunamadı.",
+    "unexpected": "Beklenmedik bir hata oluştu."
+  }
+}
