@@ -16,6 +16,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // ADR-0009 §2.2: 401 → refresh-token retry once; if refresh also fails,
+    // clear tokens and bounce to /login.
     if (error.response?.status === 401) {
       const refreshToken = localStorage.getItem('refresh_token')
       if (refreshToken && !error.config._retry) {
@@ -39,6 +41,18 @@ api.interceptors.response.use(
         }
       }
     }
+
+    // ADR-0009 §2.2: 403 → the user is authenticated but lacks the role
+    // policy for this route (e.g. Viewer hitting /budget-entries commit).
+    // Send them to /forbidden instead of letting the axios error bubble
+    // to the generic error boundary with no visible reason.
+    if (error.response?.status === 403) {
+      // Skip the redirect when we're already on /forbidden to avoid a loop.
+      if (!window.location.pathname.startsWith('/forbidden')) {
+        window.location.href = '/forbidden'
+      }
+    }
+
     return Promise.reject(error)
   }
 )

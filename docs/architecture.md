@@ -840,11 +840,13 @@ Mevcut `client/package.json` üzerine şu eklemeler pin'lenir:
 
 ADR-0001'de "Recharts" olarak geçen frontend chart kütüphanesi burada resmi olarak **superseded**: Chart.js + react-chartjs-2 5.3 bağlayıcı (CLAUDE.md §Stack).
 
-#### 2.2. OIDC Code + PKCE Flow (1A)
+#### 2.2. OIDC Password Grant (F4 Part 2'de korundu; PKCE code flow migration F8+'a ertelendi)
 
-- SPA `/login` → `window.location.href = '/connect/authorize?...'` yönlendirir; OpenIddict cookie akışı + server-rendered consent sayfası kullanılır.
-- Alternatif (1B — SPA programmatic redirect) reddedildi: PKCE akışının server-tarafında cookie+CSRF ile entegrasyonu basitleşiyor, SPA'da iki katmanlı auth state yönetimi gerekmez.
-- Token interceptor `shared/api/http.ts` Axios instance'ına bağlanır; 401 → refresh attempt → fail ise `/login`; 403 → `/forbidden` route.
+- **Revize edildi (2026-04-17, F4 Part 2 başlangıcı):** F4 Part 1 keşif sonrası mevcut `client/src/lib/api.ts` + `client/src/stores/auth.ts` SPA'nın halihazırda **OpenIddict password grant** (`grant_type=password` + `grant_type=refresh_token`) kullandığı görüldü. Mevcut akış production-safe ve iç araç kullanım senaryosunda (CFO + muhasebe ekibi) kabul edilebilir; PKCE code flow'a geçiş **büyük bir SPA refactor** olup F4 bütçesini önemli ölçüde genişletir.
+- **Karar:** Password grant F4 Part 2'de korunur. LoginPage email/password form → POST `/connect/token` akışı değişmez. F4 Part 2 yalnızca eksik olanları tamamlar: (a) 401 refresh zaten mevcut, (b) **403 forbidden redirect eklendi** (`lib/api.ts` axios interceptor), (c) `shared/` pattern'ine opsiyonel re-export (F4 Part 1 minimal refactor direktifi gereği).
+- **Code + PKCE migration** ayrı bir ADR (ADR-0011 aday konu, F8+ "Güvenlik Hardening") ile planlanır. Mevcut flow'un riski: password grant + localStorage access/refresh token → XSS durumunda token çalınabilir. F2 CSP + input sanitization ile kısmen azaltılır; iç araç + authenticated kullanıcı tabanı → risk kabul edilebilir.
+- **Alternatif (1A `/connect/authorize` redirect + PKCE)**: Önerildi, F4 scope bütçesiyle uyumsuz bulundu; F8+ güvenlik hardening fazına ertelendi.
+- **Alternatif (1B SPA programmatic PKCE)**: Red kararı geçerliliğini korur (iki katmanlı auth state).
 
 #### 2.3. i18n (2A — TR Default)
 
@@ -891,7 +893,8 @@ ADR-0001'de "Recharts" olarak geçen frontend chart kütüphanesi burada resmi o
 
 | Alternatif | Red Nedeni |
 |---|---|
-| 1B SPA programmatic redirect | İki katmanlı auth state yönetimi; server-rendered consent daha temiz |
+| 1A `/connect/authorize` + PKCE (F4 Part 2 önerisi) | F4 Part 2 bütçesi dışında; password grant mevcut ve çalışır. PKCE migration F8+ güvenlik hardening (ADR-0011 aday) |
+| 1B SPA programmatic PKCE | İki katmanlı auth state yönetimi |
 | 2B Browser language detect | Homojen Türkçe kullanıcı tabanı; TR default yeterli |
 | AG-Grid Enterprise | Lisans maliyeti gereksiz; Community + custom hook yeterli |
 | Non-contiguous paste native desteği | AG-Grid Community sınırı; silent behavior yerine açık kullanıcı uyarısı seçildi |
@@ -914,6 +917,60 @@ ADR-0001'de "Recharts" olarak geçen frontend chart kütüphanesi burada resmi o
 **Koşullu:**
 - §2.6 SameSite=Strict — Playwright E2E sonucu ile dallanır.
 - ~~§2.7 §2.4 muhasebe teyit — 2026-04-20 deadline~~ _(2026-04-17 kapandı — onaylandı, koşul düştü)_
+
+---
+
+## ADR-0011 — OIDC Password Grant → Authorization Code + PKCE Migration (Aday)
+
+**Tarih:** 2026-04-17
+**Statü:** Önerildi (F8+ güvenlik hardening fazında değerlendirilir)
+**Karar Sahibi:** Timur Selçuk Turan
+**İlgili Belgeler:**
+- ADR-0003 (Identity + OpenIddict — mevcut server-side yapılandırma `AllowAuthorizationCodeFlow()` + `RequireProofKeyForCodeExchange()` zaten kayıtlı)
+- ADR-0009 §2.2 (F4 Part 2'de password grant korundu — bu ADR'nin doğuş nedeni)
+- CLAUDE.md §Stack (OpenIddict 7.4.0)
+
+### 1. Bağlam
+
+F4 Part 2 keşfinde SPA'nın OpenIddict password grant (`grant_type=password` + refresh_token) kullandığı görüldü. Mevcut akış iç araç kullanım senaryosunda çalışır ve F4 Part 2 bütçesinde kalır; ancak modern SPA best practice **authorization code + PKCE** üç tehditi kapatır:
+
+1. **Password exposure** — kullanıcı parolası SPA'ya form ile gönderiliyor. SPA kodunda XSS veya supply-chain risk → parolaya doğrudan erişim. PKCE akışında parola yalnızca server-rendered consent sayfasında alınır, SPA parolayı asla görmez.
+2. **localStorage token storage** — access + refresh token `localStorage`'da. XSS payload'ı token'ları çalabilir. PKCE + httpOnly cookie token'ı DOM erişiminden izole eder.
+3. **RFC 8252 uyumluluğu** — native + SPA uygulamalar için OAuth 2.0 best practice PKCE zorunlu kılıyor; password grant "deprecated" olarak işaretlenmiş.
+
+Migration maliyeti:
+- SPA: LoginPage form → `/connect/authorize` redirect; callback handler + code exchange; token storage modeli değişir (cookie vs localStorage).
+- Backend: OpenIddict zaten PKCE destekliyor (`AuthenticationExtensions.AddServer` içinde `AllowAuthorizationCodeFlow()` + `RequireProofKeyForCodeExchange()` kayıtlı); ek DI/middleware gerekmez. Refresh token rotation politikası gözden geçirilir.
+- Test etkisi: auth store testleri + mevcut client Vitest'in login path'i yeniden yazılır.
+
+### 2. Karar
+
+**Önerilen:** Password grant → PKCE code flow migration **F8+ Güvenlik Hardening fazında** uygulanır.
+
+F4 Part 2'de uygulanmama gerekçesi: F4 bütçesinin önemli kısmını (~1 gün) tek bir auth refactor'una ayırmak, aynı fazdaki AG-Grid entegrasyonu, Playwright harness ve Cookie SameSite kararını erteler. Password grant iç araç için kabul edilebilir güvenlik seviyesinde; riski F2 CSP + F4 Part 2 SameSite kararı azaltır.
+
+### 3. Reddedilen Alternatifler
+
+| Alternatif | Red Nedeni |
+|---|---|
+| Mevcut password grant'ı kalıcı bırakma | Modern SPA güvenlik best practice ile çelişir; audit + uyum süreçlerinde soru işareti yaratır |
+| F4 Part 2'ye migration'ı sığdırma | Fazın diğer iş paketlerini (AG-Grid, E2E, SameSite) erteler; tek fazda çoklu breaking change riski |
+| Implicit flow | OAuth 2.0 BCP 210 tarafından "don't do this" olarak işaretlendi |
+
+### 4. Sonuçlar
+
+**Olumlu (migration sonrası):**
+- SPA parolaya erişmez; XSS → credential theft vektörü kapanır.
+- Token httpOnly cookie'de → DOM erişiminden izole.
+- RFC 8252 uyumlu; güvenlik denetimi pozitif geri bildirim.
+
+**Olumsuz (migration maliyeti):**
+- SPA login flow yeniden yazım (~1 gün).
+- Test senaryoları (client Vitest'in bir kısmı + E2E login akışı) güncellenir.
+- Redirect-based flow bazı dev-tooling'e ek adım ekler.
+
+**Koşullu:**
+- F8+ fazı başlamadan önce F4-F7'nin ürettiği bundle size + Lighthouse kararları stabilize olmuş olmalı.
 
 ---
 

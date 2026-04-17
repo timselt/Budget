@@ -4,6 +4,37 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### FAZ 4 Part 2a — OIDC §2.2 Revize + /forbidden Route + ADR-0011 Proposed (2026-04-17)
+
+F4 Part 2 scope'u (MVP sayfa wiring + AG-Grid entegrasyonu + Playwright E2E + SameSite probe) tek oturumda sığmadığı için kullanıcı direktifiyle **SPLIT**'e gidildi. Part 2a bu PR'da; Part 2b (AG-Grid), Part 2c (Playwright harness + SameSite E2E — 7a/7b), Part 2d (AG-Grid paste E2E + F4 kapanış) ayrı branch + PR'larda devam eder.
+
+#### Eklendi
+
+- **`shared/ui/ForbiddenPage.tsx`** (ADR-0009 §2.2) — 403 landing sayfası. Lucide `ShieldAlert` ikon + i18next `errors.forbidden` + dashboard'a geri link. `App.tsx`'e `/forbidden` rotası eklendi (AuthGuard dışında — session temizlendiğinde re-auth loop oluşturmasın).
+- **`lib/api.ts` 403 redirect** — axios response interceptor 403 yanıtlarında `/forbidden`'a yönlendirir (loop-safe guard ile). 401 refresh flow değişmedi.
+- **`App.tsx` i18next bootstrap import** — `./shared/i18n` side-effect import app entry'sinde; i18next `.isInitialized` guard'ı sayesinde HMR/test double-init güvenli.
+
+#### Değişti
+
+- **ADR-0009 §2.2 revize** (Önerildi'den revize edildi) — F4 Part 2 keşfi: mevcut SPA OpenIddict **password grant** kullanıyor, PKCE değil. Password grant iç araç kullanım senaryosunda kabul edilebilir; PKCE migration F4 bütçesini şişirirdi. §2.2 "Password grant korundu; PKCE migration F8+'a ertelendi" olarak güncellendi. Reddedilen alternatifler tablosuna `1A /connect/authorize + PKCE (F4 Part 2 önerisi)` satırı eklendi.
+
+#### Yeni ADR
+
+- **ADR-0011 "Önerildi"** — OIDC Password Grant → Authorization Code + PKCE Migration (Aday). F8+ güvenlik hardening fazının konusu. Üç tehdit kayıt altına alındı (password exposure, localStorage token XSS, RFC 8252 non-compliance); migration maliyeti ve koşullu bağımlılıklar belgeli.
+
+#### Test Kapsamı
+
+| Katman | F4 Part 1 sonu | F4 Part 2a sonu | Delta |
+|---|---|---|---|
+| Backend unit | 144 | 144 | 0 |
+| Backend integration | 34 | 34 | 0 |
+| Client Vitest | 43 | 43 | 0 |
+| **Toplam** | 221 | **221** | **0** |
+
+Yeni test yok — değişiklikler redirect side-effect + yeni static component + ADR revizyonu; unit test kapsamında değil. `pnpm build` bundle 112 KB gzip (<300 KB limit).
+
+---
+
 ### FAZ 4 Part 1 — Frontend Foundation + ADR-0008 §2.4 Finalize (2026-04-17)
 
 ADR-0009 (Önerildi — F4 Part 2 kapanışında "Kabul edildi"ye geçer) kapsamında foundation iş paketi teslim edildi. Branch: `feat/f4-frontend-baseline`. MVP sayfa wiring + AG-Grid entegrasyonu + Cookie SameSite Playwright probe bilerek Part 2'ye bırakıldı; iki ince ayarın somut kanıtı ve §2.4 muhasebe finalize'ı main'e zamanında akıtılsın diye Part 1 ayrı PR olarak gönderildi.
