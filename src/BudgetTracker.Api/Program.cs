@@ -118,6 +118,27 @@ try
         return;
     }
 
+    // Bootstrap admin seed (one-shot). Creates the first Admin user on a
+    // fresh staging/production DB so that /api/v1/account/register (which
+    // requires Admin policy) is reachable. Reads BOOTSTRAP_ADMIN_EMAIL +
+    // BOOTSTRAP_ADMIN_PASSWORD from the environment; idempotent — if the
+    // email already has a user the call is a no-op.
+    if (args.Contains("--seed-bootstrap-admin"))
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            Console.Error.WriteLine(
+                "[seed-bootstrap-admin] Dev env already seeds 5 test users via IdentitySeeder " +
+                "(admin@tag.local / Devpass!2026). Set ASPNETCORE_ENVIRONMENT=Staging or Production " +
+                "and retry if you need to bootstrap a non-dev database.");
+            Environment.Exit(1);
+            return;
+        }
+        using var scope = app.Services.CreateScope();
+        await BootstrapAdminSeeder.SeedAsync(scope.ServiceProvider);
+        return;
+    }
+
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();

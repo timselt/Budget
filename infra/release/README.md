@@ -46,6 +46,31 @@ export BUDGET_APP_DB_PASSWORD='<Railway secret>'
 
 **Idempotent:** `ALTER ROLE ... PASSWORD` defalarca çalıştırılabilir.
 
+## 1b. Bootstrap Admin kullanıcı — `--seed-bootstrap-admin`
+
+**Neden:** `AccountController.Register` `Admin` policy ile korunur. Sıfır kullanıcıyla gelen bir staging/production DB'sinde ilk Admin'i başka bir yoldan oluşturmak gerekir; bu seeder tam bu boşluğu doldurur.
+
+**Gerekli env-var'lar:**
+| Değişken | Örnek |
+|---|---|
+| `BOOTSTRAP_ADMIN_EMAIL` | `admin@finopstur.com` |
+| `BOOTSTRAP_ADMIN_PASSWORD` | 16+ karakter, güçlü random (`openssl rand -base64 24` önerilir) |
+
+**Çalıştırma:**
+
+```bash
+railway run -- \
+  BOOTSTRAP_ADMIN_EMAIL=admin@finopstur.com \
+  BOOTSTRAP_ADMIN_PASSWORD='<strong-random>' \
+  dotnet BudgetTracker.Api.dll --seed-bootstrap-admin
+```
+
+**Sonrası:** Oluşturulan hesapla SPA'da login → `/master-data` → kendi Admin rollü kullanıcılarınızı + CFO/Finance/Department Head/Viewer kullanıcılarını tek tek davet edin. Bootstrap admin'i bir sonraki kullanıcı oluşturulduktan sonra silebilirsiniz (veya durağan tutun, hepsi audit_logs'ta).
+
+**Idempotent:** E-mail adresinde zaten bir kullanıcı varsa seeder hiçbir şey yapmadan çıkar.
+
+**Dev ortamı:** Bu komut **Development** env'inde reddedilir — orada `IdentitySeeder` zaten 5 test kullanıcısı seed eder (`admin@tag.local` / `Devpass!2026`).
+
 ## 2. Üretim OIDC SPA client seed — `--seed-prod-oidc-client`
 
 **Neden:** Dev ortamı `IdentitySeeder` üzerinden `budget-tracker-dev` client'ını otomatik seed eder. Production SPA için ayrı bir client (`budget-tracker-spa`) bir kereye mahsus seed edilir.
