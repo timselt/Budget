@@ -35,11 +35,17 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
 
         if (statusCode == StatusCodes.Status500InternalServerError)
         {
-            _logger.LogError(exception, "Unhandled exception");
+            _logger.LogError(exception,
+                "Unhandled exception: {SafeMessage} path={Path} traceId={TraceId}",
+                ExceptionMessageSanitizer.Sanitize(exception.Message),
+                httpContext.Request.Path,
+                httpContext.TraceIdentifier);
         }
         else
         {
-            _logger.LogWarning(exception, "Handled exception: {StatusCode}", statusCode);
+            _logger.LogWarning(exception,
+                "Handled exception: {StatusCode} path={Path} traceId={TraceId}",
+                statusCode, httpContext.Request.Path, httpContext.TraceIdentifier);
         }
 
         var problemDetails = new ProblemDetails

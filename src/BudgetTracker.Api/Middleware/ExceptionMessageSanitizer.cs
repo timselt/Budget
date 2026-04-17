@@ -20,17 +20,20 @@ public static partial class ExceptionMessageSanitizer
 
     // Absolute POSIX filesystem paths in operational directories that operators
     // don't want in logs (release secrets, volume mounts, temp dirs).
-    [GeneratedRegex(@"/(etc|var|home|usr|opt|tmp|root)(/[^\s""']+)+")]
+    // Added /app + /proc + /mnt + /srv + /run after F3 security-reviewer
+    // flagged Railway/Docker container paths as bypass candidates.
+    [GeneratedRegex(@"/(etc|var|home|usr|opt|tmp|root|app|proc|mnt|srv|run)(/[^\s""']+)+")]
     private static partial Regex AbsoluteUnixPath();
 
     // Windows drive-letter paths — less common on Railway but cheap to cover.
     [GeneratedRegex(@"(?i)[A-Z]:\\[^\s""']+")]
     private static partial Regex AbsoluteWindowsPath();
 
-    // Anything ending in .pfx or .key regardless of directory — OpenIddict cert
-    // references often leak as "certificate not found at X.pfx" in messages that
-    // the unix-path mask would otherwise miss.
-    [GeneratedRegex(@"[^\s""']+\.(pfx|key)\b", RegexOptions.IgnoreCase)]
+    // Anything ending in .pfx / .key / .p12 / .keystore regardless of directory
+    // — OpenIddict cert references often leak as "certificate not found at X.pfx"
+    // in messages that the unix-path mask would otherwise miss. F3
+    // security-reviewer added .p12 (PKCS#12 alt extension) and .keystore (Java).
+    [GeneratedRegex(@"[^\s""']+\.(pfx|key|p12|keystore)\b", RegexOptions.IgnoreCase)]
     private static partial Regex CertificateFileReference();
 
     public static string Sanitize(string? message)

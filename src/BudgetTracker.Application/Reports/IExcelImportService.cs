@@ -32,6 +32,14 @@ public interface IExcelImportService
     /// limit check because a preview of a 500 MB file would block a request
     /// thread; the limit applies uniformly.
     /// </summary>
+    /// <remarks>
+    /// <b>Non-binding snapshot:</b> preview does NOT acquire the import advisory
+    /// lock. Between a preview call and its paired commit, another caller may
+    /// commit against the same <paramref name="versionId"/>, which can cause
+    /// the commit result to diverge from the previewed row count. The SPA
+    /// should treat preview output as advisory and show the commit result as
+    /// the authoritative count.
+    /// </remarks>
     Task<ExcelImportPreview> PreviewAsync(
         int versionId,
         Stream excelStream,

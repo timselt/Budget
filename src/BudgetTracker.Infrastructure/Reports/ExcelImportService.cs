@@ -62,7 +62,7 @@ public sealed class ExcelImportService : IExcelImportService
             version.CompanyId, versionId, streamLength,
             actorUserId, cancellationToken, postCheckRowCount: dataRowCount);
 
-        var customers = await LoadActiveCustomersAsync(cancellationToken);
+        var customers = await LoadActiveCustomersAsync(version.CompanyId, cancellationToken);
 
         var errors = new List<ExcelImportRowError>();
         var warnings = new List<string>();
@@ -132,7 +132,7 @@ public sealed class ExcelImportService : IExcelImportService
             version.CompanyId, versionId, streamLength,
             actorUserId, cancellationToken, postCheckRowCount: dataRowCount);
 
-        var customers = await LoadActiveCustomersAsync(cancellationToken);
+        var customers = await LoadActiveCustomersAsync(version.CompanyId, cancellationToken);
         var now = _clock.UtcNow;
 
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
@@ -244,9 +244,12 @@ public sealed class ExcelImportService : IExcelImportService
         return version;
     }
 
-    private async Task<Dictionary<string, Customer>> LoadActiveCustomersAsync(CancellationToken ct) =>
+    private async Task<Dictionary<string, Customer>> LoadActiveCustomersAsync(int companyId, CancellationToken ct) =>
+        // Explicit CompanyId filter on top of the EF global query filter —
+        // defense-in-depth against a future refactor that inserts a stray
+        // IgnoreQueryFilters() on the customer pipeline (F3 csharp-reviewer HIGH).
         await _db.Customers
-            .Where(c => c.IsActive)
+            .Where(c => c.IsActive && c.CompanyId == companyId)
             .ToDictionaryAsync(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase, ct);
 
     private async Task EnforceLimitsAsync(
@@ -261,20 +264,34 @@ public sealed class ExcelImportService : IExcelImportService
             || (postCheckRowCount is { } rowCount && rowCount > ImportLimits.MaxRows))
         {
             var rowForAudit = postCheckRowCount ?? 0;
-            await _auditLogger.LogAsync(new AuditEvent(
-                EntityName: AuditEntityNames.BudgetVersion,
-                EntityKey: versionId.ToString(),
-                Action: AuditActions.ImportRejectedLimit,
-                CompanyId: companyId,
-                UserId: actorUserId,
-                NewValuesJson: JsonSerializer.Serialize(new
-                {
-                    bytes = streamLength,
-                    rows = rowForAudit,
-                    maxBytes = ImportLimits.MaxBytes,
-                    maxRows = ImportLimits.MaxRows,
-                })),
-                ct);
+
+            // Best-effort audit write: if the audit DB is unreachable we still
+            // want the caller to see the real ImportFileTooLargeException
+            // (→ HTTP 422) rather than a generic DB failure (→ HTTP 500). The
+            // audit outage lands on ILogger so operators can correlate.
+            try
+            {
+                await _auditLogger.LogAsync(new AuditEvent(
+                    EntityName: AuditEntityNames.BudgetVersion,
+                    EntityKey: versionId.ToString(),
+                    Action: AuditActions.ImportRejectedLimit,
+                    CompanyId: companyId,
+                    UserId: actorUserId,
+                    NewValuesJson: JsonSerializer.Serialize(new
+                    {
+                        bytes = streamLength,
+                        rows = rowForAudit,
+                        maxBytes = ImportLimits.MaxBytes,
+                        maxRows = ImportLimits.MaxRows,
+                    })),
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Audit write failed during import limit enforcement: version={VersionId}",
+                    versionId);
+            }
 
             throw new ImportFileTooLargeException(streamLength, rowForAudit);
         }

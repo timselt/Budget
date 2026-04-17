@@ -14,12 +14,20 @@ namespace BudgetTracker.Infrastructure.Reports;
 internal static class QuestPdfFontBootstrap
 {
     private const string FontNamespace = "BudgetTracker.Infrastructure.Resources.Fonts";
-    private static int _registered;
 
-    public static void Register()
+    // Lazy<T> gives us a published-once-per-process guarantee that also
+    // propagates the first call's exception to later callers (as opposed to
+    // Interlocked.Exchange on an int, which would flip the flag BEFORE the
+    // registration succeeded — a failed first call would then silently skip
+    // every subsequent Register(), and each GeneratePdf would fail without
+    // any connection to the original error).
+    private static readonly Lazy<bool> _registration = new(PerformRegistration,
+        LazyThreadSafetyMode.ExecutionAndPublication);
+
+    public static void Register() => _ = _registration.Value;
+
+    private static bool PerformRegistration()
     {
-        if (Interlocked.Exchange(ref _registered, 1) == 1) return;
-
         // QuestPDF requires an explicit license selection before the first
         // GeneratePdf call. Running the library outside the API process (unit
         // tests, CLI seeders) must not depend on Program.cs having run first.
@@ -28,6 +36,7 @@ internal static class QuestPdfFontBootstrap
         var assembly = typeof(QuestPdfFontBootstrap).Assembly;
         RegisterFromResource(assembly, $"{FontNamespace}.Lato-Regular.ttf");
         RegisterFromResource(assembly, $"{FontNamespace}.Lato-Bold.ttf");
+        return true;
     }
 
     private static void RegisterFromResource(Assembly assembly, string resourceName)
