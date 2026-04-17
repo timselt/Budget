@@ -4,6 +4,28 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### FAZ 4 Kapanış — ADR-0009 Kabul edildi (2026-04-17)
+
+F4 Frontend Baseline tüm alt-kararlar kabul edilerek kapandı. Kapanış kapsamı:
+
+- **ADR-0009 "Kabul edildi"** — §2.1–§2.7 tüm alt-kararlar; §2.6 SameSite Lax'ta kaldı, Strict geçişi F8+ güvenlik hardening (ADR-0011 PKCE migration ile birlikte) fazına ertelendi
+- **ADR-0009 §5 Teslim Kanıtı** tablosu — her alt-karar dosya + test referansıyla belgelendi
+- **F5 scope güncellemesi** — SameSite cross-process E2E probe F5 Golden Scenario iş paketine eklendi
+- **CHANGELOG F4 full entry** — Part 1 + Part 2a + Part 2b + Part 2c girdileri tek çatı altında referanslandı
+
+**F4 sonu test kapsamı:** 178 backend (144 unit + 34 integration) + 48 client Vitest + 3 Playwright smoke = **229 test yeşil** (F3 sonu 178 → +51).
+
+**F4 SPLIT zaman çizelgesi:**
+| PR | Teslim | Merge |
+|---|---|---|
+| #4 (Part 1) | Foundation + ince ayar #1 + #2 + i18n seed + §2.4 finalize | 2026-04-17 |
+| #5 (Part 2a) | ADR §2.2 revize + /forbidden + ADR-0011 Proposed | 2026-04-17 |
+| #6 (Part 2b) | BudgetGrid AG-Grid + useClipboardRange bind + sonner | 2026-04-17 |
+| #7 (Part 2c) | Playwright harness + AG-Grid smoke E2E | 2026-04-17 |
+| #8 (Part 2d, bu PR) | ADR-0009 Accepted + CHANGELOG + MIGRATION_PLAN F4 kapanışı | 2026-04-17 |
+
+---
+
 ### FAZ 4 Part 2a — OIDC §2.2 Revize + /forbidden Route + ADR-0011 Proposed (2026-04-17)
 
 F4 Part 2 scope'u (MVP sayfa wiring + AG-Grid entegrasyonu + Playwright E2E + SameSite probe) tek oturumda sığmadığı için kullanıcı direktifiyle **SPLIT**'e gidildi. Part 2a bu PR'da; Part 2b (AG-Grid), Part 2c (Playwright harness + SameSite E2E — 7a/7b), Part 2d (AG-Grid paste E2E + F4 kapanış) ayrı branch + PR'larda devam eder.

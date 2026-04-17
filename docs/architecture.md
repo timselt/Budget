@@ -808,7 +808,7 @@ F3 kapsamı tek bir karar yüzeyinde birleştirilir, çünkü beş alt-problem b
 ## ADR-0009 — Frontend Baseline: SPA Stack + OIDC PKCE + SameSite + i18n + §2.4 Finalize
 
 **Tarih:** 2026-04-17
-**Statü:** Önerildi (F4 kapanışında Kabul edildi'ye güncellenecek)
+**Statü:** Kabul edildi (F4 kapanışı 2026-04-17). §2.6 SameSite kararı: Lax'ta kalındı; Strict geçişi F8+ güvenlik hardening fazına (ADR-0011 ile birlikte) ertelendi — cross-process E2E probe F5'te empirik olarak doğrulanacak.
 **Karar Sahibi:** Timur Selçuk Turan
 **İlgili Belgeler:**
 - ADR-0001 (stack — Chart.js vs Recharts sapması burada çözülür)
@@ -914,9 +914,23 @@ ADR-0001'de "Recharts" olarak geçen frontend chart kütüphanesi burada resmi o
 - i18n seed altyapısı (tr.json + en.json) muhasebe onayı sonrası ExcelExportService tarafından tüketilmiyor; gelecek EN locale taleplerine hazır dokümantasyon altyapısı olarak korundu.
 - Lighthouse ≥90 hedefi AG-Grid bundle size ile çekişebilir; chunked dynamic import gerekebilir.
 
-**Koşullu:**
-- §2.6 SameSite=Strict — Playwright E2E sonucu ile dallanır.
-- ~~§2.7 §2.4 muhasebe teyit — 2026-04-20 deadline~~ _(2026-04-17 kapandı — onaylandı, koşul düştü)_
+**Koşullu:** _(her ikisi F4 kapanışında kapandı)_
+- ~~§2.6 SameSite=Strict — Playwright E2E sonucu ile dallanır~~ — **Lax'ta kalındı** (F4 Part 2c Playwright smoke harness kuruldu; cross-process SameSite probe F5'e ertelendi). Strict geçişi ADR-0011 PKCE migration ile birlikte F8+'da ele alınır.
+- ~~§2.7 §2.4 muhasebe teyit — 2026-04-20 deadline~~ _(2026-04-17 kapandı — onaylandı)_
+
+### 5. Teslim Kanıtı (F4 kapanışı)
+
+| Kalem | Uygulama | Test |
+|---|---|---|
+| §2.1 SPA stack additions | `client/package.json` — AG-Grid Community 32.3.3, RHF 7.54, Zod 3.24, date-fns 4.1, i18next 24.2, lucide-react, sonner 2.0, Vitest 2.1, Playwright 1.59 | `pnpm build` yeşil (TS strict); app bundle 112 KB gzip, BudgetEntryPage chunk 234 KB gzip |
+| §2.2 OIDC flow (revize) | Password grant korundu; 403 → `/forbidden` axios interceptor | ADR-0011 aday açıldı (PKCE F8+) |
+| §2.3 i18n TR default + EN mirror | `shared/i18n/tr.json` + `en.json` + key-parity Vitest | 2 test |
+| §2.4 AG-Grid clipboard (ince ayar #1) | `BudgetGrid.tsx` + `useClipboardRange` + `parseClipboardGrid` + sonner toast | 15 Vitest (10 senaryo + 3 DoS + 2 parity) + 3 Playwright smoke |
+| §2.5 TR decimal parse (ince ayar #2) | `parseTrNumber.ts` | 26 Vitest (canonical + regression guard + en-US reject + edge) |
+| §2.6 SameSite (Lax korundu) | `AuthenticationExtensions.AddCookie` mevcut Lax; Strict F8+'da | F5 cross-process probe planlandı |
+| §2.7 §2.4 muhasebe teyit | 2026-04-17 onay alındı | ADR-0008 §2.4 Fully Accepted |
+
+**Toplam test kapsamı F4 sonu:** 178 backend + 48 client Vitest + 3 Playwright = **229**. F3 sonu 178 → +51.
 
 ---
 
