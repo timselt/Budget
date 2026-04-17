@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend (build + test + coverage)
+    runs-on: ubuntu-latest
+    services:
+      # Testcontainers.PostgreSQL still starts its own Postgres during tests
+      # via Docker; this service block is kept as a documentation hook for
+      # future direct-Npgsql integration tests that skip Testcontainers.
+      docker:
+        image: docker:27-dind
+        options: --privileged
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Restore
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+      - name: Unit tests
+        run: >
+          dotnet test tests/BudgetTracker.UnitTests
+          --configuration Release --no-build
+          --logger "trx;LogFileName=unit.trx"
+          --collect:"XPlat Code Coverage"
+      - name: Integration tests
+        run: >
+          dotnet test tests/BudgetTracker.IntegrationTests
+          --configuration Release --no-build
+          --logger "trx;LogFileName=integration.trx"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dotnet-test-results
+          path: |
+            **/TestResults/*.trx
+            **/TestResults/**/coverage.cobertura.xml
+
+  golden-scenario:
+    name: Golden scenario (release gate)
+    runs-on: ubuntu-latest
+    needs: backend
+    # Only run on main — the regression gate should not block feature PRs.
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Restore + build
+        run: dotnet build --configuration Release
+      - name: Golden scenario
+        run: >
+          dotnet test tests/BudgetTracker.IntegrationTests
+          --configuration Release --no-build
+          --filter Category=GoldenScenario
+
+  client:
+    name: Client (build + Vitest + Playwright smoke)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: client/pnpm-lock.yaml
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm build
+      - name: Lint
+        run: pnpm lint
+      - name: Vitest
+        run: pnpm test
+      - name: Playwright install
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Playwright smoke
+        run: pnpm e2e
+        env:
+          CI: 'true'
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: client/playwright-report/
+
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    needs: [backend, client]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Vulnerable NuGet packages
+        run: dotnet list package --vulnerable --include-transitive 2>&1 | tee nuget-audit.log
+      - name: Fail on high-severity
+        run: |
+          if grep -E "High|Critical" nuget-audit.log; then
+            echo "::error::High/Critical vulnerability found in NuGet packages"
+            exit 1
+          fi
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Client audit
+        working-directory: client
+        run: pnpm audit --audit-level=high || true
