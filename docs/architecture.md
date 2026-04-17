@@ -700,7 +700,7 @@ Bu ADR **F2 başında Önerildi** statüsünde açılır ve kararlar kod yazılm
 ## ADR-0008 — Excel/PDF Raporlama, Tenant Stream Limiti, Türkçe Font ve Import Concurrency Guard
 
 **Tarih:** 2026-04-17
-**Statü:** Önerildi (F3 kapanışında Kabul edildi'ye güncellenecek — §2.4 Excel başlık dili muhasebe ekibi teyidine **koşullu**)
+**Statü:** Kabul edildi — §2.1/§2.2/§2.3/§2.5 F3 kapanışı itibarıyla uygulandı ve test edildi. **§2.4 (Excel başlık dili) muhasebe ekibi yazılı teyidine koşullu kalmaya devam ediyor**; teyit gelinceye kadar Türkçe sabit başlıklar uygulamada kullanılıyor ancak karar kilitlenmemiştir.
 **Karar Sahibi:** Timur Selçuk Turan
 **İlgili Belgeler:**
 - ADR-0002 (audit_logs partitioning — `import_errors` tablosu buradan bağımsız)
@@ -787,6 +787,21 @@ F3 kapsamı tek bir karar yüzeyinde birleştirilir, çünkü beş alt-problem b
 
 **Koşullu:**
 - §2.4 Excel başlık dili — muhasebe ekibinden yazılı teyit alınana kadar "Önerildi" kalır; diğer alt-kararlar (§2.1 / §2.2 / §2.3 / §2.5) F3 kapanışında "Kabul edildi"ye geçer.
+
+### 5. Teslim Kanıtı (F3 kapanışı)
+
+| Kalem | Uygulama | Test |
+|---|---|---|
+| §2.1 ClosedXML + tenant limiti | `ExcelImportService.PreviewAsync` / `CommitAsync`; `ImportLimits.MaxBytes = 10 MB`, `MaxRows = 50 000`; `ImportFileTooLargeException` → HTTP 422 | 5 integration (preview, commit, byte limit, year lock, concurrency) |
+| §2.2 QuestPDF + Lato TTF subset | `QuestPdfFontBootstrap` + static ctor `PdfReportService`; embed via `EmbeddedResource`; KVKK footer satırı | 3 integration (generate <200 KB + Lato byte scan + source KVKK guard) |
+| §2.3 Import concurrency guard | `IImportGuard` + `PgAdvisoryImportGuard` (`pg_try_advisory_xact_lock(hashtextextended(...))`); `ImportConcurrencyConflictException` → HTTP 409 | 6 integration (solo/contend/cross-tenant/cross-resource/auto-release/no-tx) |
+| §2.4 Excel başlık dili (TR sabit) | `ExcelExportService`/`ExcelImportService` sabit `Müşteri`/`Ocak`…`Aralık`/`Toplam` | Kapsandı ancak karar muhasebe teyidine kadar koşullu |
+| §2.5 Log hijyeni | `ExceptionMessageSanitizer` 4 regex mask + `GlobalExceptionHandler.Detail` entegrasyonu | 16 unit test (conn-string, POSIX path, Win path, cert ref, combined) |
+
+**Test kapsamı:** F2 sonu 147 → F3 sonu **178** (+31 test). 144 unit + 34 integration, 0 fail.
+
+**Muhasebe teyit bekleyen madde:**
+- §2.4 — Türkçe sabit başlık listesi (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`). Muhasebe ekibi yazılı onay verdiğinde ADR bu not silinerek fully-accepted statüsüne geçecek; onay reddedilirse F4 SPA i18n framework ile TR/EN alias sistemine migrasyon (≈0.5 gün).
 
 ---
 
