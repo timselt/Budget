@@ -57,6 +57,22 @@ public static class DependencyInjection
             options.UseOpenIddict();
         });
 
+        // ADR-0007 §2.6 — isolated context factory for audit writes. Shares the
+        // same Npgsql + snake-case + interceptor surface as the scoped context
+        // (audit_logs has no RLS policy; the interceptor's GUC set is a no-op
+        // there) but each CreateDbContextAsync() returns a short-lived instance
+        // that does not share a ChangeTracker with business operations.
+        services.AddDbContextFactory<ApplicationDbContext>((sp, options) =>
+        {
+            options.UseNpgsql(connectionString, npgsql =>
+            {
+                npgsql.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+            });
+            options.UseSnakeCaseNamingConvention();
+            options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>());
+            options.UseOpenIddict();
+        }, lifetime: ServiceLifetime.Singleton);
+
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
 
         services.AddScoped<IFxConversionService, FxConversionService>();

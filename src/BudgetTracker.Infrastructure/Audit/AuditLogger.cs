@@ -1,19 +1,29 @@
 using BudgetTracker.Application.Audit;
 using BudgetTracker.Application.Common.Abstractions;
 using BudgetTracker.Core.Entities;
+using BudgetTracker.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Infrastructure.Audit;
 
 public sealed class AuditLogger : IAuditLogger
 {
-    private readonly IApplicationDbContext _db;
+    // ADR-0007 §2.6: audit writes run on a short-lived, isolated DbContext produced
+    // by IDbContextFactory. Sharing the scoped ApplicationDbContext with business
+    // operations would let a failed business SaveChanges take the audit trail with
+    // it — append-only guarantees break the moment audit and business share a
+    // transaction boundary.
+    private readonly IDbContextFactory<ApplicationDbContext> _dbFactory;
     private readonly IClock _clock;
     private readonly ILogger<AuditLogger> _logger;
 
-    public AuditLogger(IApplicationDbContext db, IClock clock, ILogger<AuditLogger> logger)
+    public AuditLogger(
+        IDbContextFactory<ApplicationDbContext> dbFactory,
+        IClock clock,
+        ILogger<AuditLogger> logger)
     {
-        _db = db;
+        _dbFactory = dbFactory;
         _clock = clock;
         _logger = logger;
     }
@@ -34,11 +44,12 @@ public sealed class AuditLogger : IAuditLogger
             ipAddress: evt.IpAddress,
             createdAt: _clock.UtcNow);
 
-        _db.AuditLogs.Add(entry);
+        await using var ctx = await _dbFactory.CreateDbContextAsync(cancellationToken);
+        ctx.AuditLogs.Add(entry);
 
         try
         {
-            await _db.SaveChangesAsync(cancellationToken);
+            await ctx.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
