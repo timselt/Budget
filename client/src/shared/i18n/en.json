@@ -1,0 +1,55 @@
+{
+  "app": {
+    "title": "FinOps Tur",
+    "loading": "Loading..."
+  },
+  "nav": {
+    "dashboard": "Overview",
+    "budgetEntries": "Budget Entry",
+    "scenarios": "Scenarios",
+    "approvals": "Approvals",
+    "variance": "Variance",
+    "reports": "Reports",
+    "masterData": "Master Data",
+    "auditLog": "Audit Log"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "invalidCredentials": "Invalid username or password.",
+    "sessionExpired": "Your session has expired; please sign in again."
+  },
+  "budget": {
+    "headers": {
+      "customer": "Customer",
+      "segment": "Segment",
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December",
+      "total": "Total"
+    }
+  },
+  "clipboard": {
+    "nonContiguousWarning": "Non-contiguous range pasted as a contiguous block.",
+    "readOnlyWarning": "Read-only cells were skipped."
+  },
+  "import": {
+    "fileTooLarge": "File size limit exceeded.",
+    "concurrencyConflict": "Another upload is already in progress for this company.",
+    "periodLocked": "Budget period is locked; import is not allowed."
+  },
+  "errors": {
+    "forbidden": "You do not have permission to view this page.",
+    "notFound": "Page not found.",
+    "unexpected": "An unexpected error occurred."
+  }
+}
