@@ -68,11 +68,12 @@ body {
   color: var(--color-primary);
   font-variation-settings: 'FILL' 1, 'wght' 700;
 }
-/* True concave (inverted) corners: pseudo squares sit INSIDE the pill at
-   top-right + bottom-right, painted in the sidebar navy. Their inner
-   corner is rounded toward the pill body, so the white pill surface
-   curves inward — sidebar appears to "bite" into the pill. No shadow
-   trickery, no leakage. */
+/* Concave (inverted) corners: pseudo squares sit OUTSIDE the pill (above
+   and below) painted in the pill color (surface). Their corner facing
+   the pill's outer edge is rounded — clipping that quarter-circle area
+   reveals the navy sidebar through, so the pill's top-right and bottom-
+   right corners appear to be carved inward by the sidebar. No box-shadow
+   trickery; pure background + border-radius. */
 .nav-item.active::before,
 .nav-item.active::after {
   content: '';
@@ -80,16 +81,16 @@ body {
   right: 0;
   width: 24px;
   height: 24px;
-  background: var(--color-secondary);
+  background: var(--color-surface);
   pointer-events: none;
 }
 .nav-item.active::before {
-  top: 0;
-  border-bottom-left-radius: 24px;
+  top: -24px;
+  border-bottom-right-radius: 24px;
 }
 .nav-item.active::after {
-  bottom: 0;
-  border-top-left-radius: 24px;
+  bottom: -24px;
+  border-top-right-radius: 24px;
 }
 
 .nav-section {
