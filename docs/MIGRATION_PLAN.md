@@ -271,6 +271,83 @@
 
 ---
 
+### Muhasebe Seansı — F6 ile F7 arasında (1 saatlik toplantı, 2026-04-18+)
+
+**Amaç:** CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #1–#4'ü kapatmak. F7 deploy öncesinde bu kararların prod'a akması için son fırsat — shadow run sırasında değişmemeli.
+
+**Hazırlık dokümanı:** `docs/accounting-session-prep.md` (sorular + beklenen karar formatı + her madde için varsayılan yedek).
+
+**Kapanacak 4 madde:**
+1. "Holding Giderleri" sınıfı → GENERAL mi EXTRAORDINARY mi
+2. "Amortisman" sınıfı doğrulaması (TECHNICAL atandı — teyit)
+3. "SGK Teşvik" segmenti operasyonel detayı
+4. Müşteri Konsantrasyon eşik değerleri (öneri: %30 uyarı / %50 kritik)
+
+**Çıktı:** `expense_categories` seed migration + `ConcentrationThresholds` sabit güncellemesi + CLAUDE.md §Açık Doğrulama bölümü tam kapanır.
+
+**Ajan:** (yok — iş toplantısı)
+
+---
+
+### FAZ 7 — Production Deploy Infrastructure (2 gün)
+
+**Amaç:** Railway prod'a deploy edilebilir hale gel. Shadow run için altyapı hazır.
+
+**İşler:**
+1. `railway.toml` — 3 servis tanımı (api, web, postgres). Healthcheck probe'u `/health/ready`. Deployment region Frankfurt (KVKK).
+2. `.github/workflows/deploy.yml` — `develop` → dev (auto), `main` → staging (auto) → prod (manuel approval, 1 reviewer gate).
+3. Secret rotation runbook — `infra/release/rotate-db-password.sh` otomatik CI step olarak deploy öncesi çalışır.
+4. X509 cert üretim + Railway volume mount talimatı prod öncesi dokümante edildi (`infra/release/README.md` §3 mevcut).
+5. Seq Cloud hesabı + ingest URL Railway env'ye yerleştir (F2 ADR-0007 §2.2 ince ayar #3).
+6. Prod smoke testi — `/health/ready` 200, `/hangfire` 401 (anonymous), audit_logs partition var.
+
+**Kabul:**
+- Staging auto deploy'u 5 dk içinde yeşil.
+- Prod deploy manuel approval ile; rollback < 3 dk (runbook §Rollback).
+- Seq prod ingest çalışıyor, günlük 1 GB log kapasitesi test edildi.
+
+**Ajan:** `security-reviewer`, `doc-updater`
+
+---
+
+### FAZ 8 — Shadow Run (2 hafta paralel çalışma)
+
+**Amaç:** Prod sistem + mevcut Excel akışı aynı bütçe dönemini paralel üretir. Çıktılar karşılaştırılır. Fark bulunursa **Excel otorite**; sistem fark bulunduğunda blocker.
+
+**İşler:**
+1. Her hafta muhasebe ekibi Excel + sistem çıktılarını karşılaştırır (P&L + Varyans + Cash Flow).
+2. Fark > tolerans → issue açılır, root cause → patch → yeni deploy.
+3. Shadow run haftalık raporu `docs/shadow-run-report-YYYY-WW.md`.
+4. 2 hafta **sıfır fark** hedefi (toplam 8-10 karşılaştırma noktası).
+
+**Kabul:**
+- 2 hafta consecutive zero-variance window.
+- Audit log'da shadow kullanıcı activity'si tam.
+- Performance: p95 API latency < 500ms.
+
+**Ajan:** `silent-failure-hunter`, `performance-optimizer`
+
+---
+
+### FAZ 9 — Excel Emekliliği (1 gün)
+
+**Amaç:** Mevcut manuel Excel akışını sonlandır. FinOps Tur tek otorite.
+
+**İşler:**
+1. Son Excel cycle'ı arşivle (read-only SharePoint klasörü).
+2. Muhasebe ekibi eğitim oturumu — sistem full-flow demo (import → onay → rapor).
+3. Excel şablonu `docs/archive/finopstur_excel_legacy/`'ye taşınır + `DEPRECATED.md` notu.
+4. Final CHANGELOG girdisi: "**Excel akışı emekli edildi.** Tüm bütçe operasyonu FinOps Tur prod üzerinden."
+5. `README.md` + `docs/user-guide.md` "Excel'den sistem akışına" notu.
+
+**Kabul:**
+- Muhasebe ekibi sistem üzerinden 1 tam cycle (aylık kapanış) bağımsız tamamlar.
+- Excel şablonu arşivde, canlı kullanımda değil.
+
+**Ajan:** `doc-updater`
+
+---
+
 ## 4. Çıkartılan / Ertelenmiş Kalemler
 
 Planın ilk versiyonunda vardı, bu revizyonda çıkartıldı:
