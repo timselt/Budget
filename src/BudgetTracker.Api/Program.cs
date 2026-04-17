@@ -146,6 +146,16 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
     app.UseMiddleware<TenantResolutionMiddleware>();
+
+    // Hangfire dashboard — ADR-0007 §2.1. Only Admin / Cfo roles pass the filter;
+    // the default LocalRequestsOnlyAuthorizationFilter is replaced because on
+    // Railway all requests are "remote" from the container's point of view.
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new HangfireDashboardAuthorizationFilter() },
+        DashboardTitle = "FinOps Tur — Background Jobs",
+    });
+
     app.MapControllers();
 
     app.Run();
