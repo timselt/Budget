@@ -48,7 +48,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             Title = title,
             Detail = statusCode == StatusCodes.Status500InternalServerError
                 ? "An unexpected error occurred."
-                : exception.Message,
+                : ExceptionMessageSanitizer.Sanitize(exception.Message),
             Instance = httpContext.Request.Path
         };
 
