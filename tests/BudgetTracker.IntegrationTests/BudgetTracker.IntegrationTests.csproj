@@ -40,4 +40,12 @@
     <ProjectReference Include="..\..\src\BudgetTracker.Infrastructure\BudgetTracker.Infrastructure.csproj" />
   </ItemGroup>
 
+  <!-- F5 golden scenario baseline copied next to the assembly so
+       GoldenScenarioTests can load it at runtime without a source-tree walk. -->
+  <ItemGroup>
+    <None Update="Fixtures\golden_scenario_baseline.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
