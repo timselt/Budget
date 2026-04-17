@@ -1,0 +1,28 @@
+{
+  "$schema": "golden-scenario-v1",
+  "description": "F5 golden scenario baseline — kpi engine referans değerleri. Master spec §11.5'e göre; her release'de doğrulanır. Sabit kur (TRY) + segment = TÜM + tam yıl = 1..12 range.",
+  "version": "2026-04-17",
+  "scenario": {
+    "companyCode": "TAG",
+    "year": 2026,
+    "segmentId": null,
+    "monthRange": null
+  },
+  "expected": {
+    "kpis": {
+      "totalRevenue": 180000.00,
+      "totalClaims": 90000.00,
+      "lossRatio": 0.5000,
+      "totalExpenses": 45000.00,
+      "generalExpenses": 15000.00,
+      "technicalExpenses": 25000.00,
+      "financialExpenses": 5000.00,
+      "ebitda": 45000.00,
+      "ebitdaMargin": 0.2500
+    },
+    "tolerances": {
+      "currency": 0.01,
+      "ratio": 0.0001
+    }
+  }
+}
