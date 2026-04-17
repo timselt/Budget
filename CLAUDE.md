@@ -176,15 +176,14 @@ dotnet test --filter Category=GoldenScenario
 
 ## Açık Doğrulama Bekleyen Maddeler
 
-Sprint başında muhasebe ekibine sorulacak:
-
-1. "Holding Giderleri" sınıfı GENERAL mi EXTRAORDINARY mi
-2. "Amortisman" sınıfı doğrulaması (TECHNICAL atandı)
-3. "SGK Teşvik" segmenti operasyonel detayı
-4. Müşteri Konsantrasyon eşik değerleri (önerilen %30/%50)
+_Tümü kapandı — 2026-04-17 muhasebe seansı. Detaylı karar metni: `docs/accounting-session-decisions-2026-04-17.md`._
 
 _Kapandı — artık açık olmayan:_
-- ~~Excel şablon başlık dili~~ → 2026-04-17 muhasebe onayı: **Türkçe sabit başlıklar** (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`). Detay: ADR-0008 §2.4.
+- ~~Excel şablon başlık dili~~ → **Türkçe sabit başlıklar** (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`). Detay: ADR-0008 §2.4.
+- ~~Holding Giderleri sınıflandırması~~ → **GENERAL** (mevcut seed korundu).
+- ~~Amortisman sınıflandırması~~ → **TECHNICAL** (mevcut seed teyidi).
+- ~~SGK Teşvik operasyonel detayı~~ → **Şirket geneli tek satır, tahakkuk bazlı**; prod deploy sonrası muhasebe manuel müşteri tanımlar (`customer_code = 'SGK-TESVIK'`).
+- ~~Müşteri Konsantrasyon eşikleri~~ → **%30 uyarı / %50 kritik**. `src/BudgetTracker.Application/Calculations/ConcentrationThresholds.cs` sabit sınıfı.
 
 ---
 
