@@ -15,6 +15,14 @@
     <InternalsVisibleTo Include="BudgetTracker.IntegrationTests" />
   </ItemGroup>
 
+  <!-- ADR-0008 §2.2 — Lato TTF fonts embedded for QuestPDF. QuestPDF subsets on
+       render so the PDF only ships the glyphs actually used (<200 KB target).
+       Turkish glyphs ğüşıçö are present in both faces. License: OFL 1.1. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Fonts\Lato-Regular.ttf" />
+    <EmbeddedResource Include="Resources\Fonts\Lato-Bold.ttf" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
