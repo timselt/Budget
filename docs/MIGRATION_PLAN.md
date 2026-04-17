@@ -202,6 +202,8 @@
 6. Anti-template design (CLAUDE.md `web/design-quality` kuralı — default Tailwind/shadcn görünümünden kaç).
 7. Performance bütçesi: LCP < 2.5s, INP < 200ms, JS bundle < 300kb (app), < 150kb (landing/login).
 8. **Cookie hardening + Hangfire dashboard CSRF** _(F2 security-reviewer MEDIUM carry-over)_ — OpenIddict cookie'sini `SameSite=Strict`'e almak SPA redirect akışını etkileyebilir; F4 SPA ile birlikte `/connect/authorize` → SPA redirect path'ini uçtan uca test et. Strict uyumluysa `AuthenticationExtensions.AddCookie` güncellenir; değilse `/hangfire` için ayrı anti-CSRF token (header-based double-submit) yazılır. Seçimin gerekçesi ADR-0009'a kayıt.
+9. **i18n başlangıç: TR default + EN alias tabanı** _(F3 ADR-0008 §2.4 hedging)_ — `i18next` + `react-i18next` kurulumu, `shared/i18n/tr.json` + `shared/i18n/en.json`. Excel başlık dili anahtarları ilk basamak olarak. Muhasebe teyidi gelirse bu alias layer kullanılmayabilir; gelmezse ADR-0008 §2.4 "Reddedildi"ye döner ve Excel şablonu TR/EN dual column generator'a geçer (≈0.5 gün ek, §11 maddesi olarak aşağıda).
+10. **Muhasebe §2.4 teyit işleme yolu** — Teyit gelmişse ADR-0008 §2.4 "fully accepted" commit; gelmemişse: (a) `ExcelExportService` başlık satırında `i18next.t('budget.headers.customer')` kullanan alternatif yol, (b) CLAUDE.md "Açık Doğrulama #5" maddesi F4 ayrı commit'te kaldırılsın/güncellensin. ADR-0008 §2.4 durumu F4 sonunda final'ize.
 
 **Kabul:**
 - `pnpm build` → bundle < 300kb (app).
@@ -209,6 +211,8 @@
 - `pnpm lint` yeşil, TS strict mode.
 - Lighthouse Performance ≥ 90.
 - Cookie `SameSite` kararı ADR-0009'da belgelenmiş + `/hangfire` CSRF test'i (cross-origin form POST reddedilir).
+- i18next TR default aktif, EN anahtarları TR'nin aynasında (key count eşitliği test'te assert edilir).
+- ADR-0008 §2.4 F4 sonunda final statüsünde (teyit geldiyse fully accepted, gelmediyse alias aktif).
 
 **Ajan:** `typescript-reviewer` (ZORUNLU her commit), `code-reviewer`, `security-reviewer` (cookie/CSRF için)
 
