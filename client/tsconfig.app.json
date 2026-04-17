@@ -4,8 +4,16 @@
     "target": "es2023",
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "esnext",
-    "types": ["vite/client"],
+    "types": ["vite/client", "vitest/globals"],
     "skipLibCheck": true,
+
+    /* Type safety — ADR-0009 / F4 typescript-reviewer HIGH. A financial app
+       without strictNullChecks will silently let an undefined amount cascade
+       into a persisted BudgetEntry; turn it on explicitly. */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "useUnknownInCatchVariables": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",

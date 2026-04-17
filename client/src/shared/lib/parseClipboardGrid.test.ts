@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest'
 import {
   parseClipboardGrid,
   NON_CONTIGUOUS_WARNING,
+  PAYLOAD_TOO_LARGE_WARNING,
+  MAX_PASTE_ROWS,
+  MAX_PASTE_COLS,
 } from './parseClipboardGrid'
+import tr from '../i18n/tr.json'
 
 describe('parseClipboardGrid', () => {
   // ADR-0009 §2.4 — the 10 scenarios useClipboardRange must cover.
@@ -85,6 +89,7 @@ describe('parseClipboardGrid', () => {
   })
 
   it('negative numbers, zero, and mixed-sign TR formats survive the round-trip', () => {
+    // parseTrNumber normalises -0 → 0 at the cell level (see unit tests).
     const result = parseClipboardGrid('-1.000,00\t0,00\n-0,50\t1.234,56')
     expect(result.values).toEqual([
       [-1000, 0],
@@ -97,5 +102,52 @@ describe('parseClipboardGrid', () => {
     // flag it rather than interpret the comma as a decimal.
     const result = parseClipboardGrid('1,234.56')
     expect(result.values).toEqual([[null]])
+  })
+
+  describe('DoS guard (F4 Part 1 security-reviewer MEDIUM)', () => {
+    it('caps at MAX_PASTE_ROWS and flags the truncation', () => {
+      const rows = Array.from({ length: MAX_PASTE_ROWS + 5 }, (_, i) =>
+        String(i + 1),
+      ).join('\n')
+
+      const result = parseClipboardGrid(rows)
+
+      expect(result.values.length).toBe(MAX_PASTE_ROWS)
+      expect(result.warning).toBe(PAYLOAD_TOO_LARGE_WARNING)
+    })
+
+    it('caps at MAX_PASTE_COLS per row and flags the truncation', () => {
+      const row = Array.from({ length: MAX_PASTE_COLS + 3 }, (_, i) =>
+        String(i + 1),
+      ).join('\t')
+
+      const result = parseClipboardGrid(row)
+
+      expect(result.values[0]?.length).toBe(MAX_PASTE_COLS)
+      expect(result.warning).toBe(PAYLOAD_TOO_LARGE_WARNING)
+    })
+
+    it('a right-sized payload still runs without triggering the guard', () => {
+      // Realistic budget-entry upper bound: 14 columns × 1000 rows. Neither
+      // limit should trigger.
+      const rows = Array.from({ length: 1_000 }, () =>
+        Array.from({ length: 14 }, () => '100').join('\t'),
+      ).join('\n')
+
+      const result = parseClipboardGrid(rows)
+
+      expect(result.values.length).toBe(1_000)
+      expect(result.values[0]?.length).toBe(14)
+      expect(result.warning).toBeNull()
+    })
+  })
+
+  describe('i18n parity (F4 typescript-reviewer MEDIUM)', () => {
+    // The toast literals in this file and the clipboard.* entries in tr.json
+    // must stay in lockstep — the lint-time review flagged that two sources
+    // of the same string can drift silently.
+    it('NON_CONTIGUOUS_WARNING matches tr.json clipboard.nonContiguousWarning', () => {
+      expect(NON_CONTIGUOUS_WARNING).toBe(tr.clipboard.nonContiguousWarning)
+    })
   })
 })

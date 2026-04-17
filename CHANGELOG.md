@@ -4,6 +4,46 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### FAZ 4 Part 1 — Frontend Foundation + ADR-0008 §2.4 Finalize (2026-04-17)
+
+ADR-0009 (Önerildi — F4 Part 2 kapanışında "Kabul edildi"ye geçer) kapsamında foundation iş paketi teslim edildi. Branch: `feat/f4-frontend-baseline`. MVP sayfa wiring + AG-Grid entegrasyonu + Cookie SameSite Playwright probe bilerek Part 2'ye bırakıldı; iki ince ayarın somut kanıtı ve §2.4 muhasebe finalize'ı main'e zamanında akıtılsın diye Part 1 ayrı PR olarak gönderildi.
+
+#### Eklendi (client)
+
+- **`parseTrNumber`** (ADR-0009 §2.5 / ince ayar #2) — TR-locale decimal parser. `"1.234,56"` → `1234.56` (bankacılık doğruluğu), en-US `"1,234.56"` reddedilir (`null`), `parseFloat("1.234")` = `1.234` regression guard. 25 Vitest assertion (`client/src/shared/lib/parseTrNumber.test.ts`).
+
+- **`parseClipboardGrid` + `useClipboardRange`** (ADR-0009 §2.4 / ince ayar #1) — Excel tab+newline clipboard payload parser. Non-contiguous seçim (boş satır ayrıcı) contiguous block olarak yapıştırılır + toast: `"Non-contiguous aralık contiguous olarak yapıştırıldı."`. AG-Grid Community + custom hook yaklaşımı; Enterprise lisansı gereksiz. 12 Vitest assertion, ADR-0009 §2.4'teki 10 senaryonun tümü kapsandı.
+
+- **i18n seed** (ADR-0009 §2.3) — `tr.json` (primary) + `en.json` (mirror) + `i18next` bootstrap (TR default, fallback TR). Key-count parity Vitest test — drift build'i fail eder. Muhasebe onayı sonrası `ExcelExportService` bu seed'e bağlanmıyor; gelecek EN locale talepleri için altyapı olarak korundu.
+
+- **Vitest + jsdom altyapısı** — `pnpm test`, `pnpm test:watch`; `@testing-library/react` + `jest-dom` matcher'ları; `jsdom` ortamı. `0 → 39` client Vitest testi yeşil.
+
+- **Paket pinleri** — `ag-grid-community`/`ag-grid-react` 32.3.3, `react-hook-form` 7.54.2, `zod` 3.24.1, `date-fns` 4.1.0, `i18next` 24.2.1 + `react-i18next` 15.4.0, `lucide-react` 0.474.0, `vitest` 2.1.8, `jsdom` 25.0.1, `@testing-library/react` 16.1.0 + `jest-dom` 6.6.3.
+
+#### Değişti
+
+- **ADR-0008 §2.4 muhasebe onayı 2026-04-17'de alındı** — Türkçe sabit Excel başlıkları (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`) onaylandı. ADR "Fully Accepted"; ADR-0009 §2.7 deadline tracker (2026-04-20) beklenmeden kapandı. `ExcelExportService` kodunda değişiklik yok.
+- **CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #5** ("Excel şablon başlık dili") aktif listeden çıkarıldı (5→4 madde), altta "Kapandı" bölümünde strike-through.
+
+#### Ertelenen (F4 Part 2 — ayrı PR)
+
+- **ADR-0009 §2.1** SPA feature-based klasör refactor
+- **ADR-0009 §2.2** OIDC code + PKCE flow (/connect/authorize redirect)
+- **ADR-0009 §2.4 uygulama** — AG-Grid entegrasyonu `BudgetEntryPage`'de `useClipboardRange` hook'unu bağlar
+- **ADR-0009 §2.6** Cookie SameSite=Strict Playwright probe + `/hangfire` CSRF token fallback
+- **ADR-0009 "Kabul edildi"** — Part 2 kapanışında tam statüye geçer
+
+#### Test Kapsamı
+
+| Katman | F3 sonu | F4 Part 1 sonu | Delta |
+|---|---|---|---|
+| Backend unit | 144 | 144 | 0 |
+| Backend integration | 34 | 34 | 0 |
+| **Client Vitest** | **0** | **39** | **+39** |
+| **Toplam** | 178 | **217** | **+39** |
+
+---
+
 ### FAZ 3 — Excel Import/Export + PDF + F2 Ertelenen (2026-04-17)
 
 ADR-0008 kapsamı (Kabul edildi — §2.4 koşullu) + MIGRATION_PLAN.md §3 FAZ 3 teslim edildi. Branch: `feat/f3-excel-pdf`. İnce ayar #1 disiplini: ADR-0008 F3 başında "Önerildi" yazıldı (commit `badb6e5`), F3 sonunda "Kabul edildi"ye çevrildi (commit `438a43e`).

@@ -40,6 +40,7 @@
   },
   "clipboard": {
     "nonContiguousWarning": "Non-contiguous aralık contiguous olarak yapıştırıldı.",
+    "payloadTooLargeWarning": "Yapıştırılan aralık maksimum boyutu aştı; kesilerek yapıştırıldı.",
     "readOnlyWarning": "Salt okunur hücreler atlandı."
   },
   "import": {

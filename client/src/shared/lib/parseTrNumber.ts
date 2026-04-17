@@ -46,5 +46,11 @@ export function parseTrNumber(input: string | null | undefined): number | null {
     .replace(',', '.')   // promote decimal comma to a dot
 
   const parsed = Number(normalised)
-  return Number.isFinite(parsed) ? parsed : null
+  if (!Number.isFinite(parsed)) return null
+
+  // Normalise -0 → 0 (F4 typescript-reviewer LOW). A signed zero survives
+  // Object.is as a distinct value and complicates downstream grid
+  // comparisons; the server-side ExcelImportService treats them as
+  // equivalent on the TRY column, so we collapse here too.
+  return parsed === 0 ? 0 : parsed
 }

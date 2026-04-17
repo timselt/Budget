@@ -13,14 +13,21 @@ import en from './en.json'
  * Key-count parity between tr.json and en.json is enforced in
  * src/shared/i18n/i18n.test.ts — a mismatch fails the build.
  */
-void i18n.use(initReactI18next).init({
-  resources: {
-    tr: { translation: tr },
-    en: { translation: en },
-  },
-  lng: 'tr',
-  fallbackLng: 'tr',
-  interpolation: { escapeValue: false },
-})
+// Guard against double-initialisation under Vite HMR or Vitest module reuse
+// (F4 typescript-reviewer MEDIUM). `i18next` silently ignores a second
+// `.init(...)` but emits an "already initialized" warning to the console;
+// checking the flag keeps the developer console clean and the configuration
+// deterministic across test runs.
+if (!i18n.isInitialized) {
+  void i18n.use(initReactI18next).init({
+    resources: {
+      tr: { translation: tr },
+      en: { translation: en },
+    },
+    lng: 'tr',
+    fallbackLng: 'tr',
+    interpolation: { escapeValue: false },
+  })
+}
 
 export default i18n

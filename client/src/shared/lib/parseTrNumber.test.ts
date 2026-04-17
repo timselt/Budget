@@ -57,8 +57,13 @@ describe('parseTrNumber', () => {
       expect(parseTrNumber('0,05')).toBe(0.05)
     })
 
-    it('handles negative zero-ish input', () => {
-      expect(parseTrNumber('-0,00')).toBe(-0)
+    it('normalises negative zero to positive zero', () => {
+      // F4 typescript-reviewer LOW: banking math has no use for signed zero;
+      // parseTrNumber collapses -0 → 0 so strict/Object.is comparisons in the
+      // grid treat "-0,00" and "0,00" as equal.
+      const result = parseTrNumber('-0,00')
+      expect(result).toBe(0)
+      expect(Object.is(result, -0)).toBe(false)
     })
   })
 })

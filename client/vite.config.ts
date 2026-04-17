@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 3000,
+    // host: true binds to 0.0.0.0 so the dev server is reachable from Docker +
+    // LAN peers. F4 Part 1 security-reviewer LOW: on a shared office Wi-Fi or
+    // VPN this also exposes /api and /connect through the proxy. Kept `true`
+    // because the developer workflow needs Docker access; tighten via a
+    // host-bound env (e.g. VITE_DEV_HOST=127.0.0.1) if you move onto an
+    // untrusted network. Production uses a different Vite invocation.
     host: true,
     allowedHosts: ['host.docker.internal', 'localhost', '127.0.0.1'],
     proxy: {

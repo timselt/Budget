@@ -40,6 +40,7 @@
   },
   "clipboard": {
     "nonContiguousWarning": "Non-contiguous range pasted as a contiguous block.",
+    "payloadTooLargeWarning": "Pasted range exceeded the maximum size; it was truncated.",
     "readOnlyWarning": "Read-only cells were skipped."
   },
   "import": {

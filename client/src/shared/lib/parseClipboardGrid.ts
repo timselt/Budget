@@ -15,8 +15,23 @@ export interface ClipboardGrid {
   readonly warning: string | null
 }
 
+/**
+ * User-facing toast strings. These literals are also mirrored under
+ * `clipboard.*` in `shared/i18n/tr.json`; the i18n parity test guards against
+ * drift between the two sources so nobody edits one without the other.
+ */
 export const NON_CONTIGUOUS_WARNING =
   'Non-contiguous aralık contiguous olarak yapıştırıldı.'
+export const PAYLOAD_TOO_LARGE_WARNING =
+  'Yapıştırılan aralık maksimum boyutu aştı; kesilerek yapıştırıldı.'
+
+// DoS guard (F4 Part 1 security-reviewer MEDIUM). A hostile clipboard payload
+// (e.g. 100 000 × 100 000 tab-separated cells) would otherwise pin the tab in
+// split/map loops that run parseTrNumber per cell. Limits are sized for a
+// realistic budget-entry sheet: ~1 000 customers × 14 columns (customer +
+// segment + 12 months + total) leaves plenty of headroom at 5 000 × 50.
+export const MAX_PASTE_ROWS = 5_000
+export const MAX_PASTE_COLS = 50
 
 /**
  * Excel's native clipboard format: tab-separated columns, CRLF-separated rows.
@@ -48,13 +63,29 @@ export function parseClipboardGrid(raw: string): ClipboardGrid {
   const isNonContiguous =
     nonEmptyRows.length > 0 && nonEmptyRows.length < rawRows.length
 
-  const values: (number | null)[][] = nonEmptyRows.map((row) =>
-    row.split('\t').map((cell) => parseTrNumber(cell)),
+  // Size guard: cap both dimensions *before* expanding cells so a malicious
+  // giant payload cannot burn CPU on per-cell regex before we stop it.
+  const wasTruncated =
+    nonEmptyRows.length > MAX_PASTE_ROWS ||
+    nonEmptyRows.some((row) => row.split('\t').length > MAX_PASTE_COLS)
+  const cappedRows = nonEmptyRows.slice(0, MAX_PASTE_ROWS)
+
+  const values: (number | null)[][] = cappedRows.map((row) =>
+    row
+      .split('\t')
+      .slice(0, MAX_PASTE_COLS)
+      .map((cell) => parseTrNumber(cell)),
   )
+
+  const warning = wasTruncated
+    ? PAYLOAD_TOO_LARGE_WARNING
+    : isNonContiguous
+      ? NON_CONTIGUOUS_WARNING
+      : null
 
   return {
     values,
     isNonContiguous,
-    warning: isNonContiguous ? NON_CONTIGUOUS_WARNING : null,
+    warning,
   }
 }
