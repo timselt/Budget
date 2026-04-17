@@ -12,7 +12,7 @@ export function EbitdaBridgeChart() {
         datasets: [
           {
             data: [285, 320, -220, -25, 360],
-            backgroundColor: ['#5c5f63', '#006d3e', '#ba1a1a', '#ba1a1a', '#b50303'],
+            backgroundColor: ['#5c403b', '#14532d', '#93000a', '#93000a', '#b50303'],
             borderRadius: 4,
           },
         ],
@@ -49,7 +49,7 @@ export function LossRatioChart() {
           {
             label: 'Benchmark',
             data: [55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55],
-            borderColor: '#005b9f',
+            borderColor: '#435b9f',
             borderDash: [4, 4],
             borderWidth: 2,
             pointRadius: 0,
@@ -78,7 +78,7 @@ export function OpexBreakdownChart() {
         datasets: [
           {
             data: [245, 88, 65, 42, 51, 29],
-            backgroundColor: ['#b50303', '#005b9f', '#da291c', '#0074c8', '#916f6a', '#e6bdb7'],
+            backgroundColor: ['#b50303', '#435b9f', '#da291c', '#9cb4fe', '#916f6a', '#e6bdb7'],
             borderRadius: 4,
             barThickness: 28,
           },

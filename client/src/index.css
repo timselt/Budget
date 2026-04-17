@@ -2,43 +2,78 @@
 @import "./styles/finopstur.css";
 
 @theme {
-  /* FinOps Tur palette — prototip birebir */
+  /* =========================================================
+     Tur Assist — Architectural Precision (brand-system.md)
+     Asset: assets/198b2a38bf384c4b931d15183a332aba (Stitch v3)
+     ========================================================= */
+
+  /* Primary — red gradient action */
   --color-primary: #b50303;
   --color-primary-container: #da291c;
   --color-primary-fixed: #ffdad4;
   --color-on-primary: #ffffff;
-  --color-tertiary: #005b9f;
-  --color-tertiary-container: #0074c8;
-  --color-tertiary-fixed: #d2e4ff;
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-  --color-surface: #f7f9fe;
-  --color-surface-bright: #f7f9fe;
+
+  /* Secondary — navy monolith sidebar */
+  --color-secondary: #435b9f;
+  --color-secondary-container: #9cb4fe;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #002366;
+  --color-on-secondary-fixed: #00174a;
+
+  /* Surface — tonal layering for No-Line Rule */
+  --color-surface: #f7f9fb;
+  --color-surface-bright: #f7f9fb;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f2f4f8;
-  --color-surface-container: #eceef2;
-  --color-surface-container-high: #e6e8ed;
-  --color-surface-container-highest: #e0e2e7;
-  --color-on-surface: #191c1f;
+  --color-surface-container-low: #f2f4f6;
+  --color-surface-container: #eceef0;
+  --color-surface-container-high: #e6e8ea;
+  --color-surface-container-highest: #e0e2e4;
+
+  /* Text */
+  --color-on-surface: #191c1e;
+  --color-on-background: #191c1e;
   --color-on-surface-variant: #5c403b;
+
+  /* Status */
+  --color-error: #93000a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+  --color-success: #14532d;
+  --color-success-container: #dcfce7;
+  --color-warning: #854d0e;
+  --color-warning-container: #fef3c7;
+
+  /* Outline (ghost only — see No-Line Rule) */
   --color-outline: #916f6a;
   --color-outline-variant: #e6bdb7;
   --color-inverse-surface: #2d3134;
   --color-inverse-on-surface: #eff1f5;
-  --color-success: #006d3e;
-  --color-success-container: #b8f2c6;
-  --color-warning: #8a5300;
-  --color-warning-container: #ffddb3;
 
-  /* Fonts */
-  --font-sans: Inter, system-ui, sans-serif;
-  --font-display: Inter, system-ui, sans-serif;
+  /* Tertiary alias — DEPRECATED. Brand has no tertiary token; this maps to
+     success (emerald) for backwards compatibility while sayfa-spesifik
+     `text-tertiary` / `bg-tertiary` referansları semantic karşılıklarına
+     (text-success / bg-secondary) refactor edilene dek B aşamasında.
+     Yeni kod tertiary kullanmamalı. */
+  --color-tertiary: #14532d;
+  --color-tertiary-container: #dcfce7;
+  --color-tertiary-fixed: #dcfce7;
+
+  /* Fonts — Manrope only */
+  --font-sans: Manrope, system-ui, sans-serif;
+  --font-display: Manrope, system-ui, sans-serif;
 
   /* Radius */
   --radius-sm: 0.125rem;
-  --radius-md: 0.375rem;
+  --radius-md: 0.25rem;     /* primary CTA radius (brand spec) */
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --radius-2xl: 1rem;
   --radius-full: 9999px;
+
+  /* Ambient navy-tonal shadow (floating elements only — never neutral grey) */
+  --shadow-ambient: 0 20px 40px rgba(0, 35, 102, 0.06);
+
+  /* Primary CTA glow */
+  --shadow-primary-glow: 0 4px 12px -2px rgba(218, 41, 28, 0.35);
 }

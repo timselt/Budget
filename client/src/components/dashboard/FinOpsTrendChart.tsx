@@ -24,8 +24,8 @@ export function FinOpsTrendChart() {
           {
             label: 'Hasar',
             data: [92, 97, 106, 112, 114, 118, 122, 124, 126, 131, 134, 138],
-            borderColor: '#8a5300',
-            backgroundColor: 'rgba(138,83,0,0.06)',
+            borderColor: '#854d0e',
+            backgroundColor: 'rgba(133,77,14,0.06)',
             borderWidth: 2.5,
             tension: 0.35,
             fill: true,
@@ -35,8 +35,8 @@ export function FinOpsTrendChart() {
           {
             label: 'Teknik Marj',
             data: [66, 71, 75, 75, 78, 80, 83, 84, 86, 89, 92, 94],
-            borderColor: '#005b9f',
-            backgroundColor: 'rgba(0,91,159,0.06)',
+            borderColor: '#435b9f',
+            backgroundColor: 'rgba(67,91,159,0.06)',
             borderWidth: 2.5,
             tension: 0.35,
             fill: true,
@@ -66,7 +66,7 @@ export function FinOpsSegmentDonut() {
         datasets: [
           {
             data: [62, 18, 14, 6],
-            backgroundColor: ['#b50303', '#005b9f', '#916f6a', '#e6bdb7'],
+            backgroundColor: ['#b50303', '#435b9f', '#916f6a', '#e6bdb7'],
             borderWidth: 0,
             spacing: 2,
           },

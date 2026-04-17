@@ -10,7 +10,7 @@ export function WaterfallChart() {
         datasets: [
           {
             data: [122, 42, -39, -4, 5, 126],
-            backgroundColor: ['#5c5f63', '#006d3e', '#ba1a1a', '#ba1a1a', '#006d3e', '#b50303'],
+            backgroundColor: ['#5c403b', '#14532d', '#93000a', '#93000a', '#14532d', '#b50303'],
             borderRadius: 4,
           },
         ],

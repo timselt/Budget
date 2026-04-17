@@ -11,7 +11,7 @@ export function TopNavBar() {
   } = useAppContextStore()
 
   return (
-    <header className="bg-white/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-16rem)] z-40 h-16 px-8 flex items-center justify-between shadow-[0_1px_0_rgba(25,28,31,0.04)]">
+    <header className="bg-white/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-280px)] z-40 h-16 px-8 flex items-center justify-between shadow-[0_20px_40px_rgba(0,35,102,0.06)]">
       <div className="flex-1 flex items-center max-w-md bg-surface-container-high rounded-full px-4 py-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary/40 transition-all">
         <span className="material-symbols-outlined text-on-surface-variant mr-2" style={{ fontSize: 20 }}>
           search

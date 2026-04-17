@@ -55,24 +55,24 @@ export function Sidebar() {
   const displayName = user?.displayName ?? 'Timur Turan'
 
   return (
-    <aside className="w-64 fixed left-0 top-0 h-screen bg-surface-container-low flex flex-col py-6 px-3 z-50">
-      <div className="px-3 mb-8">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
-            <span className="material-symbols-outlined text-white" style={{ fontSize: 18 }}>
+    <aside className="w-[280px] fixed left-0 top-0 h-screen bg-secondary flex flex-col py-8 z-50">
+      <div className="px-8 mb-10">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
+            <span className="material-symbols-outlined text-white" style={{ fontSize: 20 }}>
               insights
             </span>
           </div>
-          <h1 className="text-xl font-black tracking-display text-primary">
-            FinOps<span className="text-on-surface">Tur</span>
+          <h1 className="text-xl font-extrabold tracking-display text-white">
+            FinOps<span className="text-white/70">Tur</span>
           </h1>
         </div>
-        <p className="text-xs text-on-surface-variant font-medium mt-1 pl-10">
-          2026 Bütçe &amp; Performans
+        <p className="text-[10px] tracking-[0.2em] text-white/50 font-bold mt-2 pl-12 uppercase">
+          Architectural Precision
         </p>
       </div>
 
-      <nav className="flex-1 overflow-y-auto pr-1">
+      <nav className="flex-1 overflow-y-auto pr-0">
         {mainNav.map((n) => (
           <SidebarLink key={n.to} {...n} />
         ))}
@@ -83,25 +83,25 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="mt-4 px-2">
+      <div className="mt-6 px-8">
         <button type="button" className="btn-primary w-full justify-center">
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
             download
           </span>
           Rapor İndir
         </button>
-        <div className="mt-4 flex items-center gap-3 pl-1">
+        <div className="mt-6 flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-sm">
             {getInitials(displayName)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-on-surface truncate">{displayName}</p>
-            <p className="text-[0.65rem] text-on-surface-variant truncate">{roleLine}</p>
+            <p className="text-sm font-bold text-white truncate">{displayName}</p>
+            <p className="text-[0.65rem] text-white/60 truncate">{roleLine}</p>
           </div>
           <button
             type="button"
             onClick={logout}
-            className="p-1.5 text-on-surface-variant hover:text-primary transition-colors rounded-md"
+            className="p-1.5 text-white/60 hover:text-white transition-colors rounded-md"
             title="Çıkış"
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
