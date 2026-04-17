@@ -592,7 +592,7 @@ S5'te oluşturulan API controller'ları InvalidOperationException'ları 500 olar
 ## ADR-0007 — Hangfire Dashboard, Seq Observability ve F1 Ertelenen İşler
 
 **Tarih:** 2026-04-17
-**Statü:** Önerildi (F2 kapanışında Kabul edildi'ye güncellenecek)
+**Statü:** Kabul edildi (F2 kapanışı — commit b.k.z. `e539f6f` ve feat/f2-hangfire-seq-observability PR)
 **Karar Sahibi:** Timur Selçuk Turan
 **İlgili Belgeler:**
 - ADR-0002 §5 (Hangfire açık aksiyonları)
@@ -678,6 +678,22 @@ Bu ADR **F2 başında Önerildi** statüsünde açılır ve kararlar kod yazılm
 **Olumsuz:**
 - Dev ortamda `docker-compose up` artık Seq container'ını da başlatır (ek bellek tüketimi ~200 MB).
 - `IDbContextFactory` geçişi `AuditLogger` testlerini güncelemeyi gerektirir (F1 integration testleri yeniden yazılır).
+
+### 5. Teslim Kanıtı (F2 kapanışı)
+
+| Kalem | Uygulama |
+|---|---|
+| §2.1 Dashboard + OpenIddict auth | `HangfireDashboardAuthorizationFilter` + `/hangfire` mount (anonim 401, wrong-role 403, Admin/Cfo 200) |
+| §2.2 Serilog + Seq sink | `UseSerilog` + `appsettings.Development.json`; prod serverUrl Railway env |
+| §2.3 Structured enricher'lar | `BudgetTrackerLogEnricher` — `tenant_id`, `user_id`, `request_id`, `job_context=hangfire`; null-safe, SelfLog'a düşer |
+| §2.4 PII masking (log-only) | `PiiMaskingEnricher` — email + IPv4/IPv6; tip-bypass koruması (`***` sentinel) |
+| §2.5 Health checks | `/health/live` + `/health/ready` (+ `HangfireStorageHealthCheck` async offload, stats sızdırmaz) |
+| §2.6 AuditLogger → IDbContextFactory | `AddDbContextFactory<ApplicationDbContext>` (Singleton) + izolasyon integration testi |
+| §2.7 TenantConnectionInterceptor async | Sync + async path ayrı ADO.NET komutları, exception yakalanıp connection kapatılıyor |
+
+**Test kapsamı:** 128 unit + 19 integration = 147 yeşil (F1 sonu 110 → +37).
+
+**Ertelenmiş hardening (F3+):** CSRF / SameSite=Strict, Serilog sink index fragility (kullanıcı Railway env pattern direktifi gereği korundu), exception message redaction.
 
 ---
 
