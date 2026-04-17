@@ -17,6 +17,7 @@ using BudgetTracker.Infrastructure.BackgroundJobs;
 using BudgetTracker.Infrastructure.Common;
 using BudgetTracker.Infrastructure.FxRates;
 using BudgetTracker.Infrastructure.Identity;
+using BudgetTracker.Infrastructure.Observability;
 using BudgetTracker.Infrastructure.Persistence;
 using BudgetTracker.Infrastructure.Persistence.Interceptors;
 using BudgetTracker.Infrastructure.Reports;
@@ -45,6 +46,13 @@ public static class DependencyInjection
         services.AddSingleton<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
         services.AddSingleton<TenantConnectionInterceptor>();
         services.AddSingleton<IClock, SystemClock>();
+
+        // ADR-0007 §2.3 + §2.4 — structured log enrichers. HttpContextAccessor is
+        // registered by ASP.NET but we add it explicitly so enrichers remain safe in
+        // non-web hosts (tests, CLI seeders) where the accessor is absent.
+        services.AddHttpContextAccessor();
+        services.AddSingleton<Serilog.Core.ILogEventEnricher, BudgetTrackerLogEnricher>();
+        services.AddSingleton<Serilog.Core.ILogEventEnricher, PiiMaskingEnricher>();
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {

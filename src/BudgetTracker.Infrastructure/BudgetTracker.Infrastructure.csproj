@@ -33,6 +33,7 @@
     <PackageReference Include="Hangfire.PostgreSql" />
     <PackageReference Include="Polly" />
     <PackageReference Include="Polly.Extensions" />
+    <PackageReference Include="Serilog" />
   </ItemGroup>
 
 </Project>
