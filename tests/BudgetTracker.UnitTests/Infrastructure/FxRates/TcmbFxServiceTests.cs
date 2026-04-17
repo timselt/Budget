@@ -37,8 +37,11 @@ public sealed class TcmbFxServiceTests
     }
 
     [Fact]
-    public async Task SyncRatesAsync_WhenHttpFails_ReturnsZero()
+    public async Task SyncRatesAsync_WhenHttpReturnsNonSuccess_ThrowsHttpRequestException()
     {
+        // TCMB returns 404 for non-business days. The job wrapper (TcmbFxSyncJob) relies on
+        // this exception to trigger Polly retry + previous-business-day fallback. Swallowing
+        // to 0 would be a silent failure.
         var db = CreateDb([]);
         var httpFactory = Substitute.For<IHttpClientFactory>();
 
@@ -51,9 +54,70 @@ public sealed class TcmbFxServiceTests
 
         var sut = new TcmbFxService(db, httpFactory, clock, NullLogger<TcmbFxService>.Instance);
 
-        var result = await sut.SyncRatesAsync(new DateOnly(2026, 4, 16), CancellationToken.None);
+        var act = async () => await sut.SyncRatesAsync(new DateOnly(2026, 4, 16), CancellationToken.None);
 
-        result.Should().Be(0);
+        (await act.Should().ThrowAsync<HttpRequestException>())
+            .Which.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task SyncRatesAsync_WhenXmlIsMalformed_ThrowsInvalidOperationException()
+    {
+        // Silent-failure guard: CLAUDE.md §Bilinen Tuzaklar #3 (TCMB XML drift) forbids
+        // swallowing parse errors. This test locks in the throwing behaviour.
+        var db = CreateDb([]);
+        var httpFactory = Substitute.For<IHttpClientFactory>();
+
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent("<not-xml>", System.Text.Encoding.UTF8, "application/xml"),
+        };
+        var handler = new FakeHttpHandler(response);
+        var client = new HttpClient(handler);
+        httpFactory.CreateClient("tcmb").Returns(client);
+
+        var clock = Substitute.For<IClock>();
+        clock.UtcNow.Returns(Now);
+
+        var sut = new TcmbFxService(db, httpFactory, clock, NullLogger<TcmbFxService>.Instance);
+
+        var act = async () => await sut.SyncRatesAsync(new DateOnly(2026, 4, 16), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*XML*drifted*");
+    }
+
+    [Fact]
+    public async Task SyncRatesAsync_WhenRateIsNotDecimal_ThrowsInvalidOperationException()
+    {
+        var db = CreateDb([]);
+        var httpFactory = Substitute.For<IHttpClientFactory>();
+
+        var xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Tarih_Date>
+              <Currency CurrencyCode="USD">
+                <ForexBuying>not-a-number</ForexBuying>
+                <ForexSelling>38.6000</ForexSelling>
+              </Currency>
+            </Tarih_Date>
+            """;
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent(xml, System.Text.Encoding.UTF8, "application/xml"),
+        };
+        var handler = new FakeHttpHandler(response);
+        var client = new HttpClient(handler);
+        httpFactory.CreateClient("tcmb").Returns(client);
+
+        var clock = Substitute.For<IClock>();
+        clock.UtcNow.Returns(Now);
+
+        var sut = new TcmbFxService(db, httpFactory, clock, NullLogger<TcmbFxService>.Instance);
+
+        var act = async () => await sut.SyncRatesAsync(new DateOnly(2026, 4, 16), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     [Fact]

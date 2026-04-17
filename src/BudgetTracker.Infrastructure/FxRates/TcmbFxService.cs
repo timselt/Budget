@@ -47,21 +47,18 @@ public sealed class TcmbFxService : ITcmbFxService
         var url = BuildUrl(date);
         var client = _httpClientFactory.CreateClient("tcmb");
 
-        HttpResponseMessage response;
-        try
-        {
-            response = await client.GetAsync(url, cancellationToken);
-        }
-        catch (HttpRequestException ex)
-        {
-            _logger.LogWarning(ex, "TCMB request failed for {Date}, trying previous day", date);
-            return 0;
-        }
-
+        // Network-level failures (DNS, timeout, reset) propagate as HttpRequestException.
+        // Non-2xx responses are re-thrown as HttpRequestException with the status code
+        // attached so the recurring-job wrapper can apply Polly retry + previous-business-day
+        // fallback. Swallowing to 0 would be a silent failure and violate CLAUDE.md §Bilinen
+        // Tuzaklar #3 (TCMB XML drift / fallback requirement).
+        var response = await client.GetAsync(url, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            _logger.LogWarning("TCMB returned {StatusCode} for {Date}", response.StatusCode, date);
-            return 0;
+            throw new HttpRequestException(
+                $"TCMB returned {(int)response.StatusCode} {response.StatusCode} for {date:yyyy-MM-dd}",
+                inner: null,
+                statusCode: response.StatusCode);
         }
 
         var xml = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -92,33 +89,45 @@ public sealed class TcmbFxService : ITcmbFxService
 
     private List<FxRate> ParseTcmbXml(string xml, DateOnly date)
     {
+        // XML / decimal parse failures propagate as InvalidOperationException so the
+        // caller (TcmbFxSyncJob) can see a schema drift and surface it via Hangfire
+        // failure + Seq alert. Swallowing these would be a silent failure — the exact
+        // scenario CLAUDE.md §Bilinen Tuzaklar #3 (TCMB XML drift) warns against.
         var rates = new List<FxRate>();
+        XDocument doc;
         try
         {
-            var doc = XDocument.Parse(xml);
-            var currencies = doc.Descendants("Currency");
-
-            foreach (var currency in currencies)
-            {
-                var code = currency.Attribute("CurrencyCode")?.Value;
-                if (code is null || !TrackedCurrencies.Contains(code)) continue;
-
-                var forexBuyingStr = currency.Element("ForexBuying")?.Value;
-                var forexSellingStr = currency.Element("ForexSelling")?.Value;
-
-                if (string.IsNullOrWhiteSpace(forexBuyingStr) || string.IsNullOrWhiteSpace(forexSellingStr))
-                    continue;
-
-                var buying = decimal.Parse(forexBuyingStr, CultureInfo.InvariantCulture);
-                var selling = decimal.Parse(forexSellingStr, CultureInfo.InvariantCulture);
-                var midRate = Math.Round((buying + selling) / 2m, 4, MidpointRounding.ToEven);
-
-                rates.Add(FxRate.Create(code, date, midRate, FxRateSource.Tcmb, false, _clock.UtcNow));
-            }
+            doc = XDocument.Parse(xml);
         }
-        catch (Exception ex)
+        catch (System.Xml.XmlException ex)
         {
-            _logger.LogError(ex, "Failed to parse TCMB XML for {Date}", date);
+            _logger.LogError(ex, "TCMB XML parse failed for {Date}", date);
+            throw new InvalidOperationException(
+                $"TCMB XML for {date:yyyy-MM-dd} is malformed; upstream contract may have drifted.",
+                ex);
+        }
+
+        foreach (var currency in doc.Descendants("Currency"))
+        {
+            var code = currency.Attribute("CurrencyCode")?.Value;
+            if (code is null || !TrackedCurrencies.Contains(code)) continue;
+
+            var forexBuyingStr = currency.Element("ForexBuying")?.Value;
+            var forexSellingStr = currency.Element("ForexSelling")?.Value;
+
+            if (string.IsNullOrWhiteSpace(forexBuyingStr) || string.IsNullOrWhiteSpace(forexSellingStr))
+                continue;
+
+            if (!decimal.TryParse(forexBuyingStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var buying)
+                || !decimal.TryParse(forexSellingStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var selling))
+            {
+                throw new InvalidOperationException(
+                    $"TCMB rate for {code} on {date:yyyy-MM-dd} is not a valid decimal " +
+                    $"(buying='{forexBuyingStr}', selling='{forexSellingStr}').");
+            }
+
+            var midRate = Math.Round((buying + selling) / 2m, 4, MidpointRounding.ToEven);
+            rates.Add(FxRate.Create(code, date, midRate, FxRateSource.Tcmb, false, _clock.UtcNow));
         }
 
         return rates;
