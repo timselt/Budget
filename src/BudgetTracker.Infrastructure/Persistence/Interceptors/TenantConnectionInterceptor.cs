@@ -5,13 +5,24 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 namespace BudgetTracker.Infrastructure.Persistence.Interceptors;
 
 /// <summary>
-/// Each opened DB connection gets app.current_company_id GUC set so that Postgres RLS
-/// policies can enforce tenant isolation. Bypass scope (system jobs) leaves the GUC unset
-/// which causes RLS USING (...) to evaluate against NULL — policies must allow this for
-/// cross-tenant operations or use a SECURITY DEFINER role.
+/// Each opened DB connection gets <c>app.current_company_id</c> GUC set so that
+/// Postgres RLS policies can enforce tenant isolation. Bypass scope (system jobs)
+/// or no-tenant scope resets the GUC to an empty string, which evaluates against
+/// <c>NULLIF(current_setting(...), '')::INT</c> as NULL and produces the default-deny
+/// behaviour wired into the RLS policies (see ADR-0002 §2.2).
 /// </summary>
+/// <remarks>
+/// Both the async (<see cref="ConnectionOpenedAsync"/>) and the sync
+/// (<see cref="ConnectionOpened"/>) overrides issue their own commands against the
+/// connection directly, rather than bridging sync ⇄ async. ADR-0007 §2.7 closed the
+/// earlier sync-over-async hazard flagged on the F1 branch — the fix keeps both
+/// paths deadlock-free while retaining the same GUC semantics.
+/// </remarks>
 public sealed class TenantConnectionInterceptor : DbConnectionInterceptor
 {
+    private const string GucName = "app.current_company_id";
+    private const string SetConfigSql = "SELECT set_config('" + GucName + "', @cid, false)";
+
     private readonly ITenantContext _tenantContext;
 
     public TenantConnectionInterceptor(ITenantContext tenantContext)
@@ -24,37 +35,38 @@ public sealed class TenantConnectionInterceptor : DbConnectionInterceptor
         ConnectionEndEventData eventData,
         CancellationToken cancellationToken = default)
     {
-        if (_tenantContext.BypassFilter)
-        {
-            await ResetGuc(connection, cancellationToken);
-            return;
-        }
-
-        if (_tenantContext.CurrentCompanyId is { } companyId)
-        {
-            await using var cmd = connection.CreateCommand();
-            cmd.CommandText = "SELECT set_config('app.current_company_id', @cid, false)";
-            var p = cmd.CreateParameter();
-            p.ParameterName = "cid";
-            p.Value = companyId.ToString();
-            cmd.Parameters.Add(p);
-            await cmd.ExecuteNonQueryAsync(cancellationToken);
-        }
-        else
-        {
-            await ResetGuc(connection, cancellationToken);
-        }
+        var value = ResolveGucValue();
+        await using var cmd = BuildSetConfigCommand(connection, value);
+        await cmd.ExecuteNonQueryAsync(cancellationToken);
     }
 
     public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)
     {
-        ConnectionOpenedAsync(connection, eventData).GetAwaiter().GetResult();
+        // Synchronous path: issue the command with sync ADO.NET so we do not bridge
+        // an async call back to sync via .GetAwaiter().GetResult() (deadlock risk on
+        // legacy sync contexts, flagged by csharp-reviewer on feat/f1-operational-closure).
+        var value = ResolveGucValue();
+        using var cmd = BuildSetConfigCommand(connection, value);
+        cmd.ExecuteNonQuery();
     }
 
-    private static async Task ResetGuc(DbConnection connection, CancellationToken ct)
+    private string ResolveGucValue()
     {
-        await using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT set_config('app.current_company_id', '', false)";
-        await cmd.ExecuteNonQueryAsync(ct);
+        if (_tenantContext.BypassFilter || _tenantContext.CurrentCompanyId is not { } companyId)
+        {
+            return string.Empty;
+        }
+        return companyId.ToString();
+    }
+
+    private static DbCommand BuildSetConfigCommand(DbConnection connection, string value)
+    {
+        var cmd = connection.CreateCommand();
+        cmd.CommandText = SetConfigSql;
+        var p = cmd.CreateParameter();
+        p.ParameterName = "cid";
+        p.Value = value;
+        cmd.Parameters.Add(p);
+        return cmd;
     }
 }
