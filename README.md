@@ -43,9 +43,28 @@ pnpm dev
 
 ### Dev login
 
-Seed dev kullanıcılar (`IdentitySeeder.cs`, `Devpass!2026`):
-- `admin@tag.local` — tüm rolleri kapsar
-- `cfo@tag.local`, `finance@tag.local`, `dept@tag.local`, `viewer@tag.local`
+`Development` environment'ı `IdentitySeeder` ile 5 test kullanıcısı seed eder (hepsinin şifresi `Devpass!2026`):
+
+| E-posta | Rol |
+|---|---|
+| `admin@tag.local` | Admin (tüm yetkiler) |
+| `cfo@tag.local` | Cfo |
+| `finance@tag.local` | FinanceManager |
+| `dept@tag.local` | DepartmentHead |
+| `viewer@tag.local` | Viewer |
+
+### Staging / production login
+
+Fresh DB → kullanıcı yok. `--seed-bootstrap-admin` flag'i ilk Admin'i yaratır:
+
+```bash
+railway run --service api --environment staging \
+  --env BOOTSTRAP_ADMIN_EMAIL=admin@finopstur.com \
+  --env BOOTSTRAP_ADMIN_PASSWORD="$(openssl rand -base64 24)" \
+  dotnet BudgetTracker.Api.dll --seed-bootstrap-admin
+```
+
+Detay: `infra/release/README.md` §1b + `docs/deployment-setup-guide.md` Adım 7.5.
 
 ### Testler
 

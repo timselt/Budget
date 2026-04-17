@@ -123,6 +123,24 @@ railway run --service api --environment staging \
 
 `ProductionOidcClientSeeder` mevcut client'ı kontrol eder, yoksa oluşturur. Idempotent.
 
+## Adım 7.5 — Bootstrap Admin Kullanıcı Seed
+
+`AccountController.Register` Admin policy ile korunur → ilk Admin kullanıcı başka yoldan yaratılmalı. `--seed-bootstrap-admin` CLI flag'i tam bu boşluğu doldurur.
+
+```bash
+# Staging için
+railway run --service api --environment staging \
+  --env BOOTSTRAP_ADMIN_EMAIL=admin@finopstur.com \
+  --env BOOTSTRAP_ADMIN_PASSWORD="$(openssl rand -base64 24)" \
+  dotnet BudgetTracker.Api.dll --seed-bootstrap-admin
+```
+
+Oluşan şifreyi **güvenli bir yere kaydedin** (1Password/Bitwarden) — ilk SPA login için gereklidir. Oturum açtıktan sonra `/master-data` üzerinden kendi hesabınızı + diğer kullanıcıları oluşturabilirsiniz.
+
+**Idempotent:** E-mail'de zaten kullanıcı varsa komut no-op döner.
+
+**Detay:** `infra/release/README.md` §1b.
+
 ## Adım 8 — GitHub Secrets
 
 Repo → Settings → Secrets and variables → Actions → New repository secret:
