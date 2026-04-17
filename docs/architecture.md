@@ -840,11 +840,13 @@ Mevcut `client/package.json` üzerine şu eklemeler pin'lenir:
 
 ADR-0001'de "Recharts" olarak geçen frontend chart kütüphanesi burada resmi olarak **superseded**: Chart.js + react-chartjs-2 5.3 bağlayıcı (CLAUDE.md §Stack).
 
-#### 2.2. OIDC Code + PKCE Flow (1A)
+#### 2.2. OIDC Password Grant (F4 Part 2'de korundu; PKCE code flow migration F8+'a ertelendi)
 
-- SPA `/login` → `window.location.href = '/connect/authorize?...'` yönlendirir; OpenIddict cookie akışı + server-rendered consent sayfası kullanılır.
-- Alternatif (1B — SPA programmatic redirect) reddedildi: PKCE akışının server-tarafında cookie+CSRF ile entegrasyonu basitleşiyor, SPA'da iki katmanlı auth state yönetimi gerekmez.
-- Token interceptor `shared/api/http.ts` Axios instance'ına bağlanır; 401 → refresh attempt → fail ise `/login`; 403 → `/forbidden` route.
+- **Revize edildi (2026-04-17, F4 Part 2 başlangıcı):** F4 Part 1 keşif sonrası mevcut `client/src/lib/api.ts` + `client/src/stores/auth.ts` SPA'nın halihazırda **OpenIddict password grant** (`grant_type=password` + `grant_type=refresh_token`) kullandığı görüldü. Mevcut akış production-safe ve iç araç kullanım senaryosunda (CFO + muhasebe ekibi) kabul edilebilir; PKCE code flow'a geçiş **büyük bir SPA refactor** olup F4 bütçesini önemli ölçüde genişletir.
+- **Karar:** Password grant F4 Part 2'de korunur. LoginPage email/password form → POST `/connect/token` akışı değişmez. F4 Part 2 yalnızca eksik olanları tamamlar: (a) 401 refresh zaten mevcut, (b) **403 forbidden redirect eklendi** (`lib/api.ts` axios interceptor), (c) `shared/` pattern'ine opsiyonel re-export (F4 Part 1 minimal refactor direktifi gereği).
+- **Code + PKCE migration** ayrı bir ADR (ADR-0011 aday konu, F8+ "Güvenlik Hardening") ile planlanır. Mevcut flow'un riski: password grant + localStorage access/refresh token → XSS durumunda token çalınabilir. F2 CSP + input sanitization ile kısmen azaltılır; iç araç + authenticated kullanıcı tabanı → risk kabul edilebilir.
+- **Alternatif (1A `/connect/authorize` redirect + PKCE)**: Önerildi, F4 scope bütçesiyle uyumsuz bulundu; F8+ güvenlik hardening fazına ertelendi.
+- **Alternatif (1B SPA programmatic PKCE)**: Red kararı geçerliliğini korur (iki katmanlı auth state).
 
 #### 2.3. i18n (2A — TR Default)
 
@@ -891,7 +893,8 @@ ADR-0001'de "Recharts" olarak geçen frontend chart kütüphanesi burada resmi o
 
 | Alternatif | Red Nedeni |
 |---|---|
-| 1B SPA programmatic redirect | İki katmanlı auth state yönetimi; server-rendered consent daha temiz |
+| 1A `/connect/authorize` + PKCE (F4 Part 2 önerisi) | F4 Part 2 bütçesi dışında; password grant mevcut ve çalışır. PKCE migration F8+ güvenlik hardening (ADR-0011 aday) |
+| 1B SPA programmatic PKCE | İki katmanlı auth state yönetimi |
 | 2B Browser language detect | Homojen Türkçe kullanıcı tabanı; TR default yeterli |
 | AG-Grid Enterprise | Lisans maliyeti gereksiz; Community + custom hook yeterli |
 | Non-contiguous paste native desteği | AG-Grid Community sınırı; silent behavior yerine açık kullanıcı uyarısı seçildi |
