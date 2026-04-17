@@ -9,6 +9,10 @@ namespace BudgetTracker.Infrastructure.Reports;
 
 public sealed class PdfReportService : IPdfReportService
 {
+    static PdfReportService() => QuestPdfFontBootstrap.Register();
+
+    private const string FontFamily = "Lato";
+
     private static readonly string[] MonthNames =
     [
         "Oca", "Şub", "Mar", "Nis", "May", "Haz",
@@ -64,6 +68,7 @@ public sealed class PdfReportService : IPdfReportService
                 page.Size(PageSizes.A4.Landscape());
                 page.MarginHorizontal(30);
                 page.MarginVertical(25);
+                page.DefaultTextStyle(x => x.FontFamily(FontFamily));
 
                 page.Header().Column(col =>
                 {
@@ -150,14 +155,23 @@ public sealed class PdfReportService : IPdfReportService
                     });
                 });
 
-                page.Footer().AlignCenter()
-                    .Text(t =>
+                // Footer: left cell carries the KVKK notice (required on every
+                // exported report — ADR-0008 §2.2), right cell handles pagination.
+                page.Footer().Row(row =>
+                {
+                    row.RelativeItem().Text(t =>
+                    {
+                        t.Span("KVKK Madde 11 uyarınca kişisel veri içerir — yetkisiz paylaşım yasaktır.")
+                            .FontSize(7).FontColor(Colors.Grey.Darken1);
+                    });
+                    row.ConstantItem(80).AlignRight().Text(t =>
                     {
                         t.Span("Sayfa ").FontSize(8);
                         t.CurrentPageNumber().FontSize(8);
                         t.Span(" / ").FontSize(8);
                         t.TotalPages().FontSize(8);
                     });
+                });
             });
         });
 
