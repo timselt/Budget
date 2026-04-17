@@ -45,9 +45,11 @@ public sealed class ReportsController : ControllerBase
         return File(bytes, "application/pdf", $"yonetim_raporu_v{versionId}.pdf");
     }
 
-    [HttpPost("budget/import")]
+    [HttpPost("budget/import/preview")]
     [Authorize(Policy = "RequireFinanceRole")]
-    public async Task<IActionResult> ImportBudgetExcel(
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 10 * 1024 * 1024)]
+    public async Task<IActionResult> PreviewBudgetExcel(
         [FromQuery] int versionId,
         IFormFile file,
         CancellationToken cancellationToken)
@@ -60,12 +62,45 @@ public sealed class ReportsController : ControllerBase
         var userId = GetUserId();
 
         await using var stream = file.OpenReadStream();
-        var result = await _excelImport.ImportBudgetEntriesAsync(versionId, stream, userId, cancellationToken);
+        var preview = await _excelImport.PreviewAsync(
+            versionId, stream, file.Length, userId, cancellationToken);
+
+        return Ok(preview);
+    }
+
+    [HttpPost("budget/import/commit")]
+    [Authorize(Policy = "RequireFinanceRole")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 10 * 1024 * 1024)]
+    public async Task<IActionResult> CommitBudgetExcel(
+        [FromQuery] int versionId,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { error = "Dosya yüklenmedi." });
+        }
+
+        var userId = GetUserId();
+
+        await using var stream = file.OpenReadStream();
+        var result = await _excelImport.CommitAsync(
+            versionId, stream, file.Length, userId, cancellationToken);
 
         return Ok(result);
     }
 
-    private int GetUserId() =>
-        int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-            ?? throw new InvalidOperationException("User ID claim not found"));
+    private int GetUserId()
+    {
+        // FormatException from int.Parse would land on GlobalExceptionHandler's
+        // 500 branch; UnauthorizedAccessException maps to 403 and records the
+        // auth-layer root cause correctly (F3 csharp-reviewer MEDIUM).
+        var raw = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(raw, out var id))
+        {
+            throw new UnauthorizedAccessException("Geçerli kullanıcı kimliği bulunamadı.");
+        }
+        return id;
+    }
 }

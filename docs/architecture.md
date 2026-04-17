@@ -697,6 +697,114 @@ Bu ADR **F2 başında Önerildi** statüsünde açılır ve kararlar kod yazılm
 
 ---
 
+## ADR-0008 — Excel/PDF Raporlama, Tenant Stream Limiti, Türkçe Font ve Import Concurrency Guard
+
+**Tarih:** 2026-04-17
+**Statü:** Kabul edildi — §2.1/§2.2/§2.3/§2.5 F3 kapanışı itibarıyla uygulandı ve test edildi. **§2.4 (Excel başlık dili) muhasebe ekibi yazılı teyidine koşullu kalmaya devam ediyor**; teyit gelinceye kadar Türkçe sabit başlıklar uygulamada kullanılıyor ancak karar kilitlenmemiştir.
+**Karar Sahibi:** Timur Selçuk Turan
+**İlgili Belgeler:**
+- ADR-0002 (audit_logs partitioning — `import_errors` tablosu buradan bağımsız)
+- ADR-0007 (observability — import audit event'leri Seq'e akacak)
+- CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #5 (Excel şablon başlık dili)
+
+### 1. Bağlam
+
+F1 ve F2'de operasyonel çekirdek ve gözlemlenebilirlik teslim edildi. F3, mevcut `IExcelImportService`, `IExcelExportService`, `IPdfReportService` interface'lerini doldurarak muhasebe ekibinin günlük iş akışını (Excel şablon → bütçe yükleme, P&L/Varyans Excel rapor, yönetim PDF) karşılamalı.
+
+F3 kapsamı tek bir karar yüzeyinde birleştirilir, çünkü beş alt-problem birbirine bağımlı:
+1. Büyük Excel dosyaları tenant başına memory basıncı yaratır.
+2. Muhasebe ekibi Türkçe karakterle çalışır; PDF/Excel çıktılarında ğ/ü/ş/ı/ç/ö doğruluğu zorunlu.
+3. Import iki kez paralel çağrılırsa (hızlı tıklama, çift sekme) aynı tenant'ta yarış şartı olur.
+4. Excel şablon başlık dili (TR sabit / EN alias / dual header) iş akışına bağlı bir karar — teknik değil.
+5. F2 security-reviewer carry-over: exception mesajlarının connection string/secret sızdırma riski.
+
+### 2. Karar
+
+#### 2.1. Excel Engine: ClosedXML + Tenant Stream Limiti
+
+- `ClosedXML 0.104.2` (F1 pin).
+- **Tenant limiti:** per-upload max **50 000 satır** veya **10 MB**. Aşıldığında `422 UnprocessableEntity` + Türkçe mesaj + `IMPORT_REJECTED_LIMIT` audit event.
+- Ön kontrol: `IFormFile.Length > 10 * 1024 * 1024` → stream açılmadan reddet.
+- Post kontrol: `IXLWorksheet.LastRowUsed().RowNumber() > 50_000` → stream açıldı, DB'ye commit edilmeden reddet.
+- Row-by-row enumeration (`IXLWorksheet.RowsUsed()`) tercih edilir; tüm workbook memory'de tutulmaz.
+
+#### 2.2. PDF Engine: QuestPDF + Lato TTF Subset Embed
+
+- `QuestPDF 2025.1.2` (F1 pin, MIT/Community).
+- **Fontlar:** Lato-Regular + Lato-Bold TTF dosyaları `src/BudgetTracker.Infrastructure/Resources/Fonts/` altında `EmbeddedResource` olarak işaretli.
+- `FontManager.RegisterFontFromEmbeddedResource(...)` Program.cs bootstrap sırasında çağrılır.
+- Subset: QuestPDF 2025.x varsayılan olarak yalnızca render edilen glyph'leri embed eder. PDF hedef boyut < 200 KB (executive summary).
+- Doğrulama: PdfPig ile integration testte ğ/ü/ş/ı/ç/ö byte-level varlığı assert edilir.
+
+#### 2.3. Import Concurrency Guard: PostgreSQL Advisory Lock
+
+- Problem: aynı tenant'ın iki paralel import commit'i → intermediate state tutarsız, çift audit event, son yazım kazanır.
+- Çözüm: `pg_try_advisory_xact_lock(hash)` — transaction scope'lu exclusive lock.
+  - `hash = hashtextextended('import:' || company_id::text || ':budget_entries', 0)`
+  - Transaction bitince otomatik serbest kalır — manuel unlock yok.
+- `IImportGuard.TryAcquireAsync(companyId, resource, ct)` → `false` ise `409 Conflict` + Türkçe mesaj ("Bu şirket için zaten bir yükleme devam ediyor, birkaç dakika sonra tekrar deneyin.").
+- Redis/SemaphoreSlim reddedildi (§3).
+
+#### 2.4. Excel Şablon Başlık Dili (KOŞULLU)
+
+- **Teknik karar:** Türkçe sabit başlıklar — `Müşteri`, `Segment`, `Ocak`, `Şubat`, …, `Aralık`, `Toplam`.
+- **Koşul:** Muhasebe ekibinden yazılı teyit alınmadan §2.4 "Kabul edildi" statüsüne geçirilmez. Teyit öncesi F3 teslimleri TR sabit başlıklarla gider; teyit gelmezse F4 frontend i18n framework ile TR/EN alias sistemine geçiş yapılır (cost: ~0.5 gün F4 içinde).
+
+#### 2.5. Log Hijyeni (F2 Carry-over)
+
+- `ExceptionMessageSanitizer` helper — 3 regex mask:
+  - Npgsql connection fragmentleri (`Host=`, `Password=`, `Port=`, `Username=`)
+  - Mutlak dosya yolları (`^/etc/`, `^/var/`, `^/home/`, `C:\`)
+  - OpenIddict cert path/uzantıları (`.pfx`, `.key`)
+- Uygulama noktaları: `Program.cs` `Log.Fatal(ex, ...)` + `GlobalExceptionHandler` → `ProblemDetails.Detail`.
+- F2 security-reviewer LOW bulgusunu kapatır.
+
+### 3. Reddedilen Alternatifler
+
+| Alternatif | Red Nedeni |
+|---|---|
+| EPPlus (v5+) | Kommersiyal lisans; CLAUDE.md yasak. |
+| OpenXML SDK doğrudan | Düşük seviye, F3 scope'u için overkill. Streaming gerekirse F8+'de değerlendirilir. |
+| Redis distributed lock | CLAUDE.md Redis yasak. Advisory lock postgres-native, extra infra yok. |
+| `SemaphoreSlim` in-memory | Multi-instance deploy'da işe yaramaz. |
+| iTextSharp PDF | AGPL lisans; kommersiyal kullanım için paid. |
+| Dual header (§2.4) | Okunabilirlik ve kolon genişliği sorunu. |
+| TR/EN alias sistemi (§2.4) | F3 scope'unda complexity maliyet; F4 i18n ile entegre daha uygun. |
+
+### 4. Sonuçlar
+
+**Olumlu:**
+- Muhasebe ekibi için Türkçe Excel şablonu → günlük iş akışı kesintisiz.
+- Advisory lock → concurrency güvencesi, extra infra yok, multi-instance friendly.
+- Lato TTF subset → PDF <200 KB, Türkçe glyph doğruluğu kanıtlı.
+- Stream limiti → tenant bazlı DoS koruması, audit trail'de denetlenebilir.
+- `ExceptionMessageSanitizer` → F2 carry-over kapanır.
+
+**Olumsuz:**
+- 50 000 satır üzerinde import isteyen bir tenant gelirse F8+'de streaming'e geçiş.
+- Lato Regular + Bold embed infrastructure assembly'sini ~500 KB büyütür.
+- §2.4 muhasebe teyidi gecikirse F4 i18n scope'u büyür.
+
+**Koşullu:**
+- §2.4 Excel başlık dili — muhasebe ekibinden yazılı teyit alınana kadar "Önerildi" kalır; diğer alt-kararlar (§2.1 / §2.2 / §2.3 / §2.5) F3 kapanışında "Kabul edildi"ye geçer.
+
+### 5. Teslim Kanıtı (F3 kapanışı)
+
+| Kalem | Uygulama | Test |
+|---|---|---|
+| §2.1 ClosedXML + tenant limiti | `ExcelImportService.PreviewAsync` / `CommitAsync`; `ImportLimits.MaxBytes = 10 MB`, `MaxRows = 50 000`; `ImportFileTooLargeException` → HTTP 422 | 5 integration (preview, commit, byte limit, year lock, concurrency) |
+| §2.2 QuestPDF + Lato TTF subset | `QuestPdfFontBootstrap` + static ctor `PdfReportService`; embed via `EmbeddedResource`; KVKK footer satırı | 3 integration (generate <200 KB + Lato byte scan + source KVKK guard) |
+| §2.3 Import concurrency guard | `IImportGuard` + `PgAdvisoryImportGuard` (`pg_try_advisory_xact_lock(hashtextextended(...))`); `ImportConcurrencyConflictException` → HTTP 409 | 6 integration (solo/contend/cross-tenant/cross-resource/auto-release/no-tx) |
+| §2.4 Excel başlık dili (TR sabit) | `ExcelExportService`/`ExcelImportService` sabit `Müşteri`/`Ocak`…`Aralık`/`Toplam` | Kapsandı ancak karar muhasebe teyidine kadar koşullu |
+| §2.5 Log hijyeni | `ExceptionMessageSanitizer` 4 regex mask + `GlobalExceptionHandler.Detail` entegrasyonu | 16 unit test (conn-string, POSIX path, Win path, cert ref, combined) |
+
+**Test kapsamı:** F2 sonu 147 → F3 sonu **178** (+31 test). 144 unit + 34 integration, 0 fail.
+
+**Muhasebe teyit bekleyen madde:**
+- §2.4 — Türkçe sabit başlık listesi (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`). Muhasebe ekibi yazılı onay verdiğinde ADR bu not silinerek fully-accepted statüsüne geçecek; onay reddedilirse F4 SPA i18n framework ile TR/EN alias sistemine migrasyon (≈0.5 gün).
+
+---
+
 ## ADR-XXXX — [Başlık]
 
 **Tarih:** YYYY-MM-DD

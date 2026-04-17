@@ -4,6 +4,45 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### FAZ 3 — Excel Import/Export + PDF + F2 Ertelenen (2026-04-17)
+
+ADR-0008 kapsamı (Kabul edildi — §2.4 koşullu) + MIGRATION_PLAN.md §3 FAZ 3 teslim edildi. Branch: `feat/f3-excel-pdf`. İnce ayar #1 disiplini: ADR-0008 F3 başında "Önerildi" yazıldı (commit `badb6e5`), F3 sonunda "Kabul edildi"ye çevrildi (commit `438a43e`).
+
+#### Eklendi
+
+- **`IImportGuard` + `PgAdvisoryImportGuard`** (ADR-0008 §2.3) — `pg_try_advisory_xact_lock(hashtextextended('import:{companyId}:{resource}', 0))`, transaction scope'lu, auto-release. `ImportConcurrencyConflictException` → HTTP 409 (Türkçe mesaj). 6 integration test (solo/cross-tenant/cross-resource/auto-release/no-tx).
+
+- **`ExcelImportService` preview/commit split + tenant limitleri** (ADR-0008 §2.1) — `ImportLimits.MaxBytes = 10 MB`, `MaxRows = 50 000`, `BudgetEntriesResource`. `PreviewAsync` validation-only (lock almaz, non-binding snapshot — explicit docstring). `CommitAsync` advisory lock + transactional insert + audit events (`IMPORT_PREVIEWED`, `IMPORT_COMMITTED`, `IMPORT_REJECTED_LIMIT`, `IMPORT_CONCURRENCY_CONFLICT`). `ImportFileTooLargeException` → HTTP 422. Kapalı dönem kilidi (`BudgetYear.IsLocked`) → HTTP 409. Audit en iyi çaba — DB hatası 422'yi 500'e çevirmez. Tenant filter defense-in-depth (`CompanyId` explicit). 6 integration test.
+
+- **`PdfReportService` Lato TTF subset + KVKK footer** (ADR-0008 §2.2) — Lato-Regular + Lato-Bold TTF `EmbeddedResource` olarak Infrastructure assembly'sinde. `QuestPdfFontBootstrap` `Lazy<T>` ile thread-safe ve exception-propagating registration. `DefaultTextStyle.FontFamily("Lato")`; her sayfa footer'ında "KVKK Madde 11 uyarınca kişisel veri içerir — yetkisiz paylaşım yasaktır." notu. PDF <200 KB hedefi. 3 integration test (generate + Lato byte scan + source-level KVKK guard).
+
+- **`ExceptionMessageSanitizer`** (ADR-0008 §2.5, F2 carry-over) — 4 GeneratedRegex mask: Npgsql connection fragments (`Host`, `Password`, `Username`, `User ID`, `Port`, `Database`), POSIX paths (`/etc` `/var` `/home` `/usr` `/opt` `/tmp` `/root` `/app` `/proc` `/mnt` `/srv` `/run`), Windows drive-letter paths, certificate extensions (`.pfx` `.key` `.p12` `.keystore`). `GlobalExceptionHandler.Detail` + log messages bu helper'dan geçer. 16 unit test.
+
+- **`ReportsController`** — `POST /api/v1/reports/budget/import/preview` + `.../commit` (iki endpoint de Finance/Cfo policy + `[RequestSizeLimit(10 MB)]` + `[RequestFormLimits]`). Framework katmanında oversize reject. `GetUserId()` `int.TryParse` + `UnauthorizedAccessException` (→ 403) — magic-string `FormatException` (→ 500) bypass'ı kapatıldı.
+
+- **`GlobalExceptionHandler`** — `ImportFileTooLargeException` → 422, `ImportConcurrencyConflictException` → 409. Log mesajlarına `Path` + `TraceIdentifier` + sanitizer uygulanmış `SafeMessage` — Seq tenant/tx korelasyonu.
+
+#### Değişti
+
+- Lato TTF fontları (`Lato-Regular.ttf`, `Lato-Bold.ttf`, `OFL.txt`) `src/BudgetTracker.Infrastructure/Resources/Fonts/` altında yeni dizin (OFL 1.1 lisansı repo'ya eklendi).
+- `AuditActions`/`AuditEntityNames`: 4 yeni action sabiti + `BudgetVersion` entity name.
+- `IExcelImportService` interface tamamen yeniden yazıldı (eski `ImportBudgetEntriesAsync` kaldırıldı, preview/commit ayrımına geçildi) — BREAKING ama sadece test + bu controller kullanıyordu.
+
+#### Test Kapsamı
+
+| Katman | F2 sonu | F3 sonu | Delta |
+|---|---|---|---|
+| Unit | 128 | **144** | +16 (sanitizer) |
+| Integration | 19 | **34** | +15 (advisory lock 6, Excel import 6, PDF 3) |
+| **Toplam** | 147 | **178** | **0 fail** |
+
+#### Ertelenen (F4+)
+
+- **§2.4 muhasebe teyidi** — Türkçe sabit başlıklar uygulanmış; muhasebe ekibi yazılı onay verdiğinde ADR "Kabul edildi" fully-unconditional'a geçer. Reddedilirse F4 SPA i18n framework ile TR/EN alias migrasyonu (≈0.5 gün).
+- **SQL injection false positive** (csharp HIGH) — `PgAdvisoryImportGuard` EF `SqlQuery<bool>($"...")` parametrize ediyor; bulgu false positive olarak raporda belgelendi.
+
+---
+
 ### FAZ 2 — Hangfire Dashboard + Seq Observability + F1 Ertelenen (2026-04-17)
 
 MIGRATION_PLAN.md §3 FAZ 2 + ADR-0007 kapsamında gözlemlenebilirlik katmanı + F1 review'dan ertelenen iki HIGH kalemi teslim edildi. Tüm işler `feat/f2-hangfire-seq-observability` branch'inde; ADR-0007 ince ayar #1 gereği F2 başında "Önerildi" olarak açıldı (commit `78c5032`), F2 sonunda "Kabul edildi"ye çevrildi (commit `244419f`).

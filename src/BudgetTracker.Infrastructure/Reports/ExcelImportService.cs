@@ -1,85 +1,189 @@
+using System.Text.Json;
+using BudgetTracker.Application.Audit;
 using BudgetTracker.Application.Common.Abstractions;
+using BudgetTracker.Application.Imports;
 using BudgetTracker.Application.Reports;
 using BudgetTracker.Core.Entities;
 using BudgetTracker.Core.Enums;
+using BudgetTracker.Infrastructure.Persistence;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BudgetTracker.Infrastructure.Reports;
 
+/// <summary>
+/// ADR-0008 §2.1 implementation. Preview/commit split, tenant stream limits,
+/// advisory-lock concurrency guard, and audit events for every lifecycle edge.
+/// </summary>
 public sealed class ExcelImportService : IExcelImportService
 {
-    private readonly IApplicationDbContext _db;
+    // Concrete context: CommitAsync needs access to Database.BeginTransactionAsync
+    // for the advisory-lock scope, which IApplicationDbContext does not expose.
+    private readonly ApplicationDbContext _db;
     private readonly IClock _clock;
+    private readonly IImportGuard _importGuard;
+    private readonly IAuditLogger _auditLogger;
+    private readonly ILogger<ExcelImportService> _logger;
 
-    public ExcelImportService(IApplicationDbContext db, IClock clock)
+    public ExcelImportService(
+        ApplicationDbContext db,
+        IClock clock,
+        IImportGuard importGuard,
+        IAuditLogger auditLogger,
+        ILogger<ExcelImportService> logger)
     {
         _db = db;
         _clock = clock;
+        _importGuard = importGuard;
+        _auditLogger = auditLogger;
+        _logger = logger;
     }
 
-    public async Task<ExcelImportResult> ImportBudgetEntriesAsync(
+    public async Task<ExcelImportPreview> PreviewAsync(
         int versionId,
         Stream excelStream,
+        long streamLength,
         int actorUserId,
         CancellationToken cancellationToken)
     {
-        var version = await _db.BudgetVersions
-            .FirstOrDefaultAsync(v => v.Id == versionId, cancellationToken)
-            ?? throw new InvalidOperationException($"BudgetVersion {versionId} bulunamadı.");
+        var version = await LoadVersionForImportAsync(versionId, cancellationToken);
 
-        if (version.Status != BudgetVersionStatus.Draft)
-        {
-            throw new InvalidOperationException("Sadece taslak durumundaki versiyonlara içe aktarım yapılabilir.");
-        }
+        await EnforceLimitsAsync(
+            version.CompanyId, versionId, streamLength,
+            actorUserId, cancellationToken, postCheckRowCount: null);
 
         using var workbook = new XLWorkbook(excelStream);
         var worksheet = workbook.Worksheets.First();
+        var lastRow = worksheet.LastRowUsed()?.RowNumber() ?? 1;
+        var dataRowCount = Math.Max(0, lastRow - 1);
 
-        var customers = await _db.Customers
-            .Where(c => c.IsActive)
-            .ToDictionaryAsync(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase, cancellationToken);
+        await EnforceLimitsAsync(
+            version.CompanyId, versionId, streamLength,
+            actorUserId, cancellationToken, postCheckRowCount: dataRowCount);
 
+        var customers = await LoadActiveCustomersAsync(version.CompanyId, cancellationToken);
+
+        var errors = new List<ExcelImportRowError>();
         var warnings = new List<string>();
-        var importedCount = 0;
-        var skippedCount = 0;
+        var valid = 0;
+
+        for (var row = 2; row <= lastRow; row++)
+        {
+            var outcome = InspectRow(worksheet, row, customers);
+            switch (outcome)
+            {
+                case RowOutcome.Valid:
+                    valid++;
+                    break;
+                case RowOutcome.Empty:
+                    // silent skip — blank rows are allowed
+                    break;
+                case RowOutcome.UnknownCustomer customer:
+                    errors.Add(new ExcelImportRowError(row, "unknown_customer", $"Müşteri bulunamadı: '{customer.Name}'"));
+                    break;
+                case RowOutcome.InvalidAmount amt:
+                    errors.Add(new ExcelImportRowError(row, "invalid_amount", $"Ay {amt.Month}: sayı çevrilemedi"));
+                    break;
+            }
+        }
+
+        await _auditLogger.LogAsync(new AuditEvent(
+            EntityName: AuditEntityNames.BudgetVersion,
+            EntityKey: versionId.ToString(),
+            Action: AuditActions.ImportPreviewed,
+            CompanyId: version.CompanyId,
+            UserId: actorUserId,
+            NewValuesJson: JsonSerializer.Serialize(new
+            {
+                totalRows = dataRowCount,
+                validRows = valid,
+                errorRows = errors.Count,
+            })),
+            cancellationToken);
+
+        return new ExcelImportPreview(
+            TotalRows: dataRowCount,
+            ValidRows: valid,
+            ErrorRows: errors.Count,
+            Errors: errors,
+            Warnings: warnings);
+    }
+
+    public async Task<ExcelImportResult> CommitAsync(
+        int versionId,
+        Stream excelStream,
+        long streamLength,
+        int actorUserId,
+        CancellationToken cancellationToken)
+    {
+        var version = await LoadVersionForImportAsync(versionId, cancellationToken);
+
+        await EnforceLimitsAsync(
+            version.CompanyId, versionId, streamLength,
+            actorUserId, cancellationToken, postCheckRowCount: null);
+
+        using var workbook = new XLWorkbook(excelStream);
+        var worksheet = workbook.Worksheets.First();
+        var lastRow = worksheet.LastRowUsed()?.RowNumber() ?? 1;
+        var dataRowCount = Math.Max(0, lastRow - 1);
+
+        await EnforceLimitsAsync(
+            version.CompanyId, versionId, streamLength,
+            actorUserId, cancellationToken, postCheckRowCount: dataRowCount);
+
+        var customers = await LoadActiveCustomersAsync(version.CompanyId, cancellationToken);
         var now = _clock.UtcNow;
 
-        var lastRow = worksheet.LastRowUsed()?.RowNumber() ?? 1;
+        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        if (!await _importGuard.TryAcquireAsync(
+                version.CompanyId, ImportLimits.BudgetEntriesResource, cancellationToken))
+        {
+            await _auditLogger.LogAsync(new AuditEvent(
+                EntityName: AuditEntityNames.BudgetVersion,
+                EntityKey: versionId.ToString(),
+                Action: AuditActions.ImportConcurrencyConflict,
+                CompanyId: version.CompanyId,
+                UserId: actorUserId),
+                cancellationToken);
+            throw new ImportConcurrencyConflictException(
+                version.CompanyId, ImportLimits.BudgetEntriesResource);
+        }
+
+        var warnings = new List<string>();
+        var imported = 0;
+        var skipped = 0;
 
         for (var row = 2; row <= lastRow; row++)
         {
             var customerName = worksheet.Cell(row, 1).GetString().Trim();
-
             if (string.IsNullOrWhiteSpace(customerName))
             {
-                skippedCount++;
+                skipped++;
                 continue;
             }
 
             if (!customers.TryGetValue(customerName, out var customer))
             {
                 warnings.Add($"Satır {row}: Müşteri bulunamadı — '{customerName}'");
-                skippedCount++;
+                skipped++;
                 continue;
             }
 
             for (var month = 1; month <= 12; month++)
             {
                 var cell = worksheet.Cell(row, month + 2);
-                if (cell.IsEmpty())
-                {
-                    continue;
-                }
+                if (cell.IsEmpty()) continue;
 
                 if (!cell.TryGetValue<decimal>(out var amount))
                 {
                     warnings.Add($"Satır {row}, Ay {month}: Geçersiz sayı değeri");
-                    skippedCount++;
+                    skipped++;
                     continue;
                 }
 
-                var entry = BudgetEntry.Create(
+                _db.BudgetEntries.Add(BudgetEntry.Create(
                     companyId: version.CompanyId,
                     versionId: versionId,
                     customerId: customer.Id,
@@ -90,15 +194,148 @@ public sealed class ExcelImportService : IExcelImportService
                     amountTryFixed: amount,
                     amountTrySpot: amount,
                     createdByUserId: actorUserId,
-                    createdAt: now);
-
-                _db.BudgetEntries.Add(entry);
-                importedCount++;
+                    createdAt: now));
+                imported++;
             }
         }
 
         await _db.SaveChangesAsync(cancellationToken);
+        await tx.CommitAsync(cancellationToken);
 
-        return new ExcelImportResult(importedCount, skippedCount, warnings);
+        await _auditLogger.LogAsync(new AuditEvent(
+            EntityName: AuditEntityNames.BudgetVersion,
+            EntityKey: versionId.ToString(),
+            Action: AuditActions.ImportCommitted,
+            CompanyId: version.CompanyId,
+            UserId: actorUserId,
+            NewValuesJson: JsonSerializer.Serialize(new { imported, skipped })),
+            cancellationToken);
+
+        _logger.LogInformation(
+            "Excel import committed: version={VersionId} tenant={Tenant} imported={Imported} skipped={Skipped}",
+            versionId, version.CompanyId, imported, skipped);
+
+        return new ExcelImportResult(imported, skipped, warnings);
+    }
+
+    private async Task<BudgetVersion> LoadVersionForImportAsync(int versionId, CancellationToken ct)
+    {
+        var version = await _db.BudgetVersions.FirstOrDefaultAsync(v => v.Id == versionId, ct)
+            ?? throw new InvalidOperationException($"BudgetVersion {versionId} bulunamadı.");
+
+        if (version.Status != BudgetVersionStatus.Draft)
+        {
+            throw new InvalidOperationException("Sadece taslak durumundaki versiyonlara içe aktarım yapılabilir.");
+        }
+
+        // Closed-period guard: once the enclosing BudgetYear is locked, no import
+        // can add or modify rows under any of its versions — even a Draft. Exports
+        // remain allowed (read-only). Message uses "cannot be edited" so
+        // GlobalExceptionHandler maps it to HTTP 409 (Conflict).
+        var year = await _db.BudgetYears
+            .AsNoTracking()
+            .FirstOrDefaultAsync(y => y.Id == version.BudgetYearId, ct);
+        if (year?.IsLocked == true)
+        {
+            throw new InvalidOperationException(
+                $"Bütçe yılı {year.Year} kilitli; kapalı dönemler cannot be edited.");
+        }
+
+        return version;
+    }
+
+    private async Task<Dictionary<string, Customer>> LoadActiveCustomersAsync(int companyId, CancellationToken ct) =>
+        // Explicit CompanyId filter on top of the EF global query filter —
+        // defense-in-depth against a future refactor that inserts a stray
+        // IgnoreQueryFilters() on the customer pipeline (F3 csharp-reviewer HIGH).
+        await _db.Customers
+            .Where(c => c.IsActive && c.CompanyId == companyId)
+            .ToDictionaryAsync(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase, ct);
+
+    private async Task EnforceLimitsAsync(
+        int companyId,
+        int versionId,
+        long streamLength,
+        int actorUserId,
+        CancellationToken ct,
+        int? postCheckRowCount)
+    {
+        if (streamLength > ImportLimits.MaxBytes
+            || (postCheckRowCount is { } rowCount && rowCount > ImportLimits.MaxRows))
+        {
+            var rowForAudit = postCheckRowCount ?? 0;
+
+            // Best-effort audit write: if the audit DB is unreachable we still
+            // want the caller to see the real ImportFileTooLargeException
+            // (→ HTTP 422) rather than a generic DB failure (→ HTTP 500). The
+            // audit outage lands on ILogger so operators can correlate.
+            try
+            {
+                await _auditLogger.LogAsync(new AuditEvent(
+                    EntityName: AuditEntityNames.BudgetVersion,
+                    EntityKey: versionId.ToString(),
+                    Action: AuditActions.ImportRejectedLimit,
+                    CompanyId: companyId,
+                    UserId: actorUserId,
+                    NewValuesJson: JsonSerializer.Serialize(new
+                    {
+                        bytes = streamLength,
+                        rows = rowForAudit,
+                        maxBytes = ImportLimits.MaxBytes,
+                        maxRows = ImportLimits.MaxRows,
+                    })),
+                    ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Audit write failed during import limit enforcement: version={VersionId}",
+                    versionId);
+            }
+
+            throw new ImportFileTooLargeException(streamLength, rowForAudit);
+        }
+    }
+
+    private static RowOutcome InspectRow(IXLWorksheet worksheet, int row, Dictionary<string, Customer> customers)
+    {
+        var customerName = worksheet.Cell(row, 1).GetString().Trim();
+        if (string.IsNullOrWhiteSpace(customerName))
+        {
+            return RowOutcome.Empty.Instance;
+        }
+
+        if (!customers.TryGetValue(customerName, out _))
+        {
+            return new RowOutcome.UnknownCustomer(customerName);
+        }
+
+        for (var month = 1; month <= 12; month++)
+        {
+            var cell = worksheet.Cell(row, month + 2);
+            if (cell.IsEmpty()) continue;
+            if (!cell.TryGetValue<decimal>(out _))
+            {
+                return new RowOutcome.InvalidAmount(month);
+            }
+        }
+        return RowOutcome.Valid.Instance;
+    }
+
+    private abstract record RowOutcome
+    {
+        public sealed record Valid : RowOutcome
+        {
+            public static readonly Valid Instance = new();
+        }
+
+        public sealed record Empty : RowOutcome
+        {
+            public static readonly Empty Instance = new();
+        }
+
+        public sealed record UnknownCustomer(string Name) : RowOutcome;
+
+        public sealed record InvalidAmount(int Month) : RowOutcome;
     }
 }

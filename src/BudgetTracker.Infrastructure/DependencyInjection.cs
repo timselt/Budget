@@ -6,6 +6,7 @@ using BudgetTracker.Application.Common.Abstractions;
 using BudgetTracker.Application.Customers;
 using BudgetTracker.Application.Expenses;
 using BudgetTracker.Application.FxRates;
+using BudgetTracker.Application.Imports;
 using BudgetTracker.Application.Reports;
 using BudgetTracker.Application.Scenarios;
 using BudgetTracker.Application.SpecialItems;
@@ -17,6 +18,7 @@ using BudgetTracker.Infrastructure.BackgroundJobs;
 using BudgetTracker.Infrastructure.Common;
 using BudgetTracker.Infrastructure.FxRates;
 using BudgetTracker.Infrastructure.Identity;
+using BudgetTracker.Infrastructure.Imports;
 using BudgetTracker.Infrastructure.Observability;
 using BudgetTracker.Infrastructure.Persistence;
 using BudgetTracker.Infrastructure.Persistence.Interceptors;
@@ -103,6 +105,9 @@ public static class DependencyInjection
         services.AddScoped<IExcelExportService, ExcelExportService>();
         services.AddScoped<IExcelImportService, ExcelImportService>();
         services.AddScoped<IPdfReportService, PdfReportService>();
+
+        // F3 / ADR-0008 §2.3 — import concurrency guard.
+        services.AddScoped<IImportGuard, PgAdvisoryImportGuard>();
 
         // F1 — Operational closure: audit logger + recurring jobs.
         services.AddScoped<IAuditLogger, AuditLogger>();

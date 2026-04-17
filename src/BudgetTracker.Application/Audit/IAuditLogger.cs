@@ -27,9 +27,16 @@ public static class AuditActions
     public const string AuthSignIn = "AUTH_SIGN_IN";
     public const string AuthSignInFailed = "AUTH_SIGN_IN_FAILED";
     public const string AuthSignOut = "AUTH_SIGN_OUT";
+
+    // F3 / ADR-0008 — Excel import lifecycle.
+    public const string ImportPreviewed = "IMPORT_PREVIEWED";
+    public const string ImportCommitted = "IMPORT_COMMITTED";
+    public const string ImportRejectedLimit = "IMPORT_REJECTED_LIMIT";
+    public const string ImportConcurrencyConflict = "IMPORT_CONCURRENCY_CONFLICT";
 }
 
 public static class AuditEntityNames
 {
     public const string UserAccount = "UserAccount";
+    public const string BudgetVersion = "BudgetVersion";
 }
