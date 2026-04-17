@@ -1,8 +1,10 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import './shared/i18n' // initialise i18next once at app entry
 import { AuthGuard } from './components/layout/AuthGuard'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoginPage } from './pages/LoginPage'
+import { ForbiddenPage } from './shared/ui/ForbiddenPage'
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const BudgetEntryPage = lazy(() => import('./pages/BudgetEntryPage').then(m => ({ default: m.BudgetEntryPage })))
@@ -28,6 +30,10 @@ export function App() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        {/* 403 landing sits outside the AuthGuard wrap so a user who has
+            just been redirected here does not re-trigger the auth check
+            and bounce again. */}
+        <Route path="/forbidden" element={<ForbiddenPage />} />
         <Route
           element={
             <AuthGuard>
