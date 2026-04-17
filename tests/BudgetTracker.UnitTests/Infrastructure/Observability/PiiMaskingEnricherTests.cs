@@ -68,13 +68,25 @@ public sealed class PiiMaskingEnricherTests
     }
 
     [Fact]
-    public void Enrich_IgnoresNonStringEmailValues()
+    public void Enrich_NonStringEmailValue_RedactsWithSentinel()
     {
+        // Type-bypass defence: a caller that passes a Guid / int / object under a
+        // sensitive property name must not ship the raw value to Seq. The masking
+        // function cannot operate on non-strings, so the enricher replaces the
+        // entire scalar with "***".
         var captured = CaptureOne(logger =>
             logger.Information("weird {Email}", 42));
 
-        // Non-string values are left alone rather than turned into "***".
-        Scalar(captured, "Email").Should().Be(42);
+        Scalar(captured, "Email").Should().Be("***");
+    }
+
+    [Fact]
+    public void Enrich_NonStringIpValue_RedactsWithSentinel()
+    {
+        var captured = CaptureOne(logger =>
+            logger.Information("weird {IpAddress}", Guid.NewGuid()));
+
+        Scalar(captured, "IpAddress").Should().Be("***");
     }
 
     [Theory]

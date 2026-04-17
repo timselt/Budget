@@ -60,6 +60,33 @@ public sealed class HangfireDashboardAuthorizationFilterTests
         HangfireDashboardAuthorizationFilter.AuthorizeHttpContext(ctx).Should().BeFalse();
     }
 
+    [Fact]
+    public void AuthorizeHttpContext_AnonymousRequest_SetsStatusCode401()
+    {
+        // ADR-0007 §2.1: anonymous → 401.
+        var ctx = new DefaultHttpContext();
+        HangfireDashboardAuthorizationFilter.AuthorizeHttpContext(ctx).Should().BeFalse();
+        ctx.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+    }
+
+    [Fact]
+    public void AuthorizeHttpContext_AuthenticatedWrongRole_SetsStatusCode403()
+    {
+        // ADR-0007 §2.1: authenticated but without Admin/Cfo → 403.
+        var ctx = BuildContext(roles: new[] { RoleNames.FinanceManager });
+        HangfireDashboardAuthorizationFilter.AuthorizeHttpContext(ctx).Should().BeFalse();
+        ctx.Response.StatusCode.Should().Be(StatusCodes.Status403Forbidden);
+    }
+
+    [Fact]
+    public void AuthorizeHttpContext_Admin_DoesNotOverrideStatusCode()
+    {
+        var ctx = BuildContext(roles: new[] { RoleNames.Admin });
+        ctx.Response.StatusCode = StatusCodes.Status200OK;
+        HangfireDashboardAuthorizationFilter.AuthorizeHttpContext(ctx).Should().BeTrue();
+        ctx.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+    }
+
     private static HttpContext BuildContext(string[] roles)
     {
         var claims = roles.Select(r => new Claim(ClaimTypes.Role, r));

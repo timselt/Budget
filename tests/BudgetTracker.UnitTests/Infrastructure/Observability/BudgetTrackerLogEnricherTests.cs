@@ -70,6 +70,27 @@ public sealed class BudgetTrackerLogEnricherTests
     }
 
     [Fact]
+    public void Enrich_WhenNameIdentifierIsEmail_RedactsUserIdToSentinel()
+    {
+        // Defensive guard: if a custom OpenIddict claim mapping ever placed an email
+        // under NameIdentifier, shipping it to Seq as `user_id` would bypass the
+        // PiiMaskingEnricher (which only matches properties named Email/email).
+        var httpContext = new DefaultHttpContext { TraceIdentifier = "req-99" };
+        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, "timur@turassist.com"),
+        }, authenticationType: "test"));
+
+        var accessor = Substitute.For<IHttpContextAccessor>();
+        accessor.HttpContext.Returns(httpContext);
+
+        var captured = CaptureOne(new BudgetTrackerLogEnricher(accessor, tenantContext: null),
+            logger => logger.Information("ping"));
+
+        Scalar(captured, "user_id").Should().Be("***");
+    }
+
+    [Fact]
     public void Enrich_WhenAccessorNull_DoesNotThrow_AndTreatsAsBackgroundJob()
     {
         // Non-web host (CLI seeder, unit tests): the accessor itself may be absent.

@@ -19,25 +19,33 @@ namespace BudgetTracker.Infrastructure.BackgroundJobs;
 /// </remarks>
 public sealed class HangfireDashboardAuthorizationFilter : IDashboardAuthorizationFilter
 {
-    public bool Authorize([NotNull] DashboardContext context)
-    {
-        var httpContext = context.GetHttpContext();
-        return AuthorizeHttpContext(httpContext);
-    }
+    public bool Authorize([NotNull] DashboardContext context) =>
+        AuthorizeHttpContext(context.GetHttpContext());
 
     /// <summary>
-    /// Extracted to a static method so unit tests can exercise the authorisation
-    /// logic with a <see cref="DefaultHttpContext"/> instead of mocking the
-    /// Hangfire-internal abstract <see cref="DashboardContext"/>.
+    /// Single decision point — extracted so unit tests can exercise it with a
+    /// <see cref="DefaultHttpContext"/> instead of mocking the Hangfire-internal
+    /// abstract <see cref="DashboardContext"/>. Side-effects the response status
+    /// code so <c>/hangfire</c> matches ADR-0007 §2.1 semantics:
+    /// anonymous → 401, authenticated-wrong-role → 403.
     /// </summary>
     internal static bool AuthorizeHttpContext(HttpContext httpContext)
     {
         var user = httpContext.User;
-        if (user?.Identity?.IsAuthenticated is not true)
+        var authenticated = user?.Identity?.IsAuthenticated is true;
+
+        if (!authenticated)
         {
+            httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
             return false;
         }
 
-        return user.IsInRole(RoleNames.Admin) || user.IsInRole(RoleNames.Cfo);
+        if (user!.IsInRole(RoleNames.Admin) || user.IsInRole(RoleNames.Cfo))
+        {
+            return true;
+        }
+
+        httpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
+        return false;
     }
 }

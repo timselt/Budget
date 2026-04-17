@@ -36,8 +36,21 @@ public sealed class TenantConnectionInterceptor : DbConnectionInterceptor
         CancellationToken cancellationToken = default)
     {
         var value = ResolveGucValue();
-        await using var cmd = BuildSetConfigCommand(connection, value);
-        await cmd.ExecuteNonQueryAsync(cancellationToken);
+        try
+        {
+            await using var cmd = BuildSetConfigCommand(connection, value);
+            await cmd.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch
+        {
+            // A silently swallowed failure here leaves the connection open with no
+            // GUC set, which would cause the RLS policies to fall into the empty-string
+            // default-deny branch — the caller would then see "no rows" and misdiagnose
+            // a tenant visibility problem. Close the connection and rethrow so the
+            // caller sees an explicit error.
+            await connection.CloseAsync();
+            throw;
+        }
     }
 
     public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)
@@ -46,8 +59,16 @@ public sealed class TenantConnectionInterceptor : DbConnectionInterceptor
         // an async call back to sync via .GetAwaiter().GetResult() (deadlock risk on
         // legacy sync contexts, flagged by csharp-reviewer on feat/f1-operational-closure).
         var value = ResolveGucValue();
-        using var cmd = BuildSetConfigCommand(connection, value);
-        cmd.ExecuteNonQuery();
+        try
+        {
+            using var cmd = BuildSetConfigCommand(connection, value);
+            cmd.ExecuteNonQuery();
+        }
+        catch
+        {
+            connection.Close();
+            throw;
+        }
     }
 
     private string ResolveGucValue()

@@ -44,18 +44,20 @@ public sealed class AuditLogger : IAuditLogger
             ipAddress: evt.IpAddress,
             createdAt: _clock.UtcNow);
 
-        await using var ctx = await _dbFactory.CreateDbContextAsync(cancellationToken);
-        ctx.AuditLogs.Add(entry);
-
+        // CreateDbContextAsync + SaveChangesAsync share one try/catch so a pool-
+        // exhaustion or unreachable-DB failure during context creation is logged
+        // with the same context (Action + EntityName) as a save-time failure.
+        // Never log EntityKey here — for failed sign-ins it contains the attempted
+        // username, and a caller that passes a password in the username field would
+        // leak the password to Seq/stdout.
         try
         {
+            await using var ctx = await _dbFactory.CreateDbContextAsync(cancellationToken);
+            ctx.AuditLogs.Add(entry);
             await ctx.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
         {
-            // Never log EntityKey here — for failed sign-ins it contains the attempted
-            // username, and a caller that passes a password-in-the-username-field would
-            // leak the password to Seq/stdout. Keep diagnostics to Action + EntityName.
             _logger.LogError(ex,
                 "Audit log write failed: action={Action} entity={EntityName}",
                 evt.Action, evt.EntityName);

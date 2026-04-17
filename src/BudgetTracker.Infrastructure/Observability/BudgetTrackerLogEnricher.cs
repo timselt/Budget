@@ -67,7 +67,14 @@ public sealed class BudgetTrackerLogEnricher : ILogEventEnricher
                 ?? httpContext.User?.FindFirstValue("sub");
             if (!string.IsNullOrEmpty(userIdClaim))
             {
-                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("user_id", userIdClaim));
+                // Defensive guard: if a custom OpenIddict claim mapping ever maps
+                // NameIdentifier/sub to an email, we do not want the raw email to
+                // land in Seq under `user_id` (PiiMaskingEnricher only matches on
+                // the property name `Email`). Replace with a fixed sentinel.
+                var safeUserId = userIdClaim.Contains('@', StringComparison.Ordinal)
+                    ? "***"
+                    : userIdClaim;
+                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("user_id", safeUserId));
             }
         }
         catch (Exception ex)

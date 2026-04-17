@@ -25,36 +25,48 @@ public sealed class PiiMaskingEnricher : ILogEventEnricher
 
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
     {
-        foreach (var name in EmailPropertyNames)
+        // Defensive wrapper: ADR-0007 §2.3 requires the enricher never to throw.
+        // Any failure here goes to SelfLog instead of aborting the log event —
+        // PII masking is important but it must not silently drop lines on a bug.
+        try
         {
-            if (TryReadScalarString(logEvent, name, out var value))
+            foreach (var name in EmailPropertyNames)
             {
-                logEvent.AddOrUpdateProperty(propertyFactory.CreateProperty(name, MaskEmail(value)));
+                MaskIfPresent(logEvent, propertyFactory, name, MaskEmail);
+            }
+
+            foreach (var name in IpPropertyNames)
+            {
+                MaskIfPresent(logEvent, propertyFactory, name, MaskIp);
             }
         }
-
-        foreach (var name in IpPropertyNames)
+        catch (Exception ex)
         {
-            if (TryReadScalarString(logEvent, name, out var value))
-            {
-                logEvent.AddOrUpdateProperty(propertyFactory.CreateProperty(name, MaskIp(value)));
-            }
+            Serilog.Debugging.SelfLog.WriteLine("PiiMaskingEnricher failed: {0}", ex);
         }
     }
 
-    private static bool TryReadScalarString(LogEvent logEvent, string name, out string value)
+    private static void MaskIfPresent(
+        LogEvent logEvent,
+        ILogEventPropertyFactory factory,
+        string name,
+        Func<string, string> mask)
     {
-        if (logEvent.Properties.TryGetValue(name, out var prop)
-            && prop is ScalarValue scalar
-            && scalar.Value is string str
-            && !string.IsNullOrEmpty(str))
+        if (!logEvent.Properties.TryGetValue(name, out var prop)) return;
+
+        // If the property is present but not a plain string scalar (e.g. the caller
+        // passed an object, Guid, or destructured value under a sensitive name) we
+        // cannot safely mask it; replace it with a fixed sentinel rather than let
+        // the unmasked value ship to Seq. This closes the "type-bypass" vector.
+        if (prop is not ScalarValue scalar || scalar.Value is not string str)
         {
-            value = str;
-            return true;
+            logEvent.AddOrUpdateProperty(factory.CreateProperty(name, "***"));
+            return;
         }
 
-        value = string.Empty;
-        return false;
+        if (string.IsNullOrEmpty(str)) return;
+
+        logEvent.AddOrUpdateProperty(factory.CreateProperty(name, mask(str)));
     }
 
     internal static string MaskEmail(string email)

@@ -18,6 +18,9 @@ QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 // ADR-0007 §2.2 — bootstrap logger captures anything that goes wrong before the
 // host is built; after UseSerilog() the configured sinks take over.
+// SelfLog routes enricher/sink failures to stderr so an enricher that silently
+// drops properties (e.g. a Seq outage) is still visible to the operator.
+Serilog.Debugging.SelfLog.Enable(Console.Error);
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .WriteTo.Console()
