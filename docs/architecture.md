@@ -700,12 +700,12 @@ Bu ADR **F2 başında Önerildi** statüsünde açılır ve kararlar kod yazılm
 ## ADR-0008 — Excel/PDF Raporlama, Tenant Stream Limiti, Türkçe Font ve Import Concurrency Guard
 
 **Tarih:** 2026-04-17
-**Statü:** Kabul edildi — §2.1/§2.2/§2.3/§2.5 F3 kapanışı itibarıyla uygulandı ve test edildi. **§2.4 (Excel başlık dili) muhasebe ekibi yazılı teyidine koşullu kalmaya devam ediyor**; teyit gelinceye kadar Türkçe sabit başlıklar uygulamada kullanılıyor ancak karar kilitlenmemiştir.
+**Statü:** Kabul edildi (tüm alt-kararlar). §2.4 için muhasebe ekibinin yazılı teyidi **2026-04-17 tarihinde alındı**: Türkçe sabit başlıklar onaylandı — koşul kaldırıldı.
 **Karar Sahibi:** Timur Selçuk Turan
 **İlgili Belgeler:**
 - ADR-0002 (audit_logs partitioning — `import_errors` tablosu buradan bağımsız)
 - ADR-0007 (observability — import audit event'leri Seq'e akacak)
-- CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #5 (Excel şablon başlık dili)
+- ~~CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #5~~ _(2026-04-17 kapandı — muhasebe onayı)_
 
 ### 1. Bağlam
 
@@ -795,13 +795,13 @@ F3 kapsamı tek bir karar yüzeyinde birleştirilir, çünkü beş alt-problem b
 | §2.1 ClosedXML + tenant limiti | `ExcelImportService.PreviewAsync` / `CommitAsync`; `ImportLimits.MaxBytes = 10 MB`, `MaxRows = 50 000`; `ImportFileTooLargeException` → HTTP 422 | 5 integration (preview, commit, byte limit, year lock, concurrency) |
 | §2.2 QuestPDF + Lato TTF subset | `QuestPdfFontBootstrap` + static ctor `PdfReportService`; embed via `EmbeddedResource`; KVKK footer satırı | 3 integration (generate <200 KB + Lato byte scan + source KVKK guard) |
 | §2.3 Import concurrency guard | `IImportGuard` + `PgAdvisoryImportGuard` (`pg_try_advisory_xact_lock(hashtextextended(...))`); `ImportConcurrencyConflictException` → HTTP 409 | 6 integration (solo/contend/cross-tenant/cross-resource/auto-release/no-tx) |
-| §2.4 Excel başlık dili (TR sabit) | `ExcelExportService`/`ExcelImportService` sabit `Müşteri`/`Ocak`…`Aralık`/`Toplam` | Kapsandı ancak karar muhasebe teyidine kadar koşullu |
+| §2.4 Excel başlık dili (TR sabit) | `ExcelExportService`/`ExcelImportService` sabit `Müşteri`/`Ocak`…`Aralık`/`Toplam` | **Muhasebe teyidi 2026-04-17'de alındı — Fully Accepted.** |
 | §2.5 Log hijyeni | `ExceptionMessageSanitizer` 4 regex mask + `GlobalExceptionHandler.Detail` entegrasyonu | 16 unit test (conn-string, POSIX path, Win path, cert ref, combined) |
 
 **Test kapsamı:** F2 sonu 147 → F3 sonu **178** (+31 test). 144 unit + 34 integration, 0 fail.
 
-**Muhasebe teyit bekleyen madde:**
-- §2.4 — Türkçe sabit başlık listesi (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`). Muhasebe ekibi yazılı onay verdiğinde ADR bu not silinerek fully-accepted statüsüne geçecek; onay reddedilirse F4 SPA i18n framework ile TR/EN alias sistemine migrasyon (≈0.5 gün).
+**Muhasebe teyit durumu:** _(2026-04-17 kapandı — onaylandı)_
+- §2.4 Türkçe sabit başlık listesi muhasebe ekibinden yazılı onay aldı. ADR fully-accepted statüsüne geçti; i18next migration iptal edildi. `ExcelExportService` mevcut sabit Türkçe başlıklarla kalır.
 
 ---
 
@@ -879,16 +879,13 @@ ADR-0001'de "Recharts" olarak geçen frontend chart kütüphanesi burada resmi o
 - **Çalışıyorsa**: Strict'e geçilir, `/hangfire` CSRF native korumalı.
 - **Bozulursa**: Lax'ta kalınır + `/hangfire` için header-based double-submit CSRF token (SPA `X-CSRF-Token` header attığında sunucu cookie vs header eşleşme kontrolü). Gerekçe F4 PR açıklamasında + bu ADR §4 sonuçlarında belgelenir.
 
-#### 2.7. Muhasebe §2.4 Teyit Deadline (2026-04-20 / Gün-3)
+#### 2.7. Muhasebe §2.4 Teyit — _KAPANDI 2026-04-17 (onaylandı)_
 
-- F4 başlangıcı 2026-04-17. **Gün-3 son tarih: 2026-04-20**. Muhasebe ekibi yazılı teyit vermezse:
-  - ADR-0008 §2.4 statü: "Reddedildi (i18next migration)"
-  - `ExcelExportService` başlık satırı `i18next.t('budget.headers.customer')` pattern'ına geçer (~0.5 gün)
-  - CLAUDE.md Açık Doğrulama #5 kapanır (reddedildi notu ile)
-- Teyit gelirse:
-  - ADR-0008 §2.4 "Fully Accepted" (koşul kalkar)
-  - CLAUDE.md Açık Doğrulama #5 silinir (kabul notu ile)
-  - ExcelExportService TR sabit başlık olarak kalır
+- Muhasebe ekibi Türkçe sabit başlıkları yazılı olarak onayladı (F4 Gün-0'da teyit geldi — deadline (2026-04-20) beklenmeden).
+- ADR-0008 §2.4 "Fully Accepted"; `ExcelExportService` TR sabit başlıklarla kalır.
+- CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #5 kapatıldı.
+- i18n seed (tr.json + en.json) F4 foundation commit'inde teslim edildi; ExcelExportService bu seed'e bağlanmıyor (ölü kod değil — gelecek EN locale taleplerine hazır altyapı).
+- F4 içindeki i18next migration iş paketi (Task #9) iptal edildi.
 
 ### 3. Reddedilen Alternatifler
 
@@ -911,12 +908,12 @@ ADR-0001'de "Recharts" olarak geçen frontend chart kütüphanesi burada resmi o
 
 **Olumsuz:**
 - AG-Grid Enterprise olmadığı için büyük range paste senaryolarında kullanıcı uyarı toast'ı çıkar; UX ek adım.
-- i18n mirror gün-3 teyidine kadar spekülatif iş; teyit gelirse bu kod yolu kullanılmaz (ölü kod riski). F4 sonunda değerlendirilir.
+- i18n seed altyapısı (tr.json + en.json) muhasebe onayı sonrası ExcelExportService tarafından tüketilmiyor; gelecek EN locale taleplerine hazır dokümantasyon altyapısı olarak korundu.
 - Lighthouse ≥90 hedefi AG-Grid bundle size ile çekişebilir; chunked dynamic import gerekebilir.
 
 **Koşullu:**
 - §2.6 SameSite=Strict — Playwright E2E sonucu ile dallanır.
-- §2.7 §2.4 muhasebe teyit — 2026-04-20 deadline.
+- ~~§2.7 §2.4 muhasebe teyit — 2026-04-20 deadline~~ _(2026-04-17 kapandı — onaylandı, koşul düştü)_
 
 ---
 

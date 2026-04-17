@@ -182,7 +182,9 @@ Sprint başında muhasebe ekibine sorulacak:
 2. "Amortisman" sınıfı doğrulaması (TECHNICAL atandı)
 3. "SGK Teşvik" segmenti operasyonel detayı
 4. Müşteri Konsantrasyon eşik değerleri (önerilen %30/%50)
-5. Excel şablon başlık dili (Türkçe sabit mi, alias mı)
+
+_Kapandı — artık açık olmayan:_
+- ~~Excel şablon başlık dili~~ → 2026-04-17 muhasebe onayı: **Türkçe sabit başlıklar** (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`). Detay: ADR-0008 §2.4.
 
 ---
 
