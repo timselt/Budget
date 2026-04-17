@@ -60,5 +60,15 @@
          Used by TcmbFxSyncJob for retry + fallback to previous-day rates. -->
     <PackageVersion Include="Polly" Version="8.5.2" />
     <PackageVersion Include="Polly.Extensions" Version="8.5.2" />
+
+    <!-- Observability (F2 / ADR-0007) — Serilog + Seq + enricher surface.
+         Seq serverUrl is supplied via Railway env in production; dev reads
+         appsettings.Development.json (http://seq:5341). Console sink stays
+         as a stdout fallback so a Seq outage does not blind the operator. -->
+    <PackageVersion Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Seq" Version="9.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+    <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
   </ItemGroup>
 </Project>

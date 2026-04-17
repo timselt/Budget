@@ -589,6 +589,98 @@ S5'te oluşturulan API controller'ları InvalidOperationException'ları 500 olar
 
 ---
 
+## ADR-0007 — Hangfire Dashboard, Seq Observability ve F1 Ertelenen İşler
+
+**Tarih:** 2026-04-17
+**Statü:** Önerildi (F2 kapanışında Kabul edildi'ye güncellenecek)
+**Karar Sahibi:** Timur Selçuk Turan
+**İlgili Belgeler:**
+- ADR-0002 §5 (Hangfire açık aksiyonları)
+- ADR-0003 §5 (OpenIddict dashboard auth'u)
+- CHANGELOG.md "FAZ 1 — Operasyonel Kapanış" girdisi (kanıt kaydı)
+- CLAUDE.md §Bilinen Tuzaklar #2 (Hangfire dashboard auth), #4 (TenantConnectionInterceptor sync-over-async)
+
+### 1. Bağlam
+
+F1 ("Operasyonel Kapanış") üç iş için Hangfire çekirdeği + 2 recurring job + TCMB silent-failure düzeltmesi + production X509/OIDC/DB rotation runbook'u teslim etti. Ancak dashboard UI, Seq sink ve F1 review ajanlarının yüksek önemli iki bulgusu (AuditLogger scoped context paylaşımı ve TenantConnectionInterceptor sync-over-async) bilinçli olarak bir sonraki faza bırakıldı.
+
+F2 hem gözlemlenebilirlik katmanını ekliyor (dashboard + yapılandırılmış log + health check'ler) hem de F1 review ertelemelerini kapatıyor. Bu ADR her iki fazın birleşik karar kaydıdır.
+
+Bu ADR **F2 başında Önerildi** statüsünde açılır ve kararlar kod yazılmadan belgelenir. Kod teslimi tamamlandığında ayrı bir commit ile "Kabul edildi" statüsüne güncellenir — git history'de karar tarihi koddan önce görünür.
+
+### 2. Karar
+
+#### 2.1. Hangfire Dashboard + OpenIddict Auth Filter
+
+- `/hangfire` endpoint'i `UseHangfireDashboard()` ile açılır.
+- `HangfireDashboardAuthorizationFilter` — JWT bearer token doğrular, `Admin` veya `Cfo` rolü gerektirir. Anonim 401, Viewer/Finance 403, Admin/Cfo 200.
+- Default `LocalRequestsOnlyAuthorizationFilter` davranışı kaldırılır — Railway ortamında "local" anlamsız.
+
+#### 2.2. Serilog + Seq Sink
+
+- `Program.cs`'de `UseSerilog()` bootstrap logger ile değiştirilir.
+- `appsettings.Development.json` — `Serilog:WriteTo` içinde Seq sink `http://seq:5341`. Aynı dosyada Console sink stdout fallback olarak kalır (Seq down → uygulama çöker değil, stdout'a devam eder).
+- `appsettings.Production.json` **oluşturulmaz**. Railway ortamında Serilog konfigürasyonu env-var injection ile verilir (`Serilog__WriteTo__1__Args__serverUrl` + opsiyonel `apiKey`). Secret management disiplini F1 rotate-db-password.sh ile aynı: hiçbir prod secret repo'da tutulmaz.
+- Dev `docker-compose.dev.yml` Seq container'ı: `datalust/seq:latest`, 5341 (ingest) + 8081 (UI).
+
+#### 2.3. Structured Enricher'lar
+
+`tenant_id`, `user_id`, `request_id` — her log event'ine otomatik eklenir. Seq UI'da filtre edilebilir.
+
+**HttpContext yokluğu:** Hangfire recurring job'lar background thread'de çalışır ve `IHttpContextAccessor.HttpContext == null` olur. Enricher null-safe implement edilir:
+- `HttpContext == null` → `tenant_id`, `user_id`, `request_id` properties log event'ine eklenmez (`null` olarak görünür veya tamamen atlanır).
+- Alternatif etiket: `job_context` property'si `"hangfire"` değerini alır, böylece Seq filter'ında `job_context=hangfire` ile tüm background job log'ları izlenebilir.
+- Enricher hiçbir ortamda exception fırlatmaz; yakalanan hata Serilog `SelfLog`'a düşer.
+
+#### 2.4. PII Masking (Log-Only, Log-Only)
+
+- Serilog `Destructure.ByTransforming` ile:
+  - `User` → email `u***@tag.local` formatına
+  - `AuditEvent.IpAddress` → son oktet `192.168.1.***` formatına
+- **Kapsam: sadece Seq'e giden structured log output.** `audit_logs` tablosu ham IP ile kalır — KVKK "meşru menfaat" gerekçesi (güvenlik olayı analizi). F6 `docs/kvkk-uyum.md` içinde bu gerekçe hukuk tarafıyla belgelenecek.
+
+#### 2.5. Health Checks
+
+- `/health/live` — sadece process (mevcut davranış, değişmiyor).
+- `/health/ready` — `DbContextCheck<ApplicationDbContext>` (F1'den mevcut) + yeni `HangfireStorageHealthCheck` (Hangfire monitoring API'sine ping).
+
+#### 2.6. AuditLogger → IDbContextFactory Geçişi _(F1 ertelenen)_
+
+- `services.AddDbContextFactory<ApplicationDbContext>()` eklenir.
+- `AuditLogger` constructor'ı `IDbContextFactory<ApplicationDbContext>` alır; her `LogAsync` çağrısında kısa-ömürlü `CreateDbContextAsync()` açar, kullanır, kapatır.
+- Sonuç: audit yazımı business `SaveChangesAsync` scope'u ile paylaşılmaz. Business transaction rollback olsa bile audit satırı korunur (append-only garanti).
+- Integration test: "business SaveChanges patladı → audit satırı DB'de" kanıtı.
+
+#### 2.7. TenantConnectionInterceptor Async Fix _(F1 ertelenen)_
+
+- Mevcut `ConnectionOpened` (sync) override → `ConnectionOpenedAsync` (async) override'a taşınır.
+- `.GetAwaiter().GetResult()` kaldırılır — ASP.NET Core sync context'te deadlock riski kapanır.
+- Integration test: async yolun çalıştığı + RLS GUC'unun set edildiği doğrulanır.
+
+### 3. Reddedilen Alternatifler
+
+| Alternatif | Reddedilme Nedeni |
+|---|---|
+| Dashboard'u Basic Auth ile koru | İki auth katmanı karışır; mevcut OpenIddict JWT'yi kullanmak tutarlı. |
+| Seq yerine Datadog/NewRelic | Maliyet + KVKK yurt içi/yurt dışı veri transferi sorunu. Self-hosted Seq Turkey Railway region'da kalır. |
+| PII masking'i `audit_logs` tablosunda da uygula | Audit kaydı güvenlik olayı analizi için ham IP gerektirir; KVKK meşru menfaat gerekçesi F6'da belgelenecek. |
+| `AuditLogger`'ı `Hangfire.Client`'a fire-and-forget | Audit yazımının kaybolma riski; DbContextFactory ile senkron ama izole yazım daha güvenli. |
+| Interceptor'ı tümden kaldırıp `SET LOCAL` middleware | Connection pool'da session GUC kaybolması CLAUDE.md §Bilinen Tuzaklar #1'de belgelenmiş risk; interceptor mimari olarak doğru çözüm, sadece async'e taşınıyor. |
+
+### 4. Sonuçlar
+
+**Olumlu:**
+- Operatör için dashboard + structured log = incident triage süresi düşer.
+- F1 review HIGH bulguları kapatılır; audit append-only garantisi sağlamlaşır.
+- Seq + Serilog konfigürasyonu Railway env ile yönetilir (F1 secret disiplini korunur).
+- Background job log'ları HttpContext yokluğundan etkilenmez — crash yok.
+
+**Olumsuz:**
+- Dev ortamda `docker-compose up` artık Seq container'ını da başlatır (ek bellek tüketimi ~200 MB).
+- `IDbContextFactory` geçişi `AuditLogger` testlerini güncelemeyi gerektirir (F1 integration testleri yeniden yazılır).
+
+---
+
 ## ADR-XXXX — [Başlık]
 
 **Tarih:** YYYY-MM-DD
