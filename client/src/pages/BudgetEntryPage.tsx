@@ -434,7 +434,7 @@ export function BudgetEntryPage() {
         </button>
       </div>
 
-      <div className="card mb-4 flex flex-wrap items-center gap-3 hidden">
+      <div className="card mb-4 flex flex-wrap items-center gap-3">
         <span className="label-sm">Filtre</span>
         <select
           className="select"

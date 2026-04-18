@@ -1075,6 +1075,201 @@ Eksik 8 kategori: `SEYAHAT, PAZARLAMA, DANISMANLIK, AGIRLAMA, ARAC_TURFILO, KONU
 
 ---
 
+## ADR-0013 — Product Domain: ProductCategory + Product + CustomerProduct + BudgetEntry.ProductId (Aday)
+
+**Tarih:** 2026-04-18
+**Statü:** Önerildi (implementasyon öncesi onay bekliyor)
+**Karar Sahibi:** Timur Turan + muhasebe/operasyon ekibi
+
+### 1. Bağlam
+
+Mevcut domain müşteri seviyesinde duruyor: `Segment` (kategori) → `Customer` → `BudgetEntry (CustomerId × Month × Revenue/Claim)`. Timur'un 2026-04-18 tarihli bütçe yönetimi anlatımı ise **ürün kırılımı** gerektiriyor:
+
+> Kategori → Müşteri → [Ürün Kategorisi → Ürün] → Müşteri-Ürün bağı → aylık tutar.
+
+Örnek: *İkame Araç* ürün kategorisi altında `3x2 gün`, `5x3 gün`, `7x5 gün` gibi teminat varyasyonları; *Yol Yardım* altında farklı kapsam paketleri; *Konut* altında ayrı teminat kırılımları. Bir müşteri (örn. Anadolu Sigorta) bu ürün kataloğundan **sadece kendi sözleşmesinde olan ürünleri** kullanıyor, komisyon oranı ürün bazında değişebiliyor, bütçe kalemi her müşteri×**ürün**×ay için girilebilir olmalı.
+
+Şu anki durum:
+- **Backend:** `Product`, `ProductCategory`, `CustomerProduct` entity yok (grep sıfır eşleşme). `BudgetEntry.ProductId` alanı yok.
+- **Frontend:** `BudgetEntryPage.tsx` içinde 6 satırlık `CUSTOMER_PRODUCTS` mock dizisi (Oto Asistans - LifeStyle / Standart Paket, Eksper Hizmeti, Sağlık Asistans, Mini Onarım, İkame Araç); `CustomersPage.tsx` "Müşteri × Ürün Matrisi" sekmesi yine mock `MATRIX_ROWS` ile dolu. Ürün yönetim ekranı yok.
+
+Bu ADR ürün domain'inin DB + Core + Application + API + UI katmanlarında uçtan uca eklenmesini tasarlar. `ExpenseCategory`/`SpecialItem` ile birleştirme kararı ADR-0012'nin kapsamında kaldığı için buradan ayrıdır; sadece **satış tarafı (gelir/hasar)** ürün kırılımı ele alınır.
+
+### 2. Karar — Önerilen Domain Modeli
+
+#### 2.1 Yeni Entity'ler (Core)
+
+```
+ProductCategory : TenantEntity
+  - Id (SERIAL)
+  - CompanyId (FK → companies)
+  - Code (VARCHAR 30, UNIQUE per CompanyId)
+  - Name (VARCHAR 150)
+  - Description (TEXT, nullable)
+  - DisplayOrder (SMALLINT)
+  - IsActive (BOOL)
+  - audit alanları (CreatedAt/By, UpdatedAt/By, DeletedAt/By)
+  - Opsiyonel: SegmentId (FK → segments, nullable) — bir ürün kategorisi
+    sadece belirli müşteri kategorilerinde anlamlı olabilir (örn. "İkame
+    Araç" sadece Otomotiv/Filo). Null ise tüm segmentlerde geçerli.
+  - Unique index: (CompanyId, Code) WHERE DeletedAt IS NULL
+
+Product : TenantEntity
+  - Id (SERIAL)
+  - CompanyId (FK → companies)
+  - ProductCategoryId (FK → product_categories)
+  - Code (VARCHAR 30, UNIQUE per CompanyId)
+  - Name (VARCHAR 200)
+  - Description (TEXT, nullable)
+  - CoverageTerms (JSONB, nullable) — teminat parametreleri için esnek alan
+    (ör. {"days": 5, "replacements": 3, "limit_try": 15000})
+  - DefaultCurrencyCode (CHAR(3), nullable — FK → currencies)
+  - IsActive (BOOL)
+  - DisplayOrder (SMALLINT)
+  - audit alanları
+  - Unique index: (CompanyId, Code) WHERE DeletedAt IS NULL
+  - Index: (ProductCategoryId, IsActive)
+
+CustomerProduct : TenantEntity (bağ tablosu + meta)
+  - Id (SERIAL)
+  - CompanyId (FK → companies)
+  - CustomerId (FK → customers)
+  - ProductId (FK → products)
+  - CommissionRate (DECIMAL(6,3), nullable) — müşteri×ürün özelinde %
+  - UnitPriceTry (DECIMAL(18,2), nullable) — standart birim fiyat (varsa)
+  - StartDate (DATE, nullable — kontrat başlangıcı)
+  - EndDate (DATE, nullable — kontrat bitişi)
+  - IsActive (BOOL)
+  - Notes (TEXT, nullable)
+  - audit alanları
+  - Unique index: (CompanyId, CustomerId, ProductId, StartDate)
+    WHERE DeletedAt IS NULL  — aynı müşteri×ürün aynı dönemde iki kez
+    aktifleşemez ama tarih aralığıyla yenileme tutulabilir.
+  - Index: (CustomerId, IsActive), (ProductId, IsActive)
+```
+
+#### 2.2 BudgetEntry Genişletme
+
+`BudgetEntry` tablosu + `ActualEntry` tablosu iki kritik değişim:
+- **`ProductId` FK alanı eklenir** (önce `nullable` başlar — geriye uyum için; migration sonrası yeni girişler zorunlu, eski satırlar null kalır)
+- **Unique constraint değişir:**
+  ```
+  Önce:  UNIQUE (version_id, customer_id, month, entry_type)
+  Sonra: UNIQUE (version_id, customer_id, product_id, month, entry_type)
+  ```
+  `product_id IS NULL` satırları için ayrı partial unique (`WHERE product_id IS NULL`) korunur ki geçiş döneminde çakışma olmasın.
+- **Business rule (Application katmanı):** Müşteri×ay×EntryType için toplamda ya **bir NULL product_id satır** olabilir (toplu giriş) ya da **N adet ProductId dolu satır** (ürün kırılımı) — ikisi aynı anda değil. Validator'da kontrol edilir. Uzun vadede NULL product_id tamamen deprecate edilir.
+
+#### 2.3 Varsayılan Seed (Muhasebe Onayı Sonrası)
+
+Muhasebe ile doğrulanacak başlangıç katalog taslağı — kod sadece örnek, final seed karar sonrası:
+
+```
+ProductCategory seed:
+  YOL_YARDIM         "Yol Yardım"
+  IKAME_ARAC         "İkame Araç"
+  EKSPER_HIZMETI     "Eksper Hizmeti"
+  KONUT_ASISTANS     "Konut Asistans"
+  SAGLIK_ASISTANS    "Sağlık Asistans"
+  MINI_ONARIM        "Mini Onarım"
+  WARRANTY           "Warranty & Garanti Sonrası"
+  SGK_TESVIK         "SGK Teşvik Gelirleri"
+
+Product seed örnek (her kategori için 2-4 ürün):
+  YOL_YARDIM × "LifeStyle Koruma"
+  YOL_YARDIM × "Standart Paket"
+  YOL_YARDIM × "Premium Paket"
+  IKAME_ARAC × "3x2 gün"
+  IKAME_ARAC × "5x3 gün"
+  IKAME_ARAC × "7x5 gün"
+  ...
+```
+
+#### 2.4 API Contract'ları (yeni)
+
+```
+GET    /api/product-categories                → list
+POST   /api/product-categories                → create
+PUT    /api/product-categories/{id}           → update
+DELETE /api/product-categories/{id}           → soft delete
+
+GET    /api/products?categoryId=&active=      → list
+GET    /api/products/{id}                     → detail
+POST   /api/products
+PUT    /api/products/{id}
+DELETE /api/products/{id}
+
+GET    /api/customers/{id}/products           → müşterinin aktif ürünleri
+POST   /api/customers/{id}/products           → ürün bağla (CustomerProduct)
+PUT    /api/customers/{id}/products/{cpId}    → komisyon/tarih güncelle
+DELETE /api/customers/{id}/products/{cpId}    → pasifleştir
+```
+
+BudgetEntry endpoint'leri `ProductId` kabul etmeye genişletilir (optional body alanı olarak başlar).
+
+#### 2.5 Frontend Değişiklikleri
+
+- **Yeni sayfa:** `ProductsPage.tsx` — sol ağaç: ürün kategorileri, sağ panel: seçili kategorinin ürünleri (CRUD). `Sidebar.tsx` Yönetim grubuna "Ürün Yönetimi" nav item (`/products`).
+- **Müşteri-Ürün bağlama:** `CustomersPage.tsx` "Müşteri × Ürün Matrisi" sekmesi gerçek API'ye bağlanır. Müşteri detayında ek sekme: aktif ürünler listesi + komisyon/tarih inline edit.
+- **BudgetEntryPage:** mock `CUSTOMER_PRODUCTS` dizisi kaldırılır. Firm seçilince `GET /customers/{id}/products` çağrısı; o müşterinin aktif ürünleri satır olarak render edilir. Her hücre (ürün × ay) `BudgetEntry { ProductId }` satırına mapped edilir.
+
+### 3. Reddedilen Alternatifler
+
+**A) Ürünleri `ExpenseCategory` gibi tek düz tabloda tut, `ProductCategoryId` kendine self-FK:**
+Bağ tablosu (`CustomerProduct`) yerine `BudgetEntry`'ye doğrudan `ProductId` ekle; müşteri-ürün ilişkisi implicit (hangi müşteriye hangi ürün girildi ise o bağ var). **Reddedildi** çünkü kontrat metadata'sı (komisyon, başlangıç/bitiş tarihi) sağ bacağı gerektiriyor; ayrıca müşteri sayfasında "hangi ürünler aktif" query'si explicit bağ olmadan yapılamaz.
+
+**B) `Product` yerine `ExpenseCategory` genişlet:**
+Schema'nın domain bucket'larıyla karışır, ADR-0012 çelişkisi büyür. Gider tarafı (ExpenseCategory) ve satış tarafı (Product) farklı kavramlar — ayrı kalmalı.
+
+**C) `CoverageTerms` için normalize tablo (`ProductAttribute` vs.):**
+Teminat parametreleri ürün başına 2-6 alan olabilir, çoğu sayı. EAV anti-pattern riski yerine **JSONB** tercih edildi — PostgreSQL 16'da indekslenebilir, validator Application katmanında.
+
+**D) `BudgetEntry.ProductId` zorunlu (NOT NULL) olarak başlat:**
+Mevcut veri seti (var olan bütçe girişleri) product_id'siz → migration anında tüm satırlar kırılır. **Reddedildi**: nullable başlat + yeni girişler için uygulama katmanında zorunluluk + sonraki ADR ile NOT NULL'a geçiş.
+
+### 4. Sonuçlar
+
+**Pozitif:**
+- Gerçek FinOps Tur iş modeli: komisyon, teminat, ürün bazlı marj analizi
+- Dashboard/Forecast/Variance ürün kırılımıyla zengin raporlama (Loss Ratio ürün bazında, en kârlı ürün, vs.)
+- `CustomerProduct` kontrat tarihi + komisyon tarihsel izlenir → audit dostu
+- Mevcut mock UI (`CUSTOMER_PRODUCTS`, `MATRIX_ROWS`) gerçek API ile değiştirilebilir
+
+**Negatif:**
+- 3 yeni tablo + 1 genişletme = **1 migration** (~300 satır DDL)
+- Backend: 3 entity + 3 configuration + 3 service + 3 controller + DTO'lar + validator'lar
+- Frontend: yeni sayfa (`ProductsPage`) + 2 sayfa güncelleme (`CustomersPage`, `BudgetEntryPage`)
+- `BudgetEntry` unique constraint değişimi — golden scenario fixture yeniden yazılır
+- Seed verisi muhasebe ekibiyle beraber hazırlanmalı (kategori + ürün listesi + komisyon varsayılanları)
+
+**Risk:**
+- Nullable `ProductId` geçiş döneminde data hygiene bozulabilir — migration script'i mevcut BudgetEntry satırlarını "eski kayıt" flag'iyle işaretlemeli. Raporlama tarafında da "ProductId = NULL" toplamlarının ayrı görünmesi gerekir.
+
+### 5. Tahmini İş Dağılımı (Sprint Planlaması İçin)
+
+| Katman | İş | Tahmini |
+|---|---|---|
+| Backend domain | 3 entity + 3 EF config + migration + seed | ~1-1.5 gün |
+| Backend servis + API | 3 controller + DTO + validator + service | ~1.5-2 gün |
+| Unit test | Entity invariant + validator + service happy/sad path | ~1 gün |
+| Integration test | Testcontainers + RLS + unique constraint ispat | ~1 gün |
+| Frontend yeni sayfa | `ProductsPage` CRUD + Sidebar nav | ~1 gün |
+| Frontend entegrasyon | `CustomersPage` matrix gerçek API, `BudgetEntryPage` ürün fetch | ~1.5 gün |
+| Seed verisi | Muhasebe ile kategori + ürün listesi doğrulama | ~0.5 gün (paralel) |
+| Regression + golden fixture | Excel baseline ürün kırılımıyla yeniden hesap | ~1 gün |
+
+**Toplam:** ~8-9 iş günü (1.5-2 sprint tek geliştirici, yarıya iner paralel çalışma).
+
+### 6. Eylem Maddeleri (Karar Öncesi)
+
+- [ ] Muhasebe + operasyon ekibinden ürün kategori listesi onayı (§2.3 taslağı ile)
+- [ ] Her kategori için başlangıç ürün katalogu (teminat parametreleriyle birlikte)
+- [ ] `CustomerProduct.CommissionRate` kaynakları — mevcut sözleşmelerden migrate edilebilir mi? Excel import akışı?
+- [ ] `BudgetEntry.ProductId` nullable → NOT NULL geçiş zamanlaması (sonraki ADR: veri temizliği sonrası)
+- [ ] Bu ADR kabul edildiğinde: implementation ADR-0013A (migration + entity + API) + ADR-0013B (frontend UI + entegrasyon) olarak iki alt-ADR'a bölünebilir
+
+---
+
 ## ADR-XXXX — [Başlık]
 
 **Tarih:** YYYY-MM-DD
