@@ -180,7 +180,7 @@ _2026-04-17 muhasebe seansındakiler kapandı — detay: `docs/accounting-sessio
 
 **Yeni açık (sonraki muhasebe seansı için):**
 - **Expense kategori seed + adjustment domain bucket uyumlama** — `docs/reference/butce_schema_v1.sql` (Excel türevi) ile mevcut backend arasında 8 eksik kategori + SpecialItem semantik çakışması. Karar metni: `docs/architecture.md` ADR-0012. Detay: `docs/schema-mapping.md`.
-- **Ürün domain'i (ProductCategory + Product + CustomerProduct + BudgetEntry.ProductId)** — Bütçe girişinin müşteri×ürün×ay granülaritesine çıkarılması için backend entity + migration + API + 1 yeni frontend sayfa planı. Karar metni: `docs/architecture.md` ADR-0013. Tahmini 1.5-2 sprint iş. Muhasebe ekibinden kategori/ürün listesi + komisyon kaynakları onayı gerek.
+- **ADR-0013 ürün domain'i seed + follow-up** — backend katmanları (entity + migration + API + 26 unit test) ve frontend `ProductsPage` **inşa edildi ve canlıda**. Muhasebe ekibinin onayını bekleyen açık maddeler: (a) ürün kategori + ürün master listesi (Yol Yardım/İkame Araç/Konut/Eksper/Sağlık/Mini Onarım/Warranty/SGK Teşvik ve teminat varyasyonları), (b) mevcut sözleşmelerden `CustomerProduct.CommissionRate` veri kaynağı stratejisi, (c) `BudgetEntry.ProductId` NOT NULL'a geçiş zamanlaması. Seed yüklendikten sonra `CustomersPage` "Müşteri × Ürün Matrisi" + `BudgetEntryPage` mock `CUSTOMER_PRODUCTS` gerçek API'ye bağlanacak.
 
 _Kapandı — artık açık olmayan:_
 - ~~Excel şablon başlık dili~~ → **Türkçe sabit başlıklar** (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`). Detay: ADR-0008 §2.4.

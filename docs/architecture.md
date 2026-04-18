@@ -1075,10 +1075,12 @@ Eksik 8 kategori: `SEYAHAT, PAZARLAMA, DANISMANLIK, AGIRLAMA, ARAC_TURFILO, KONU
 
 ---
 
-## ADR-0013 — Product Domain: ProductCategory + Product + CustomerProduct + BudgetEntry.ProductId (Aday)
+## ADR-0013 — Product Domain: ProductCategory + Product + CustomerProduct + BudgetEntry.ProductId
 
 **Tarih:** 2026-04-18
-**Statü:** Önerildi (implementasyon öncesi onay bekliyor)
+**Statü:** Kabul edildi — backend + tests + ProductsPage frontend shipped 2026-04-18
+  (commits 389e493, b70b79a, bu commit). Seed + CustomersPage matrix + BudgetEntry
+  mock kaldırma muhasebe ekibinin ürün listesi onayına bağlı (bkz. §6).
 **Karar Sahibi:** Timur Turan + muhasebe/operasyon ekibi
 
 ### 1. Bağlam

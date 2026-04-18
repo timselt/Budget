@@ -15,6 +15,7 @@ const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ defaul
 const PnlReportPage = lazy(() => import('./pages/PnlReportPage').then(m => ({ default: m.PnlReportPage })))
 const MasterDataPage = lazy(() => import('./pages/MasterDataPage').then(m => ({ default: m.MasterDataPage })))
 const CustomersPage = lazy(() => import('./pages/CustomersPage').then(m => ({ default: m.CustomersPage })))
+const ProductsPage = lazy(() => import('./pages/ProductsPage').then(m => ({ default: m.ProductsPage })))
 const ConsolidationPage = lazy(() => import('./pages/ConsolidationPage').then(m => ({ default: m.ConsolidationPage })))
 const ApprovalsPage = lazy(() => import('./pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })))
 const AuditLogPage = lazy(() => import('./pages/AuditLogPage').then(m => ({ default: m.AuditLogPage })))
@@ -53,6 +54,7 @@ export function App() {
           <Route path="reports/pnl" element={<PnlReportPage />} />
           <Route path="master-data" element={<MasterDataPage />} />
           <Route path="customers" element={<CustomersPage />} />
+          <Route path="products" element={<ProductsPage />} />
           <Route path="consolidation" element={<ConsolidationPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
           <Route path="audit" element={<AuditLogPage />} />
