@@ -16,6 +16,13 @@ public sealed class ActualEntry : TenantEntity
 
     public int Month { get; private set; }
     public EntryType EntryType { get; private set; }
+
+    /// <summary>
+    /// Adet — BudgetEntry.Quantity ile simetrik. Fiyat × Adet modeli
+    /// gerekçesi ADR-0013 §5.
+    /// </summary>
+    public int? Quantity { get; private set; }
+
     public decimal AmountOriginal { get; private set; }
     public string CurrencyCode { get; private set; } = default!;
     public decimal AmountTryFixed { get; private set; }
@@ -38,12 +45,15 @@ public sealed class ActualEntry : TenantEntity
         ActualSource source,
         DateTimeOffset createdAt,
         DateTimeOffset? syncedAt = null,
-        int? productId = null)
+        int? productId = null,
+        int? quantity = null)
     {
         if (companyId <= 0) throw new ArgumentOutOfRangeException(nameof(companyId));
         if (budgetYearId <= 0) throw new ArgumentOutOfRangeException(nameof(budgetYearId));
         if (customerId <= 0) throw new ArgumentOutOfRangeException(nameof(customerId));
         if (productId is <= 0) throw new ArgumentOutOfRangeException(nameof(productId));
+        if (quantity is < 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), "quantity must be non-negative");
         if (month is < 1 or > 12)
             throw new ArgumentOutOfRangeException(nameof(month), "month must be between 1 and 12");
         if (string.IsNullOrWhiteSpace(currencyCode) || currencyCode.Length != 3)
@@ -55,6 +65,7 @@ public sealed class ActualEntry : TenantEntity
             BudgetYearId = budgetYearId,
             CustomerId = customerId,
             ProductId = productId,
+            Quantity = quantity,
             Month = month,
             EntryType = entryType,
             AmountOriginal = amountOriginal,

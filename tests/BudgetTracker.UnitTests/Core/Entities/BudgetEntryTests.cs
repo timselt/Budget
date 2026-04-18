@@ -81,4 +81,36 @@ public sealed class BudgetEntryTests
         entry.EntryType.Should().Be(EntryType.Claim);
         entry.Month.Should().Be(12);
     }
+
+    [Fact]
+    public void Create_WithQuantity_StoresIt()
+    {
+        // ADR-0013 §5 — ürün bazlı satır: quantity + productId opsiyonel olarak
+        // gönderilebilir. Service katmanı UnitPriceTry × quantity ile amount
+        // üretir; entity sadece quantity'yi invariant'la (non-negative) saklar.
+        var entry = BudgetEntry.Create(1, 10, 100, 3, EntryType.Revenue,
+            4_000m, "TRY", 4_000m, 4_000m, 1, Now,
+            productId: 42, quantity: 80);
+
+        entry.ProductId.Should().Be(42);
+        entry.Quantity.Should().Be(80);
+    }
+
+    [Fact]
+    public void Create_ThrowsWhenQuantityNegative()
+    {
+        var act = () => BudgetEntry.Create(1, 10, 100, 3, EntryType.Revenue,
+            100m, "TRY", 100m, 100m, 1, Now, productId: 1, quantity: -1);
+        act.Should().Throw<ArgumentOutOfRangeException>().WithMessage("*non-negative*");
+    }
+
+    [Fact]
+    public void Create_AllowsZeroQuantity()
+    {
+        // Sıfır adet geçerli bir bütçe girdisi olabilir (örn. ürün pasif,
+        // satışı 0 planlanıyor).
+        var entry = BudgetEntry.Create(1, 10, 100, 3, EntryType.Revenue,
+            0m, "TRY", 0m, 0m, 1, Now, productId: 1, quantity: 0);
+        entry.Quantity.Should().Be(0);
+    }
 }

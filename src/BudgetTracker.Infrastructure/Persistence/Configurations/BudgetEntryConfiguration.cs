@@ -28,6 +28,10 @@ public sealed class BudgetEntryConfiguration : IEntityTypeConfiguration<BudgetEn
 
         b.Property(x => x.Month).IsRequired();
 
+        // ADR-0013 §5 — adet. UnitPriceTry × Quantity = AmountOriginal
+        // (service katmanında hesaplanır). Geçiş döneminde nullable.
+        b.Property(x => x.Quantity);
+
         b.Property(x => x.EntryType)
             .HasConversion(new EnumToStringConverter<EntryType>())
             .HasMaxLength(10)

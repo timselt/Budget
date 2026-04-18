@@ -18,6 +18,14 @@ public sealed class BudgetEntry : TenantEntity
 
     public int Month { get; private set; }
     public EntryType EntryType { get; private set; }
+
+    /// <summary>
+    /// Adet — ADR-0013 §5 kararı (2026-04-18): ürün bazlı bütçe satırı için
+    /// operatör "adet" girer, tutar `CustomerProduct.UnitPriceTry × Quantity`
+    /// ile service katmanında hesaplanır. Geçiş döneminde nullable.
+    /// </summary>
+    public int? Quantity { get; private set; }
+
     public decimal AmountOriginal { get; private set; }
     public string CurrencyCode { get; private set; } = default!;
     public decimal AmountTryFixed { get; private set; }
@@ -39,7 +47,8 @@ public sealed class BudgetEntry : TenantEntity
         int createdByUserId,
         DateTimeOffset createdAt,
         string? notes = null,
-        int? productId = null)
+        int? productId = null,
+        int? quantity = null)
     {
         ValidateMonth(month);
         ValidateCurrencyCode(currencyCode);
@@ -47,6 +56,8 @@ public sealed class BudgetEntry : TenantEntity
         if (versionId <= 0) throw new ArgumentOutOfRangeException(nameof(versionId));
         if (customerId <= 0) throw new ArgumentOutOfRangeException(nameof(customerId));
         if (productId is <= 0) throw new ArgumentOutOfRangeException(nameof(productId));
+        if (quantity is < 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), "quantity must be non-negative");
 
         return new BudgetEntry
         {
@@ -54,6 +65,7 @@ public sealed class BudgetEntry : TenantEntity
             VersionId = versionId,
             CustomerId = customerId,
             ProductId = productId,
+            Quantity = quantity,
             Month = month,
             EntryType = entryType,
             AmountOriginal = amountOriginal,
@@ -73,14 +85,18 @@ public sealed class BudgetEntry : TenantEntity
         decimal amountTrySpot,
         int actorUserId,
         DateTimeOffset updatedAt,
-        string? notes = null)
+        string? notes = null,
+        int? quantity = null)
     {
         ValidateCurrencyCode(currencyCode);
+        if (quantity is < 0)
+            throw new ArgumentOutOfRangeException(nameof(quantity), "quantity must be non-negative");
 
         AmountOriginal = amountOriginal;
         CurrencyCode = currencyCode;
         AmountTryFixed = amountTryFixed;
         AmountTrySpot = amountTrySpot;
+        Quantity = quantity;
         Notes = notes;
         UpdatedAt = updatedAt;
         UpdatedByUserId = actorUserId;
