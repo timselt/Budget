@@ -23,4 +23,7 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<Scenario> Scenarios { get; }
     DbSet<ImportPeriod> ImportPeriods { get; }
     DbSet<CollectionInvoice> CollectionInvoices { get; }
+    DbSet<ProductCategory> ProductCategories { get; }
+    DbSet<Product> Products { get; }
+    DbSet<CustomerProduct> CustomerProducts { get; }
 }
