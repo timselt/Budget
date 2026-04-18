@@ -18,6 +18,8 @@ const CustomersPage = lazy(() => import('./pages/CustomersPage').then(m => ({ de
 const ProductsPage = lazy(() => import('./pages/ProductsPage').then(m => ({ default: m.ProductsPage })))
 const SegmentsPage = lazy(() => import('./pages/SegmentsPage').then(m => ({ default: m.SegmentsPage })))
 const BudgetPeriodsPage = lazy(() => import('./pages/BudgetPeriodsPage').then(m => ({ default: m.BudgetPeriodsPage })))
+const ExpenseCategoriesPage = lazy(() => import('./pages/ExpenseCategoriesPage').then(m => ({ default: m.ExpenseCategoriesPage })))
+const ScenariosPage = lazy(() => import('./pages/ScenariosPage').then(m => ({ default: m.ScenariosPage })))
 const ConsolidationPage = lazy(() => import('./pages/ConsolidationPage').then(m => ({ default: m.ConsolidationPage })))
 const ApprovalsPage = lazy(() => import('./pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })))
 const AuditLogPage = lazy(() => import('./pages/AuditLogPage').then(m => ({ default: m.AuditLogPage })))
@@ -59,6 +61,8 @@ export function App() {
           <Route path="products" element={<ProductsPage />} />
           <Route path="segments" element={<SegmentsPage />} />
           <Route path="budget/periods" element={<BudgetPeriodsPage />} />
+          <Route path="expense-categories" element={<ExpenseCategoriesPage />} />
+          <Route path="scenarios" element={<ScenariosPage />} />
           <Route path="consolidation" element={<ConsolidationPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
           <Route path="audit" element={<AuditLogPage />} />

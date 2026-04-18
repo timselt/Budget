@@ -42,4 +42,23 @@ public sealed class ExpenseCategory : TenantEntity
         entity.CompanyId = companyId;
         return entity;
     }
+
+    public void Update(
+        string name,
+        ExpenseClassification classification,
+        int displayOrder,
+        bool isActive,
+        int actorUserId,
+        DateTimeOffset updatedAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        if (name.Length > 128) throw new ArgumentException("name max 128 characters", nameof(name));
+
+        Name = name;
+        Classification = classification;
+        DisplayOrder = displayOrder;
+        IsActive = isActive;
+        UpdatedAt = updatedAt;
+        UpdatedByUserId = actorUserId;
+    }
 }
