@@ -6,9 +6,16 @@ public sealed class Customer : TenantEntity
 {
     public string Code { get; private set; } = default!;
     public string Name { get; private set; } = default!;
+    public string? CategoryCode { get; private set; }
+    public string? SubCategory { get; private set; }
+    public string? TaxId { get; private set; }
+    public string? TaxOffice { get; private set; }
     public int SegmentId { get; private set; }
     public DateOnly? StartDate { get; private set; }
     public DateOnly? EndDate { get; private set; }
+    public bool IsGroupInternal { get; private set; }
+    public string? AccountManager { get; private set; }
+    public string? DefaultCurrencyCode { get; private set; }
     public string? SourceSheet { get; private set; }
     public string? Notes { get; private set; }
     public string? AccountNo { get; private set; }
@@ -31,8 +38,15 @@ public sealed class Customer : TenantEntity
         int segmentId,
         int createdByUserId,
         DateTimeOffset createdAt,
+        string? categoryCode = null,
+        string? subCategory = null,
+        string? taxId = null,
+        string? taxOffice = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
+        bool isGroupInternal = false,
+        string? accountManager = null,
+        string? defaultCurrencyCode = null,
         string? sourceSheet = null,
         string? notes = null,
         bool isOtherFlag = false)
@@ -49,9 +63,16 @@ public sealed class Customer : TenantEntity
             CompanyId = companyId,
             Code = code,
             Name = name,
+            CategoryCode = Normalize(categoryCode),
+            SubCategory = Normalize(subCategory),
+            TaxId = Normalize(taxId),
+            TaxOffice = Normalize(taxOffice),
             SegmentId = segmentId,
             StartDate = startDate,
             EndDate = endDate,
+            IsGroupInternal = isGroupInternal,
+            AccountManager = Normalize(accountManager),
+            DefaultCurrencyCode = NormalizeCurrencyCode(defaultCurrencyCode),
             SourceSheet = sourceSheet,
             Notes = notes,
             IsActive = true,
@@ -64,8 +85,15 @@ public sealed class Customer : TenantEntity
     public void Update(
         string name,
         int segmentId,
+        string? categoryCode,
+        string? subCategory,
+        string? taxId,
+        string? taxOffice,
         DateOnly? startDate,
         DateOnly? endDate,
+        bool isGroupInternal,
+        string? accountManager,
+        string? defaultCurrencyCode,
         string? notes,
         bool isActive,
         int actorUserId,
@@ -78,12 +106,38 @@ public sealed class Customer : TenantEntity
 
         Name = name;
         SegmentId = segmentId;
+        CategoryCode = Normalize(categoryCode);
+        SubCategory = Normalize(subCategory);
+        TaxId = Normalize(taxId);
+        TaxOffice = Normalize(taxOffice);
         StartDate = startDate;
         EndDate = endDate;
+        IsGroupInternal = isGroupInternal;
+        AccountManager = Normalize(accountManager);
+        DefaultCurrencyCode = NormalizeCurrencyCode(defaultCurrencyCode);
         Notes = notes;
         IsActive = isActive;
         if (isOtherFlag.HasValue) IsOtherFlag = isOtherFlag.Value;
         UpdatedAt = updatedAt;
         UpdatedByUserId = actorUserId;
+    }
+
+    private static string? Normalize(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static string? NormalizeCurrencyCode(string? value)
+    {
+        var normalized = Normalize(value);
+        if (normalized is null)
+        {
+            return null;
+        }
+
+        if (normalized.Length != 3)
+        {
+            throw new ArgumentException("currency code must be 3 characters", nameof(value));
+        }
+
+        return normalized.ToUpperInvariant();
     }
 }

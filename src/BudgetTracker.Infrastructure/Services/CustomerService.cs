@@ -21,20 +21,50 @@ public sealed class CustomerService : ICustomerService
 
     public async Task<IReadOnlyList<CustomerDto>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return await _db.Customers
-            .Select(c => new CustomerDto(
-                c.Id, c.Code, c.Name, c.SegmentId, null,
-                c.StartDate, c.EndDate, c.IsActive))
+        return await (
+            from customer in _db.Customers
+            join segment in _db.Segments on customer.SegmentId equals segment.Id
+            select new CustomerDto(
+                customer.Id,
+                customer.Code,
+                customer.Name,
+                customer.CategoryCode,
+                customer.SubCategory,
+                customer.TaxId,
+                customer.TaxOffice,
+                customer.SegmentId,
+                segment.Name,
+                customer.StartDate,
+                customer.EndDate,
+                customer.IsGroupInternal,
+                customer.AccountManager,
+                customer.DefaultCurrencyCode,
+                customer.IsActive))
             .ToListAsync(cancellationToken);
     }
 
     public async Task<CustomerDto?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
-        return await _db.Customers
-            .Where(c => c.Id == id)
-            .Select(c => new CustomerDto(
-                c.Id, c.Code, c.Name, c.SegmentId, null,
-                c.StartDate, c.EndDate, c.IsActive))
+        return await (
+            from customer in _db.Customers
+            join segment in _db.Segments on customer.SegmentId equals segment.Id
+            where customer.Id == id
+            select new CustomerDto(
+                customer.Id,
+                customer.Code,
+                customer.Name,
+                customer.CategoryCode,
+                customer.SubCategory,
+                customer.TaxId,
+                customer.TaxOffice,
+                customer.SegmentId,
+                segment.Name,
+                customer.StartDate,
+                customer.EndDate,
+                customer.IsGroupInternal,
+                customer.AccountManager,
+                customer.DefaultCurrencyCode,
+                customer.IsActive))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -48,16 +78,25 @@ public sealed class CustomerService : ICustomerService
             request.SegmentId,
             actorUserId,
             _clock.UtcNow,
+            request.CategoryCode,
+            request.SubCategory,
+            request.TaxId,
+            request.TaxOffice,
             request.StartDate,
             request.EndDate,
+            request.IsGroupInternal,
+            request.AccountManager,
+            request.DefaultCurrencyCode,
             notes: request.Notes);
 
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync(cancellationToken);
 
         return new CustomerDto(
-            customer.Id, customer.Code, customer.Name, customer.SegmentId, null,
-            customer.StartDate, customer.EndDate, customer.IsActive);
+            customer.Id, customer.Code, customer.Name, customer.CategoryCode, customer.SubCategory,
+            customer.TaxId, customer.TaxOffice, customer.SegmentId, null, customer.StartDate,
+            customer.EndDate, customer.IsGroupInternal, customer.AccountManager,
+            customer.DefaultCurrencyCode, customer.IsActive);
     }
 
     public async Task<CustomerDto> UpdateAsync(
@@ -66,14 +105,30 @@ public sealed class CustomerService : ICustomerService
         var customer = await _db.Customers.FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new InvalidOperationException($"Customer {id} not found");
 
-        customer.Update(request.Name, request.SegmentId, request.StartDate,
-            request.EndDate, request.Notes, request.IsActive, actorUserId, _clock.UtcNow);
+        customer.Update(
+            request.Name,
+            request.SegmentId,
+            request.CategoryCode,
+            request.SubCategory,
+            request.TaxId,
+            request.TaxOffice,
+            request.StartDate,
+            request.EndDate,
+            request.IsGroupInternal,
+            request.AccountManager,
+            request.DefaultCurrencyCode,
+            request.Notes,
+            request.IsActive,
+            actorUserId,
+            _clock.UtcNow);
 
         await _db.SaveChangesAsync(cancellationToken);
 
         return new CustomerDto(
-            customer.Id, customer.Code, customer.Name, customer.SegmentId, null,
-            customer.StartDate, customer.EndDate, customer.IsActive);
+            customer.Id, customer.Code, customer.Name, customer.CategoryCode, customer.SubCategory,
+            customer.TaxId, customer.TaxOffice, customer.SegmentId, null, customer.StartDate,
+            customer.EndDate, customer.IsGroupInternal, customer.AccountManager,
+            customer.DefaultCurrencyCode, customer.IsActive);
     }
 
     public async Task DeleteAsync(int id, int actorUserId, CancellationToken cancellationToken)

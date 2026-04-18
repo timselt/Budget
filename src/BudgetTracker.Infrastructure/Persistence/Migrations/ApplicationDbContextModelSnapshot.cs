@@ -749,6 +749,16 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(30)")
                         .HasColumnName("account_no");
 
+                    b.Property<string>("AccountManager")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("account_manager");
+
+                    b.Property<string>("CategoryCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("category_code");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -779,6 +789,11 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("end_date");
 
+                    b.Property<string>("DefaultCurrencyCode")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("default_currency_code");
+
                     b.Property<string>("FullTitle")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -787,6 +802,12 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
+
+                    b.Property<bool>("IsGroupInternal")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_group_internal");
 
                     b.Property<bool>("IsOtherFlag")
                         .ValueGeneratedOnAdd()
@@ -808,6 +829,11 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("segment_id");
 
+                    b.Property<string>("SubCategory")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("sub_category");
+
                     b.Property<string>("SourceSheet")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -816,6 +842,16 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly?>("StartDate")
                         .HasColumnType("date")
                         .HasColumnName("start_date");
+
+                    b.Property<string>("TaxId")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("tax_id");
+
+                    b.Property<string>("TaxOffice")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("tax_office");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")

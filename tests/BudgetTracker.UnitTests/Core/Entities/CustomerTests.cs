@@ -68,7 +68,22 @@ public sealed class CustomerTests
         var customer = Customer.Create(1, "C1", "Old", 1, 1, Now);
         var later = Now.AddHours(1);
 
-        customer.Update("New Name", 2, new DateOnly(2025, 6, 1), null, "note", false, 5, later);
+        customer.Update(
+            name: "New Name",
+            segmentId: 2,
+            categoryCode: null,
+            subCategory: null,
+            taxId: null,
+            taxOffice: null,
+            startDate: new DateOnly(2025, 6, 1),
+            endDate: null,
+            isGroupInternal: false,
+            accountManager: null,
+            defaultCurrencyCode: null,
+            notes: "note",
+            isActive: false,
+            actorUserId: 5,
+            updatedAt: later);
 
         customer.Name.Should().Be("New Name");
         customer.SegmentId.Should().Be(2);

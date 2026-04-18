@@ -17,12 +17,19 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
 
         b.Property(x => x.Code).HasMaxLength(30).IsRequired();
         b.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        b.Property(x => x.CategoryCode).HasMaxLength(50);
+        b.Property(x => x.SubCategory).HasMaxLength(100);
+        b.Property(x => x.TaxId).HasMaxLength(20);
+        b.Property(x => x.TaxOffice).HasMaxLength(100);
 
         b.Property(x => x.SegmentId).IsRequired();
         b.HasOne<Segment>().WithMany().HasForeignKey(x => x.SegmentId).OnDelete(DeleteBehavior.Restrict);
 
         b.Property(x => x.StartDate);
         b.Property(x => x.EndDate);
+        b.Property(x => x.IsGroupInternal).IsRequired().HasDefaultValue(false);
+        b.Property(x => x.AccountManager).HasMaxLength(100);
+        b.Property(x => x.DefaultCurrencyCode).HasMaxLength(3);
         b.Property(x => x.SourceSheet).HasMaxLength(100);
         b.Property(x => x.Notes);
         b.Property(x => x.AccountNo).HasMaxLength(30);
