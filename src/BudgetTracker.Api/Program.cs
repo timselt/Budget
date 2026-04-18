@@ -40,11 +40,17 @@ try
 
     builder.Services.AddApplication();
 
+    // One-shot seed runs (`--seed-bootstrap-admin`) exit before the OpenIddict
+    // HTTP server is started, so skip prod-cert loading. This lets operators
+    // seed a fresh non-dev DB without first provisioning certs that only the
+    // request-handling path actually needs.
+    var isSeedOnlyRun = args.Contains("--seed-bootstrap-admin");
+
     // OpenIddict certificates: load X509 from disk outside Development.
     // Dev keeps the existing ephemeral-cert behaviour so local runs stay zero-config.
     X509Certificate2? openIddictEncryptionCert = null;
     X509Certificate2? openIddictSigningCert = null;
-    if (!builder.Environment.IsDevelopment())
+    if (!builder.Environment.IsDevelopment() && !isSeedOnlyRun)
     {
         var certOptions = builder.Configuration
             .GetSection(OpenIddictCertificateOptions.SectionName)
