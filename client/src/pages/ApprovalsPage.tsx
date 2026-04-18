@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 
@@ -59,6 +59,7 @@ async function getVersions(yearId: number): Promise<BudgetVersionRow[]> {
 
 export function ApprovalsPage() {
   const queryClient = useQueryClient()
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
   const years = yearsQuery.data ?? []
@@ -90,7 +91,23 @@ export function ApprovalsPage() {
       const body = action === 'reject' ? { reason: reason ?? 'Belirtilmedi' } : undefined
       await api.post(endpoint, body)
     },
-    onSuccess: () => invalidateAll(),
+    onSuccess: () => {
+      setActionError(null)
+      invalidateAll()
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : 'İşlem başarısız'
+      // 403 → kullanıcının rolü yetersiz; daha açıklayıcı mesaj
+      if (msg.includes('403')) {
+        setActionError(
+          'Bu işlem için yetkiniz yok. Finans onayı FinanceManager veya Admin rolü gerektirir.',
+        )
+      } else if (msg.includes('401')) {
+        setActionError('Oturum süresi dolmuş olabilir. Lütfen yeniden giriş yapın.')
+      } else {
+        setActionError(msg)
+      }
+    },
   })
 
   const { pending, active, terminal } = useMemo(() => {
@@ -122,6 +139,23 @@ export function ApprovalsPage() {
         <KpiCard title="Aktif Versiyonlar" value={active.length} subtitle="yürürlükte" chip="chip-success" />
         <KpiCard title="Arşivli" value={terminal.length} subtitle="geçmiş" chip="chip-neutral" />
       </div>
+
+      {actionError ? (
+        <div className="card mb-4 text-sm text-error flex items-start gap-2">
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            error
+          </span>
+          <div className="flex-1">{actionError}</div>
+          <button
+            type="button"
+            className="text-on-surface-variant hover:text-on-surface"
+            onClick={() => setActionError(null)}
+            title="Kapat"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+          </button>
+        </div>
+      ) : null}
 
       <VersionSection
         title={`Bekleyen Onaylar (${pending.length})`}
@@ -200,26 +234,38 @@ function VersionSection({
                   </td>
                   <td className="text-right">
                     <div className="inline-flex gap-1 flex-wrap justify-end">
-                      {meta.nextActions.map((action) => (
-                        <button
-                          key={action}
-                          type="button"
-                          className={action === 'reject' ? 'btn-ghost text-error' : 'btn-secondary'}
-                          style={{ padding: '.35rem .6rem', fontSize: '.7rem' }}
-                          disabled={actionPending}
-                          onClick={() => {
-                            if (action === 'reject') {
-                              const reason = prompt('Red sebebi giriniz:')
-                              if (!reason?.trim()) return
-                              onAction(v.id, action, reason)
-                            } else {
+                      {meta.nextActions.map((action) => {
+                        const isReject = action === 'reject'
+                        const isArchive = action === 'archive'
+                        const btnClass = isReject
+                          ? 'btn-ghost text-error'
+                          : isArchive
+                            ? 'btn-secondary'
+                            : 'btn-primary'
+                        const label = ACTION_LABELS[action]
+                        return (
+                          <button
+                            key={action}
+                            type="button"
+                            className={btnClass}
+                            style={{ padding: '.4rem .75rem', fontSize: '.75rem' }}
+                            disabled={actionPending}
+                            onClick={() => {
+                              if (isReject) {
+                                const reason = prompt('Red sebebi giriniz:')
+                                if (!reason?.trim()) return
+                                onAction(v.id, action, reason)
+                                return
+                              }
+                              const confirmMsg = `"${v.name}" versiyonu için "${label}" aksiyonunu uygulamak istiyor musunuz?`
+                              if (!confirm(confirmMsg)) return
                               onAction(v.id, action)
-                            }
-                          }}
-                        >
-                          {ACTION_LABELS[action]}
-                        </button>
-                      ))}
+                            }}
+                          >
+                            {actionPending ? '…' : label}
+                          </button>
+                        )
+                      })}
                       {meta.nextActions.length === 0 ? (
                         <span className="text-xs text-on-surface-variant">—</span>
                       ) : null}
