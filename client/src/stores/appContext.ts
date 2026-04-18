@@ -22,17 +22,21 @@ interface AppContextState {
   selectedCompanyId: string | null
   selectedYear: number
   selectedScenario: string
+  searchQuery: string
   setCompany: (id: string | null) => void
   setYear: (year: number) => void
   setScenario: (scenario: string) => void
+  setSearchQuery: (query: string) => void
 }
 
 export const useAppContextStore = create<AppContextState>((set) => ({
   selectedCompanyId: null,
   selectedYear: 2026,
   selectedScenario: 'base',
+  searchQuery: '',
 
   setCompany: (id) => set({ selectedCompanyId: id }),
   setYear: (year) => set({ selectedYear: year }),
   setScenario: (scenario) => set({ selectedScenario: scenario }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
 }))

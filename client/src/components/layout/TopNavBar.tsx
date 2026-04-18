@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAppContextStore, COMPANIES, YEARS, SCENARIOS } from '../../stores/appContext'
 
 export function TopNavBar() {
@@ -5,14 +6,18 @@ export function TopNavBar() {
     selectedCompanyId,
     selectedYear,
     selectedScenario,
+    searchQuery,
     setCompany,
     setYear,
     setScenario,
+    setSearchQuery,
   } = useAppContextStore()
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [isHelpOpen, setIsHelpOpen] = useState(false)
 
   return (
-    <header className="bg-white/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-280px)] z-40 h-16 px-8 flex items-center justify-between shadow-[0_20px_40px_rgba(0,35,102,0.06)]">
-      <div className="flex-1 flex items-center max-w-md bg-surface-container-high rounded-full px-4 py-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary/40 transition-all">
+    <header className="relative bg-white/80 backdrop-blur-md fixed top-0 left-64 right-0 z-40 h-16 px-8 flex items-center shadow-[0_1px_0_rgba(25,28,31,0.04)]">
+      <div className="w-[470px] shrink-0 flex items-center bg-surface-container-high rounded-full px-4 py-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary/40 transition-all">
         <span className="material-symbols-outlined text-on-surface-variant mr-2" style={{ fontSize: 20 }}>
           search
         </span>
@@ -20,15 +25,17 @@ export function TopNavBar() {
           type="text"
           placeholder="Hesap, kalem, şirket ara…"
           className="bg-transparent border-none p-0 w-full text-sm text-on-surface placeholder:text-on-surface-variant focus:ring-0 focus:outline-none"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
         />
       </div>
-      <div className="flex items-center gap-4 ml-6">
+      <div className="flex items-center gap-4 ml-auto">
         <select
-          className="select"
+          className="select min-w-[170px]"
           value={selectedCompanyId ?? ''}
           onChange={(e) => setCompany(e.target.value || null)}
         >
-          <option value="">Tüm Şirketler</option>
+          <option value="">Tur Assist A.Ş.</option>
           {COMPANIES.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -37,7 +44,7 @@ export function TopNavBar() {
         </select>
 
         <select
-          className="select"
+          className="select min-w-[112px]"
           value={selectedYear}
           onChange={(e) => setYear(Number(e.target.value))}
         >
@@ -49,7 +56,7 @@ export function TopNavBar() {
         </select>
 
         <select
-          className="select"
+          className="select min-w-[190px]"
           value={selectedScenario}
           onChange={(e) => setScenario(e.target.value)}
         >
@@ -64,6 +71,10 @@ export function TopNavBar() {
           type="button"
           className="text-on-surface-variant hover:text-primary transition-all relative"
           title="Bildirimler"
+          onClick={() => {
+            setIsNotificationsOpen((value) => !value)
+            setIsHelpOpen(false)
+          }}
         >
           <span className="material-symbols-outlined">notifications</span>
           <span className="absolute top-0 right-0 w-2 h-2 bg-primary-container rounded-full" />
@@ -72,10 +83,40 @@ export function TopNavBar() {
           type="button"
           className="text-on-surface-variant hover:text-primary transition-all"
           title="Yardım"
+          onClick={() => {
+            setIsHelpOpen((value) => !value)
+            setIsNotificationsOpen(false)
+          }}
         >
           <span className="material-symbols-outlined">help_outline</span>
         </button>
       </div>
+
+      {isNotificationsOpen ? (
+        <div className="absolute right-20 top-14 w-80 card-floating p-4">
+          <p className="label-sm">Bildirimler</p>
+          <p className="text-sm font-semibold text-on-surface mt-2">Q4 growth uyarisi bekliyor</p>
+          <p className="text-xs text-on-surface-variant mt-1">
+            Otomotiv segmentinde conservative senaryoda butce artis limiti asinmis.
+          </p>
+          <p className="text-sm font-semibold text-on-surface mt-3">Onay bekleyen taslak</p>
+          <p className="text-xs text-on-surface-variant mt-1">
+            v3 Draft butcesi CFO onayina gonderilmeden once kontrol edilmeli.
+          </p>
+        </div>
+      ) : null}
+
+      {isHelpOpen ? (
+        <div className="absolute right-6 top-14 w-80 card-floating p-4">
+          <p className="label-sm">Yardim</p>
+          <p className="text-sm font-semibold text-on-surface mt-2">Hizli kullanim</p>
+          <p className="text-xs text-on-surface-variant mt-1">
+            Ust arama, agacta musteri, hesap ve gider kalemi arar. Filtreler tum tabloyu birlikte gunceller.
+          </p>
+          <p className="text-sm font-semibold text-on-surface mt-3">Kisayollar</p>
+          <p className="text-xs text-on-surface-variant mt-1">A = Hiyerarsik planlama, C = Musteri odakli giris.</p>
+        </div>
+      ) : null}
     </header>
   )
 }

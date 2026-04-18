@@ -14,11 +14,11 @@
   --color-on-primary: #ffffff;
 
   /* Secondary — navy monolith sidebar */
-  --color-secondary: #435b9f;
-  --color-secondary-container: #9cb4fe;
-  --color-on-secondary: #ffffff;
-  --color-on-secondary-container: #002366;
-  --color-on-secondary-fixed: #00174a;
+  --color-secondary: #f2f4f8;
+  --color-secondary-container: #e6e8ed;
+  --color-on-secondary: #191c1f;
+  --color-on-secondary-container: #191c1f;
+  --color-on-secondary-fixed: #191c1f;
 
   /* Surface — tonal layering for No-Line Rule */
   --color-surface: #f7f9fb;
@@ -60,8 +60,8 @@
   --color-tertiary-fixed: #dcfce7;
 
   /* Fonts — Manrope only */
-  --font-sans: Manrope, system-ui, sans-serif;
-  --font-display: Manrope, system-ui, sans-serif;
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-display: Inter, system-ui, sans-serif;
 
   /* Radius */
   --radius-sm: 0.125rem;
