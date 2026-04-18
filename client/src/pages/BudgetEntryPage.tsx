@@ -32,7 +32,7 @@ import {
 import type { CustomerContractRow } from '../components/budget-planning/api'
 import {
   CURRENCIES,
-  EDITABLE_STATUSES,
+  isEditableStatus,
   MONTHS,
 } from '../components/budget-planning/types'
 import type {
@@ -118,9 +118,7 @@ export function BudgetEntryPage() {
   )
 
   const currentVersion = versions.find((v) => v.id === versionId) ?? null
-  const isEditable = currentVersion
-    ? EDITABLE_STATUSES.has(currentVersion.status)
-    : false
+  const isEditable = isEditableStatus(currentVersion?.status)
 
   const gridContracts = useMemo<ContractRow[]>(
     () =>

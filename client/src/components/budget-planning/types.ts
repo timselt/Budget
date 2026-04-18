@@ -120,4 +120,12 @@ export type RowValues = Record<number, CellValue>
 
 export const MONTHS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
 export const CURRENCIES = ['TRY', 'USD', 'EUR', 'GBP'] as const
-export const EDITABLE_STATUSES = new Set(['Draft', 'Rejected'])
+// API status'u UPPER-case serialize ediyor ("DRAFT", "DEPTAPPROVED", vb. —
+// BudgetVersionsController: `Status.ToString().ToUpperInvariant()`).
+// Frontend compare case-insensitive olmalı.
+export const EDITABLE_STATUSES = new Set(['DRAFT', 'REJECTED'])
+
+export function isEditableStatus(status: string | null | undefined): boolean {
+  if (!status) return false
+  return EDITABLE_STATUSES.has(status.toUpperCase())
+}
