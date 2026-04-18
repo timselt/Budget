@@ -47,7 +47,5 @@ public sealed class SpecialItemsController : ControllerBase
         return NoContent();
     }
 
-    private int GetUserId() =>
-        int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-            ?? throw new InvalidOperationException("User ID claim not found"));
+    private int GetUserId() => this.GetRequiredUserId();
 }

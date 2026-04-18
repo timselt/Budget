@@ -91,16 +91,5 @@ public sealed class ReportsController : ControllerBase
         return Ok(result);
     }
 
-    private int GetUserId()
-    {
-        // FormatException from int.Parse would land on GlobalExceptionHandler's
-        // 500 branch; UnauthorizedAccessException maps to 403 and records the
-        // auth-layer root cause correctly (F3 csharp-reviewer MEDIUM).
-        var raw = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (!int.TryParse(raw, out var id))
-        {
-            throw new UnauthorizedAccessException("Geçerli kullanıcı kimliği bulunamadı.");
-        }
-        return id;
-    }
+    private int GetUserId() => this.GetRequiredUserId();
 }

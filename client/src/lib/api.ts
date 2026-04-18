@@ -1,5 +1,31 @@
 import axios from 'axios'
 
+export function normalizeRetriedApiUrl(url: string | undefined, baseURL: string | undefined): string | undefined {
+  if (!url || !baseURL) return url
+
+  const duplicatedBasePath = `${baseURL}${baseURL}/`
+
+  if (url.startsWith(duplicatedBasePath)) {
+    return `${baseURL}${url.substring(duplicatedBasePath.length - 1)}`
+  }
+
+  if (url.startsWith(`${baseURL}/`)) {
+    return url.substring(baseURL.length)
+  }
+
+  try {
+    const parsed = new URL(url, window.location.origin)
+    if (parsed.pathname.startsWith(duplicatedBasePath)) {
+      parsed.pathname = `${baseURL}${parsed.pathname.substring(duplicatedBasePath.length - 1)}`
+      return parsed.toString()
+    }
+  } catch {
+    return url
+  }
+
+  return url
+}
+
 const api = axios.create({
   baseURL: '/api/v1',
   headers: { 'Content-Type': 'application/json' },
@@ -33,6 +59,14 @@ api.interceptors.response.use(
           localStorage.setItem('access_token', data.access_token)
           localStorage.setItem('refresh_token', data.refresh_token)
           error.config.headers.Authorization = `Bearer ${data.access_token}`
+          // Guard: axios can mutate config.url to the full (baseURL + url)
+          // after the first send. Re-running `api(config)` would then apply
+          // the baseURL AGAIN, yielding /api/v1/api/v1/... → 404. Strip a
+          // duplicate baseURL prefix before the retry.
+          error.config.url = normalizeRetriedApiUrl(
+            error.config.url,
+            api.defaults.baseURL,
+          )
           return api(error.config)
         } catch {
           localStorage.removeItem('access_token')

@@ -24,7 +24,9 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
             ImportFileTooLargeException => (StatusCodes.Status422UnprocessableEntity, "Import Too Large"),
             ImportConcurrencyConflictException => (StatusCodes.Status409Conflict, "Import In Progress"),
             ArgumentException => (StatusCodes.Status422UnprocessableEntity, "Validation Error"),
-            InvalidOperationException e when e.Message.Contains("not found", StringComparison.OrdinalIgnoreCase)
+            InvalidOperationException e
+                when e.Message.Contains("not found", StringComparison.OrdinalIgnoreCase)
+                && !e.Message.Contains("claim", StringComparison.OrdinalIgnoreCase)
                 => (StatusCodes.Status404NotFound, "Not Found"),
             InvalidOperationException e when e.Message.Contains("cannot be edited", StringComparison.OrdinalIgnoreCase)
                 => (StatusCodes.Status409Conflict, "Conflict"),
