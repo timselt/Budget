@@ -20,6 +20,7 @@ const mainNav: readonly NavDef[] = [
 
 const mgmtNav: readonly NavDef[] = [
   { to: '/master-data', label: 'Master Data', icon: 'account_tree' },
+  { to: '/segments', label: 'Kategori Yönetimi', icon: 'category' },
   { to: '/customers', label: 'Müşteri Yönetimi', icon: 'groups' },
   { to: '/products', label: 'Ürün Yönetimi', icon: 'inventory_2' },
   { to: '/consolidation', label: 'Konsolidasyon', icon: 'hub' },

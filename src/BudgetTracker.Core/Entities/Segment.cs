@@ -29,6 +29,23 @@ public sealed class Segment : TenantEntity
         return segment;
     }
 
+    public void Update(
+        string name,
+        int displayOrder,
+        bool isActive,
+        int actorUserId,
+        DateTimeOffset updatedAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        if (name.Length > 100) throw new ArgumentException("name max 100 characters", nameof(name));
+
+        Name = name;
+        DisplayOrder = displayOrder;
+        IsActive = isActive;
+        UpdatedAt = updatedAt;
+        UpdatedByUserId = actorUserId;
+    }
+
     private void SetCompany(int companyId)
     {
         if (companyId <= 0)
