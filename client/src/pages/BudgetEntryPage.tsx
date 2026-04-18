@@ -241,22 +241,6 @@ function scaleValues(values: number[], factor: number) {
   return values.map((value) => Number((value * factor).toFixed(2)))
 }
 
-function distributeOpexRows(values: number[]) {
-  const templates = [
-    { name: 'Personel Giderleri', weight: 0.46 },
-    { name: 'Teknoloji & SaaS', weight: 0.16 },
-    { name: 'Operasyon & Cagri Merkezi', weight: 0.12 },
-    { name: 'Pazarlama', weight: 0.1 },
-    { name: 'Genel Yonetim', weight: 0.09 },
-    { name: 'Amortisman', weight: 0.07 },
-  ]
-
-  return templates.map((template) => ({
-    name: template.name,
-    values: values.map((value) => Number((value * template.weight).toFixed(2))),
-  }))
-}
-
 export function BudgetEntryPage() {
   const {
     selectedCompanyId,
@@ -375,8 +359,6 @@ export function BudgetEntryPage() {
   const lossRatio = getLossRatio(revenueTotal, claimTotal)
   const marginPct = getMarginPct(revenueTotal, claimTotal)
   const monthlyAverageFiles = Math.round((revenueTotal * 1700) / 12)
-  const opexSeries = adjustedOpex.map((item) => sum(item.values))
-  const opexRows = distributeOpexRows(opexSeries)
 
   const revenueProductRows = createProductRows(currentCustomer.revenue, 'weight')
   const claimProductRows = createProductRows(currentCustomer.claims, 'claimWeight')
@@ -662,7 +644,6 @@ export function BudgetEntryPage() {
               opex={selectedOpex}
               revenueRows={revenueProductRows}
               claimRows={claimProductRows}
-              opexRows={opexRows}
             />
           </div>
         </div>
@@ -749,7 +730,6 @@ export function BudgetEntryPage() {
             opex={null}
             revenueRows={revenueProductRows}
             claimRows={claimProductRows}
-            opexRows={opexRows}
           />
         </>
       )}
@@ -821,7 +801,6 @@ function BudgetTable({
   opex,
   revenueRows,
   claimRows,
-  opexRows,
 }: {
   mode: BudgetMode
   yearLabel: string
@@ -830,7 +809,6 @@ function BudgetTable({
   opex: OpexItem | null
   revenueRows: { name: string; values: number[] }[]
   claimRows: { name: string; values: number[] }[]
-  opexRows: { name: string; values: number[] }[]
 }) {
   if (opex) {
     return (
@@ -877,8 +855,6 @@ function BudgetTable({
   const claimTotal = sum(firm.claims)
   const marginMonths = firm.revenue.map((value, index) => Number((value - firm.claims[index]).toFixed(2)))
   const marginTotal = sum(marginMonths)
-  const opexTotals = opexRows[0]?.values.map((_, index) => Number(opexRows.reduce((acc, row) => acc + row.values[index], 0).toFixed(2))) ?? []
-  const opexTotal = sum(opexTotals)
   const showHeader = mode === 'customer'
 
   return (
@@ -911,6 +887,10 @@ function BudgetTable({
               </tr>
             </thead>
             <tbody>
+              {/* Müşteri seçildiğinde ana kalem olarak sadece Gelir + Hasar blokları
+                  (her biri ürün kırılımı ile). OPEX müşteri bazında kırılamaz;
+                  müşteri görünümünde gösterilmez. TEKNIK MARJ = Gelir − Hasar
+                  formül satırı olarak kalır. */}
               <tr>
                 <td className="budget-section-row" colSpan={MONTHS.length + 2}>
                   <span className="budget-section-dot bg-[#d81515]" />
@@ -973,33 +953,6 @@ function BudgetTable({
                   </td>
                 ))}
                 <td className="text-right num font-bold">{fmt(marginTotal)}</td>
-              </tr>
-
-              <tr>
-                <td className="budget-section-row" colSpan={MONTHS.length + 2}>
-                  <span className="budget-section-dot bg-[#2563eb]" />
-                  OPEX
-                </td>
-              </tr>
-              {opexRows.map((row) => (
-                <tr key={row.name}>
-                  <td>{row.name}</td>
-                  {row.values.map((value, index) => (
-                    <td key={index} className="text-right">
-                      <input className="cell-edit text-[#005b9f]" defaultValue={fmt(value)} />
-                    </td>
-                  ))}
-                  <td className="text-right num font-bold">{fmt(sum(row.values))}</td>
-                </tr>
-              ))}
-              <tr className="row-total">
-                <td>OPEX TOPLAM</td>
-                {opexTotals.map((value, index) => (
-                  <td key={index} className="text-right num">
-                    {fmt(value)}
-                  </td>
-                ))}
-                <td className="text-right num font-bold">{fmt(opexTotal)}</td>
               </tr>
             </tbody>
           </table>

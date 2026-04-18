@@ -16,8 +16,8 @@ export function TopNavBar() {
   const [isHelpOpen, setIsHelpOpen] = useState(false)
 
   return (
-    <header className="relative bg-white/80 backdrop-blur-md fixed top-0 left-64 right-0 z-40 h-16 px-8 flex items-center shadow-[0_1px_0_rgba(25,28,31,0.04)]">
-      <div className="w-[470px] shrink-0 flex items-center bg-surface-container-high rounded-full px-4 py-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary/40 transition-all">
+    <header className="fixed top-0 left-64 right-0 z-40 h-16 px-6 flex items-center gap-4 bg-white/80 backdrop-blur-md shadow-[0_1px_0_rgba(25,28,31,0.04)]">
+      <div className="flex-1 min-w-0 max-w-[32rem] flex items-center bg-surface-container-high rounded-full px-4 py-2 focus-within:bg-surface-container-lowest focus-within:ring-2 focus-within:ring-primary/40 transition-all">
         <span className="material-symbols-outlined text-on-surface-variant mr-2" style={{ fontSize: 20 }}>
           search
         </span>
@@ -29,9 +29,9 @@ export function TopNavBar() {
           onChange={(event) => setSearchQuery(event.target.value)}
         />
       </div>
-      <div className="flex items-center gap-4 ml-auto">
+      <div className="flex items-center gap-2 shrink-0">
         <select
-          className="select min-w-[170px]"
+          className="select min-w-[150px]"
           value={selectedCompanyId ?? ''}
           onChange={(e) => setCompany(e.target.value || null)}
         >
@@ -44,7 +44,7 @@ export function TopNavBar() {
         </select>
 
         <select
-          className="select min-w-[112px]"
+          className="select min-w-[96px]"
           value={selectedYear}
           onChange={(e) => setYear(Number(e.target.value))}
         >
@@ -56,7 +56,7 @@ export function TopNavBar() {
         </select>
 
         <select
-          className="select min-w-[190px]"
+          className="select min-w-[160px]"
           value={selectedScenario}
           onChange={(e) => setScenario(e.target.value)}
         >
