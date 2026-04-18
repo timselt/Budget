@@ -12,7 +12,6 @@ public sealed class CustomerProduct : TenantEntity
 {
     public int CustomerId { get; private set; }
     public int ProductId { get; private set; }
-    public decimal? CommissionRate { get; private set; }
     public decimal? UnitPriceTry { get; private set; }
     public DateOnly? StartDate { get; private set; }
     public DateOnly? EndDate { get; private set; }
@@ -27,7 +26,6 @@ public sealed class CustomerProduct : TenantEntity
         int productId,
         DateTimeOffset createdAt,
         int? createdByUserId = null,
-        decimal? commissionRate = null,
         decimal? unitPriceTry = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
@@ -36,7 +34,6 @@ public sealed class CustomerProduct : TenantEntity
         if (companyId <= 0) throw new ArgumentOutOfRangeException(nameof(companyId));
         if (customerId <= 0) throw new ArgumentOutOfRangeException(nameof(customerId));
         if (productId <= 0) throw new ArgumentOutOfRangeException(nameof(productId));
-        ValidateCommissionRate(commissionRate);
         ValidateUnitPrice(unitPriceTry);
         ValidateDateRange(startDate, endDate);
 
@@ -44,7 +41,6 @@ public sealed class CustomerProduct : TenantEntity
         {
             CustomerId = customerId,
             ProductId = productId,
-            CommissionRate = commissionRate,
             UnitPriceTry = unitPriceTry,
             StartDate = startDate,
             EndDate = endDate,
@@ -61,17 +57,14 @@ public sealed class CustomerProduct : TenantEntity
         int actorUserId,
         DateTimeOffset updatedAt,
         bool isActive,
-        decimal? commissionRate = null,
         decimal? unitPriceTry = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
         string? notes = null)
     {
-        ValidateCommissionRate(commissionRate);
         ValidateUnitPrice(unitPriceTry);
         ValidateDateRange(startDate, endDate);
 
-        CommissionRate = commissionRate;
         UnitPriceTry = unitPriceTry;
         StartDate = startDate;
         EndDate = endDate;
@@ -79,16 +72,6 @@ public sealed class CustomerProduct : TenantEntity
         IsActive = isActive;
         UpdatedAt = updatedAt;
         UpdatedByUserId = actorUserId;
-    }
-
-    private static void ValidateCommissionRate(decimal? rate)
-    {
-        if (rate is null) return;
-        if (rate < 0m || rate > 100m)
-        {
-            throw new ArgumentOutOfRangeException(nameof(rate),
-                "commission rate must be between 0 and 100 (percentage)");
-        }
     }
 
     private static void ValidateUnitPrice(decimal? price)

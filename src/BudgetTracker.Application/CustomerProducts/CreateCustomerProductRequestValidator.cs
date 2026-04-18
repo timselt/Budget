@@ -7,10 +7,6 @@ public sealed class CreateCustomerProductRequestValidator : AbstractValidator<Cr
     public CreateCustomerProductRequestValidator()
     {
         RuleFor(x => x.ProductId).GreaterThan(0);
-        RuleFor(x => x.CommissionRate)
-            .InclusiveBetween(0m, 100m)
-            .When(x => x.CommissionRate.HasValue)
-            .WithMessage("CommissionRate 0-100 arasında olmalıdır.");
         RuleFor(x => x.UnitPriceTry)
             .GreaterThanOrEqualTo(0m)
             .When(x => x.UnitPriceTry.HasValue);

@@ -8,7 +8,6 @@ public sealed record CustomerProductDto(
     string ProductName,
     int ProductCategoryId,
     string? ProductCategoryName,
-    decimal? CommissionRate,
     decimal? UnitPriceTry,
     DateOnly? StartDate,
     DateOnly? EndDate,

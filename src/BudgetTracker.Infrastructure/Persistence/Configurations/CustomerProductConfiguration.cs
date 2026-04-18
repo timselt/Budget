@@ -21,7 +21,6 @@ public sealed class CustomerProductConfiguration : IEntityTypeConfiguration<Cust
         b.Property(x => x.ProductId).IsRequired();
         b.HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
 
-        b.Property(x => x.CommissionRate).HasColumnType("numeric(6,3)");
         b.Property(x => x.UnitPriceTry).HasColumnType("numeric(18,2)");
         b.Property(x => x.StartDate);
         b.Property(x => x.EndDate);

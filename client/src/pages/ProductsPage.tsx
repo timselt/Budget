@@ -122,7 +122,7 @@ export function ProductsPage() {
           subtitle={selectedCategory ? `Kategori: ${selectedCategory.name}` : 'Tüm kategoriler'}
         />
         <KpiCard title="Teminat Parametreleri" value="JSONB" subtitle="Esnek alan (gün, sefer, limit TL)" />
-        <KpiCard title="Müşteri Bağı" value="CustomerProduct" subtitle="Komisyon + kontrat tarihleri" />
+        <KpiCard title="Müşteri Bağı" value="CustomerProduct" subtitle="Sözleşme tarihleri + notlar" />
       </div>
 
       <div className="grid grid-cols-12 gap-6">
