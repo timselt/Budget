@@ -7,6 +7,15 @@ public sealed class BudgetEntry : TenantEntity
 {
     public int VersionId { get; private set; }
     public int CustomerId { get; private set; }
+
+    /// <summary>
+    /// Ürün bazlı bütçe girişi için opsiyonel FK. ADR-0013'te tanıtılan product
+    /// domain'i tamamlandıkça bu alan zorunluya geçecek; geçiş dönemi için
+    /// nullable. NULL ise satır müşteri×ay toplam girişi (eski davranış),
+    /// değilse belirli bir <see cref="Product"/> satırı.
+    /// </summary>
+    public int? ProductId { get; private set; }
+
     public int Month { get; private set; }
     public EntryType EntryType { get; private set; }
     public decimal AmountOriginal { get; private set; }
@@ -29,19 +38,22 @@ public sealed class BudgetEntry : TenantEntity
         decimal amountTrySpot,
         int createdByUserId,
         DateTimeOffset createdAt,
-        string? notes = null)
+        string? notes = null,
+        int? productId = null)
     {
         ValidateMonth(month);
         ValidateCurrencyCode(currencyCode);
         if (companyId <= 0) throw new ArgumentOutOfRangeException(nameof(companyId));
         if (versionId <= 0) throw new ArgumentOutOfRangeException(nameof(versionId));
         if (customerId <= 0) throw new ArgumentOutOfRangeException(nameof(customerId));
+        if (productId is <= 0) throw new ArgumentOutOfRangeException(nameof(productId));
 
         return new BudgetEntry
         {
             CompanyId = companyId,
             VersionId = versionId,
             CustomerId = customerId,
+            ProductId = productId,
             Month = month,
             EntryType = entryType,
             AmountOriginal = amountOriginal,

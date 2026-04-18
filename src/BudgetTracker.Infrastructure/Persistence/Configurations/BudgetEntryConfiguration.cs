@@ -22,6 +22,10 @@ public sealed class BudgetEntryConfiguration : IEntityTypeConfiguration<BudgetEn
         b.Property(x => x.CustomerId).IsRequired();
         b.HasOne<Customer>().WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
 
+        // ADR-0013 — nullable during transition; new rows should populate it.
+        b.Property(x => x.ProductId);
+        b.HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+
         b.Property(x => x.Month).IsRequired();
 
         b.Property(x => x.EntryType)
@@ -39,8 +43,13 @@ public sealed class BudgetEntryConfiguration : IEntityTypeConfiguration<BudgetEn
         b.Property(x => x.Notes);
         b.Property(x => x.CreatedAt).IsRequired();
 
-        b.HasIndex(x => new { x.VersionId, x.CustomerId, x.Month, x.EntryType }).IsUnique();
+        // Unique = (version, customer, product, month, entry_type). ProductId
+        // nullable olduğu için PostgreSQL'de NULL satırlar unique check'ten
+        // muaf — geçiş döneminde tek "eski" satır + N adet ürün-bazlı satır
+        // aynı müşteri×ay×entry_type için var olabilir (ADR-0013 §2.2).
+        b.HasIndex(x => new { x.VersionId, x.CustomerId, x.ProductId, x.Month, x.EntryType }).IsUnique();
         b.HasIndex(x => new { x.CompanyId, x.VersionId, x.CustomerId, x.Month });
+        b.HasIndex(x => new { x.ProductId, x.Month });
         b.HasQueryFilter(x => x.DeletedAt == null);
     }
 }

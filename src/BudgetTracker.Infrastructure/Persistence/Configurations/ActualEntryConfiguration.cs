@@ -22,6 +22,10 @@ public sealed class ActualEntryConfiguration : IEntityTypeConfiguration<ActualEn
         b.Property(x => x.CustomerId).IsRequired();
         b.HasOne<Customer>().WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
 
+        // ADR-0013 — ürün kırılımı geçiş dönemi için nullable FK.
+        b.Property(x => x.ProductId);
+        b.HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
+
         b.Property(x => x.Month).IsRequired();
 
         b.Property(x => x.EntryType)
@@ -44,8 +48,9 @@ public sealed class ActualEntryConfiguration : IEntityTypeConfiguration<ActualEn
         b.Property(x => x.SyncedAt);
         b.Property(x => x.CreatedAt).IsRequired();
 
-        b.HasIndex(x => new { x.CompanyId, x.BudgetYearId, x.CustomerId, x.Month, x.EntryType }).IsUnique();
+        b.HasIndex(x => new { x.CompanyId, x.BudgetYearId, x.CustomerId, x.ProductId, x.Month, x.EntryType }).IsUnique();
         b.HasIndex(x => new { x.CompanyId, x.BudgetYearId, x.CustomerId, x.Month });
+        b.HasIndex(x => new { x.ProductId, x.Month });
         b.HasQueryFilter(x => x.DeletedAt == null);
     }
 }
