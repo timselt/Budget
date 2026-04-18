@@ -674,13 +674,18 @@ function SelectedNodeHeader({
   if (customerName) {
     return (
       <div className="card mb-4 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
+            apartment
+          </span>
+        </div>
         <div className="flex-1">
           <p className="text-[0.65rem] text-on-surface-variant font-semibold uppercase tracking-[0.08em]">
             Seçili müşteri
           </p>
           <h3 className="text-[1.5rem] leading-none font-black tracking-display text-on-surface mt-1">
             {customerName}{' '}
-            {segmentName ? <span className="chip chip-info ml-2">{segmentName}</span> : null}
+            {segmentName ? <span className="chip chip-error ml-2">{segmentName}</span> : null}
           </h3>
           <p className="text-sm text-on-surface-variant mt-1">
             {customerCode}

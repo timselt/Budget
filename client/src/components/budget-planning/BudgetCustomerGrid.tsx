@@ -100,7 +100,7 @@ export function BudgetCustomerGrid({
           </thead>
           <tbody>
             {/* GELİR */}
-            <BandRow label="GELİR" color="bg-[#b50303]" />
+            <BandRow label="GELİR" kind="REVENUE" />
             {hasContracts ? (
               rows.map((r) => (
                 <EditableContractRow
@@ -134,7 +134,7 @@ export function BudgetCustomerGrid({
             />
 
             {/* HASAR */}
-            <BandRow label="HASAR" color="bg-[#8a5300]" />
+            <BandRow label="HASAR" kind="CLAIM" />
             {hasContracts ? (
               rows.map((r) => (
                 <EditableContractRow
@@ -183,6 +183,11 @@ export function BudgetCustomerGrid({
               </td>
             </tr>
 
+            {/* Loss Ratio öncesi siyah separator bar */}
+            <tr className="budget-separator-bar">
+              <td colSpan={14}></td>
+            </tr>
+
             {/* LOSS RATIO */}
             <tr>
               <td className="font-semibold">Loss Ratio</td>
@@ -209,11 +214,13 @@ export function BudgetCustomerGrid({
   )
 }
 
-function BandRow({ label, color }: { label: string; color: string }) {
+function BandRow({ label, kind }: { label: string; kind: EntryKind }) {
+  const bandClass = kind === 'REVENUE' ? 'budget-band-revenue' : 'budget-band-claim'
+  const icon = kind === 'REVENUE' ? 'payments' : 'report'
   return (
     <tr>
-      <td className="budget-section-row" colSpan={14}>
-        <span className={`budget-section-dot ${color}`} />
+      <td className={`budget-band ${bandClass}`} colSpan={14}>
+        <span className="material-symbols-outlined">{icon}</span>
         {label}
       </td>
     </tr>
@@ -247,7 +254,7 @@ function EditableContractRow({
   const color = kind === 'REVENUE' ? 'text-[#005b9f]' : 'text-[#8a5300]'
 
   return (
-    <tr>
+    <tr className="budget-item-row">
       <td>
         <div className="font-semibold">{label}</div>
         <div className="text-[0.65rem] text-on-surface-variant font-mono">{sublabel}</div>
