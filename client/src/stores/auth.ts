@@ -31,7 +31,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         username: email,
         password,
         client_id: 'budget-tracker-dev',
-        scope: 'openid profile email api',
+        scope: 'openid profile email roles offline_access api',
       }), {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       })

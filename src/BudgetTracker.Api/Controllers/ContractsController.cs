@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using BudgetTracker.Application.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -104,10 +103,5 @@ public sealed class ContractsController : ControllerBase
         }
     }
 
-    private int GetUserId()
-    {
-        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new UnauthorizedAccessException("user id claim missing");
-        return int.Parse(claim, System.Globalization.CultureInfo.InvariantCulture);
-    }
+    private int GetUserId() => this.GetRequiredUserId();
 }

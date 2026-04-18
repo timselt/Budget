@@ -1,61 +1,121 @@
 import '../lib/chart-config'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import api from '../lib/api'
+import { useActiveVersion } from '../lib/useActiveVersion'
 import { WaterfallChart } from '../components/variance/WaterfallChart'
 
-interface SegmentRow {
-  segment: string
-  plan: string
-  actual: string
-  variance: string
-  variancePct: string
-  direction: 'good' | 'bad'
-  driver: string
-  owner: string
+interface MonthlyVarianceDto {
+  month: number
+  budgetRevenue: number
+  actualRevenue: number
+  revenueVariance: number
+  revenueVariancePercent: number
+  budgetClaims: number
+  actualClaims: number
+  claimsVariance: number
+  claimsVariancePercent: number
+  revenueAlert: string | null
+  claimsAlert: string | null
 }
 
-const SEGMENTS: readonly SegmentRow[] = [
-  {
-    segment: 'Oto Asistans',
-    plan: '396,7',
-    actual: '418,2',
-    variance: '+21,5',
-    variancePct: '+5,4%',
-    direction: 'good',
-    driver: 'Sigortacı portföy büyümesi',
-    owner: 'A. Çelik',
-  },
-  {
-    segment: 'Sağlık Asistans',
-    plan: '161,8',
-    actual: '152,4',
-    variance: '-9,4',
-    variancePct: '-5,8%',
-    direction: 'bad',
-    driver: '2 kontrat yenileme gecikti',
-    owner: 'M. Yılmaz',
-  },
-  {
-    segment: 'Konut Asistans',
-    plan: '115,4',
-    actual: '139,6',
-    variance: '+24,2',
-    variancePct: '+21,0%',
-    direction: 'good',
-    driver: 'KonutKonfor kampanya etkisi',
-    owner: 'S. Özkan',
-  },
-  {
-    segment: 'Warranty',
-    plan: '74,5',
-    actual: '80,3',
-    variance: '+5,8',
-    variancePct: '+7,8%',
-    direction: 'good',
-    driver: 'Yeni OEM kontrat',
-    owner: 'B. Demir',
-  },
-]
+interface VarianceSummaryResult {
+  monthlyVariances: MonthlyVarianceDto[]
+  totalBudgetRevenue: number
+  totalActualRevenue: number
+  totalBudgetClaims: number
+  totalActualClaims: number
+}
+
+interface CustomerVarianceDto {
+  customerId: number
+  customerName: string
+  customerCode: string
+  budgetRevenue: number
+  actualRevenue: number
+  revenueVariance: number
+  revenueVariancePercent: number
+  budgetClaims: number
+  actualClaims: number
+  claimsVariance: number
+  claimsVariancePercent: number
+}
+
+function fmtM(value: number): string {
+  const m = value / 1_000_000
+  return m.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+}
+
+function fmtPct(value: number, digits = 1): string {
+  return `${value >= 0 ? '+' : ''}${value.toLocaleString('tr-TR', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  })}%`
+}
 
 export function VariancePage() {
+  const { versionId, year, versionName, isLoading: versionLoading } = useActiveVersion()
+
+  const summaryQuery = useQuery({
+    queryKey: ['variance-summary', versionId],
+    queryFn: async () => {
+      const { data } = await api.get<VarianceSummaryResult>(`/variance/${versionId}/summary`)
+      return data
+    },
+    enabled: versionId !== null,
+  })
+
+  const customersQuery = useQuery({
+    queryKey: ['variance-customers', versionId],
+    queryFn: async () => {
+      const { data } = await api.get<CustomerVarianceDto[]>(`/variance/${versionId}/customers`)
+      return data
+    },
+    enabled: versionId !== null,
+  })
+
+  const summary = summaryQuery.data ?? null
+  const customers = useMemo(() => customersQuery.data ?? [], [customersQuery.data])
+
+  const revenueVar = summary ? summary.totalActualRevenue - summary.totalBudgetRevenue : 0
+  const revenueVarPct = summary && summary.totalBudgetRevenue > 0
+    ? (revenueVar / summary.totalBudgetRevenue) * 100
+    : 0
+
+  const claimsVar = summary ? summary.totalActualClaims - summary.totalBudgetClaims : 0
+  const claimsVarPct = summary && summary.totalBudgetClaims > 0
+    ? (claimsVar / summary.totalBudgetClaims) * 100
+    : 0
+
+  const budgetMargin = summary ? summary.totalBudgetRevenue - summary.totalBudgetClaims : 0
+  const actualMargin = summary ? summary.totalActualRevenue - summary.totalActualClaims : 0
+  const marginVar = actualMargin - budgetMargin
+  const marginVarPct = budgetMargin !== 0 ? (marginVar / budgetMargin) * 100 : 0
+
+  if (versionLoading) {
+    return (
+      <section>
+        <h2 className="text-3xl font-extrabold tracking-display text-[#002366] mb-6">
+          Sapma Analizi
+        </h2>
+        <div className="card p-6 text-sm text-on-surface-variant">Yükleniyor…</div>
+      </section>
+    )
+  }
+
+  if (versionId === null) {
+    return (
+      <section>
+        <h2 className="text-3xl font-extrabold tracking-display text-[#002366] mb-6">
+          Sapma Analizi
+        </h2>
+        <div className="card p-6 text-sm text-on-surface-variant">
+          Aktif bütçe versiyonu bulunamadı.
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section>
       <div className="flex justify-between items-end mb-8">
@@ -63,123 +123,130 @@ export function VariancePage() {
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
             Sapma Analizi
           </h2>
-        </div>
-        <div className="flex gap-3">
-          <select className="select">
-            <option>Dönem: YTD (Oca-Nis)</option>
-            <option>Aylık</option>
-            <option>Çeyreklik</option>
-          </select>
-          <button type="button" className="btn-primary">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              picture_as_pdf
-            </span>
-            Varyans Raporu
-          </button>
+          {versionName && year ? (
+            <p className="text-sm text-on-surface-variant mt-1">
+              FY{year} · {versionName} · Plan vs Gerçekleşen
+            </p>
+          ) : null}
         </div>
       </div>
+
+      {summaryQuery.isError || customersQuery.isError ? (
+        <div className="card mb-6 text-sm text-error">Veri alınırken hata oluştu.</div>
+      ) : null}
 
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="card relative">
-          <div className="ribbon-tertiary" />
+        <div className="card">
           <span className="label-sm">Gelir Sapması</span>
-          <p className="text-2xl font-black num mt-2 text-tertiary">+42,1M</p>
-          <p className="text-xs font-bold mt-1">+%5,9 vs Plan</p>
+          <p className={`text-2xl font-black num mt-2 ${revenueVar >= 0 ? 'text-success' : 'text-error'}`}>
+            {summary ? `${revenueVar >= 0 ? '+' : ''}${fmtM(revenueVar)}M` : '—'}
+          </p>
+          <p className="text-xs font-bold mt-1">
+            {summary ? `${fmtPct(revenueVarPct)} vs Plan` : '—'}
+          </p>
         </div>
-        <div className="card relative">
-          <div className="ribbon-warning" />
+        <div className="card">
           <span className="label-sm">Hasar Sapması</span>
-          <p className="text-2xl font-black num mt-2 text-warning">+38,7M</p>
-          <p className="text-xs font-bold mt-1">+%8,2 vs Plan (olumsuz)</p>
+          <p className={`text-2xl font-black num mt-2 ${claimsVar <= 0 ? 'text-success' : 'text-warning'}`}>
+            {summary ? `${claimsVar >= 0 ? '+' : ''}${fmtM(claimsVar)}M` : '—'}
+          </p>
+          <p className="text-xs font-bold mt-1">
+            {summary ? `${fmtPct(claimsVarPct)} vs Plan` : '—'}
+          </p>
         </div>
-        <div className="card relative">
-          <div className="ribbon-success" />
+        <div className="card">
           <span className="label-sm">Teknik Marj Sapması</span>
-          <p className="text-2xl font-black num mt-2 text-success">+3,4M</p>
-          <p className="text-xs font-bold mt-1">+%1,1 vs Plan</p>
+          <p className={`text-2xl font-black num mt-2 ${marginVar >= 0 ? 'text-success' : 'text-error'}`}>
+            {summary ? `${marginVar >= 0 ? '+' : ''}${fmtM(marginVar)}M` : '—'}
+          </p>
+          <p className="text-xs font-bold mt-1">
+            {summary ? `${fmtPct(marginVarPct)} vs Plan` : '—'}
+          </p>
         </div>
-        <div className="card relative">
-          <div className="ribbon-primary" />
-          <span className="label-sm">EBITDA Sapması</span>
-          <p className="text-2xl font-black num mt-2 text-primary">+5,8M</p>
-          <p className="text-xs font-bold mt-1">+%4,7 vs Plan</p>
+        <div className="card">
+          <span className="label-sm">Toplam Plan Gelir</span>
+          <p className="text-2xl font-black num mt-2 text-[#002366]">
+            {summary ? `${fmtM(summary.totalBudgetRevenue)}M` : '—'}
+          </p>
+          <p className="text-xs text-on-surface-variant mt-1">
+            Gerçekleşen: {summary ? `${fmtM(summary.totalActualRevenue)}M` : '—'}
+          </p>
         </div>
       </div>
 
-      <div className="card p-0 overflow-hidden">
+      <div className="card p-0 overflow-hidden mb-6">
         <div className="p-6 pb-3 flex justify-between items-center">
-          <h3 className="text-lg font-bold tracking-tight">Segment Bazlı Sapma</h3>
-          <span className="chip chip-neutral">YTD Nisan 2026</span>
+          <h3 className="text-lg font-bold tracking-tight">Müşteri Bazlı Sapma</h3>
+          <span className="chip chip-neutral">Top 10</span>
         </div>
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th>Segment</th>
-              <th className="text-right">Plan (M)</th>
-              <th className="text-right">Actual (M)</th>
-              <th className="text-right">Sapma (M)</th>
-              <th className="text-right">Sapma %</th>
-              <th>Ana Sürücü</th>
-              <th>Sorumlu</th>
-            </tr>
-          </thead>
-          <tbody>
-            {SEGMENTS.map((s) => (
-              <tr key={s.segment}>
-                <td className="font-bold">{s.segment}</td>
-                <td className="text-right num">{s.plan}</td>
-                <td className="text-right num">{s.actual}</td>
-                <td className={`text-right num var-${s.direction}`}>{s.variance}</td>
-                <td className={`text-right num var-${s.direction}`}>{s.variancePct}</td>
-                <td className="text-xs">{s.driver}</td>
-                <td className="text-xs">{s.owner}</td>
+        {customers.length === 0 ? (
+          <p className="px-6 pb-6 text-sm text-on-surface-variant">
+            {customersQuery.isLoading ? 'Yükleniyor…' : 'Bu versiyonda henüz actual kayıt yok.'}
+          </p>
+        ) : (
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>Müşteri</th>
+                <th className="text-right">Plan Gelir (M)</th>
+                <th className="text-right">Actual Gelir (M)</th>
+                <th className="text-right">Sapma (M)</th>
+                <th className="text-right">Sapma %</th>
+                <th className="text-right">Hasar Sapma (M)</th>
               </tr>
-            ))}
-            <tr className="total-row">
-              <td>TOPLAM GELİR</td>
-              <td className="text-right num">748,4</td>
-              <td className="text-right num">790,5</td>
-              <td className="text-right num">+42,1</td>
-              <td className="text-right num">+5,6%</td>
-              <td />
-              <td />
-            </tr>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {customers.slice(0, 10).map((c) => (
+                <tr key={c.customerId}>
+                  <td>
+                    <div className="font-bold">{c.customerName}</div>
+                    <div className="text-[0.65rem] text-on-surface-variant font-mono">
+                      {c.customerCode}
+                    </div>
+                  </td>
+                  <td className="text-right num">{fmtM(c.budgetRevenue)}</td>
+                  <td className="text-right num">{fmtM(c.actualRevenue)}</td>
+                  <td
+                    className={`text-right num ${
+                      c.revenueVariance >= 0 ? 'text-success' : 'text-error'
+                    }`}
+                  >
+                    {c.revenueVariance >= 0 ? '+' : ''}
+                    {fmtM(c.revenueVariance)}
+                  </td>
+                  <td
+                    className={`text-right num ${
+                      c.revenueVariance >= 0 ? 'text-success' : 'text-error'
+                    }`}
+                  >
+                    {fmtPct(c.revenueVariancePercent)}
+                  </td>
+                  <td
+                    className={`text-right num ${
+                      c.claimsVariance <= 0 ? 'text-success' : 'text-warning'
+                    }`}
+                  >
+                    {c.claimsVariance >= 0 ? '+' : ''}
+                    {fmtM(c.claimsVariance)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-6 mt-6">
-        <div className="card">
-          <h3 className="text-base font-bold tracking-tight mb-4">EBITDA Waterfall (YTD)</h3>
-          <div style={{ height: 260 }}>
-            <WaterfallChart />
-          </div>
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold tracking-tight">EBITDA Waterfall</h3>
+          <span className="chip chip-neutral">Demo grafik</span>
         </div>
-        <div className="card">
-          <h3 className="text-base font-bold tracking-tight mb-4">Yorum &amp; Aksiyon</h3>
-          <div className="space-y-3 text-sm">
-            <div className="relative bg-surface-container-low rounded-lg p-4 pl-5">
-              <div className="ribbon-tertiary" />
-              <p className="font-bold">Oto gelirlerindeki +%5,4 sapma sürdürülebilir mi?</p>
-              <p className="text-xs text-on-surface-variant mt-1">
-                → M. Yılmaz, CFO ofisine 15 Mayıs'a kadar trend teyidi gönderecek.
-              </p>
-            </div>
-            <div className="relative bg-surface-container-low rounded-lg p-4 pl-5">
-              <div className="ribbon-warning" />
-              <p className="font-bold">Sağlık gelir kaybı kontrat yenileme riski</p>
-              <p className="text-xs text-on-surface-variant mt-1">
-                → Mayıs sonuna kadar re-negosiasyon; risk senaryosu 45M TL.
-              </p>
-            </div>
-            <div className="relative bg-surface-container-low rounded-lg p-4 pl-5">
-              <div className="ribbon-primary" />
-              <p className="font-bold">Hasar sapmasında ikame araç başlıca kalem</p>
-              <p className="text-xs text-on-surface-variant mt-1">
-                → RS Otomotiv filo kapasitesi artırılacak, maliyet optimizasyonu.
-              </p>
-            </div>
-          </div>
+        <p className="text-xs text-on-surface-variant mb-4">
+          Bu grafik henüz örnek veri gösteriyor; EBITDA köprüsü endpoint'i sprint devamında
+          gelecek.
+        </p>
+        <div style={{ height: 260 }}>
+          <WaterfallChart />
         </div>
       </div>
     </section>

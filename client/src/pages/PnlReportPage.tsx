@@ -51,6 +51,20 @@ const MONTHS = ['Oca', 'Sub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Agu', 'Eyl', '
 export function PnlReportPage() {
   return (
     <section>
+      <div className="card mb-6 flex items-start gap-3 bg-warning/10 border border-warning/30">
+        <span className="material-symbols-outlined text-warning" style={{ fontSize: 20 }}>
+          info
+        </span>
+        <div className="flex-1">
+          <p className="text-sm font-bold text-on-surface">Demo veri</p>
+          <p className="text-xs text-on-surface-variant mt-1">
+            Bu P&amp;L tablosu örnek verilerle dolu. Gerçek aylık gelir/hasar kırılımı
+            <code className="mx-1">/api/v1/dashboard/&#123;versionId&#125;/kpis</code>'ten
+            gelebilir; aylık segment kırılımı için aggregate endpoint sprint devamında
+            eklenecek.
+          </p>
+        </div>
+      </div>
       <div className="flex justify-between items-end mb-6">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">

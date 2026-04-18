@@ -28,7 +28,7 @@ interface SegmentRow {
   isActive: boolean
 }
 
-type Tab = 'customers' | 'matrix'
+type Tab = 'customers'
 type ModalState = { kind: 'none' } | { kind: 'create' } | { kind: 'edit'; customer: CustomerRow }
 
 const CURRENCY_OPTIONS = ['TRY', 'EUR', 'USD', 'GBP'] as const
@@ -44,7 +44,7 @@ async function getSegments(): Promise<SegmentRow[]> {
 }
 
 export function CustomersPage() {
-  const [tab, setTab] = useState<Tab>('customers')
+  const [tab] = useState<Tab>('customers')
   const [modal, setModal] = useState<ModalState>({ kind: 'none' })
   const [search, setSearch] = useState('')
   const [segmentFilter, setSegmentFilter] = useState<number | 'all'>('all')
@@ -103,11 +103,6 @@ export function CustomersPage() {
         <KpiCard title="Kategori" value={`${segments.length}`} subtitle="Segment / müşteri kategorisi" />
         <KpiCard title="Grup İçi" value={`${groupInternalCount}`} subtitle="Konsolidasyonda elimine edilir" />
         <KpiCard title="Filtrelenen" value={`${filtered.length}`} subtitle="Arama + filtre sonucu" />
-      </div>
-
-      <div className="flex gap-1 mb-6 bg-surface-container-low rounded-lg p-1 w-fit">
-        <TabButton active={tab === 'customers'} onClick={() => setTab('customers')} icon="business" label="Müşteriler" />
-        <TabButton active={tab === 'matrix'} onClick={() => setTab('matrix')} icon="grid_view" label="Müşteri × Ürün Matrisi" />
       </div>
 
       {tab === 'customers' ? (
@@ -223,10 +218,6 @@ export function CustomersPage() {
         </>
       ) : null}
 
-      {tab === 'matrix' ? (
-        <CustomerProductsPanel customers={customers} />
-      ) : null}
-
       {modal.kind !== 'none' ? (
         <CustomerModal
           mode={modal.kind === 'create' ? 'create' : 'edit'}
@@ -243,31 +234,6 @@ export function CustomersPage() {
   )
 }
 
-/* =====================================================================
-   Matrix tab placeholder — kontrat yönetimi ContractsPage'e taşındı (ADR-0014)
-   ===================================================================== */
-function CustomerProductsPanel({ customers: _customers }: { customers: CustomerRow[] }) {
-  return (
-    <div className="card p-8 text-center">
-      <span className="material-symbols-outlined block" style={{ fontSize: 36 }}>
-        assignment
-      </span>
-      <h3 className="text-base font-bold mt-2">Müşteri × Kontrat Yönetimi</h3>
-      <p className="text-sm text-on-surface-variant mt-1 max-w-md mx-auto">
-        ADR-0014 sonrası müşteri-ürün bağları 14-segment kontrat kodu ile
-        Sözleşmeler sayfasından yönetilir. Birim fiyat, sözleşme tarihleri,
-        metadata revizyonu ve versiyonlama oradadır.
-      </p>
-      <a className="btn-primary mt-4 inline-flex" href="/contracts">
-        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-          arrow_forward
-        </span>
-        Sözleşmeler Sayfası
-      </a>
-    </div>
-  )
-}
-
 function KpiCard({ title, value, subtitle }: { title: string; value: string; subtitle: string }) {
   return (
     <div className="col-span-12 md:col-span-3 card">
@@ -275,27 +241,6 @@ function KpiCard({ title, value, subtitle }: { title: string; value: string; sub
       <p className="text-2xl font-black tracking-display num mt-2">{value}</p>
       <p className="text-xs text-on-surface-variant mt-1">{subtitle}</p>
     </div>
-  )
-}
-
-function TabButton({
-  active,
-  onClick,
-  icon,
-  label,
-}: {
-  active: boolean
-  onClick: () => void
-  icon: string
-  label: string
-}) {
-  return (
-    <button type="button" className={`tab ${active ? 'active' : ''}`} onClick={onClick}>
-      <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
-        {icon}
-      </span>
-      {label}
-    </button>
   )
 }
 

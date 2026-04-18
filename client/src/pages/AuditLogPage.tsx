@@ -1,34 +1,76 @@
-interface AuditRow {
-  datetime: string
-  user: string
-  ip: string
-  module: string
-  action: 'update' | 'create' | 'approve' | 'import' | 'delete' | 'export'
-  actionLabel: string
-  oldValue: string
-  newValue: string
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import api from '../lib/api'
+
+interface AuditLogDto {
+  id: number
+  userId: number | null
+  userDisplayName: string | null
+  entityName: string
+  entityKey: string
+  action: string
+  oldValuesJson: string | null
+  newValuesJson: string | null
+  ipAddress: string | null
+  createdAt: string
 }
 
-const ACTION_CHIP: Record<AuditRow['action'], string> = {
-  update: 'chip-info',
-  create: 'chip-success',
-  approve: 'chip-success',
-  import: 'chip-success',
-  delete: 'chip-error',
-  export: 'chip-neutral',
+interface PagedAuditResult {
+  items: AuditLogDto[]
+  totalCount: number
+  page: number
+  limit: number
 }
 
-const ROWS: readonly AuditRow[] = [
-  { datetime: '17.04.2026 14:23:11', user: 'Timur Turan', ip: '10.12.4.22', module: 'Bütçe', action: 'update', actionLabel: 'UPDATE', oldValue: '98,0M', newValue: '112,0M' },
-  { datetime: '17.04.2026 13:45:02', user: 'M. Yılmaz', ip: '10.12.8.14', module: 'Master Data', action: 'create', actionLabel: 'CREATE', oldValue: '-', newValue: 'Yeni hesap 600.04' },
-  { datetime: '17.04.2026 11:02:49', user: 'A. Çelik', ip: '10.12.6.31', module: 'Onay', action: 'approve', actionLabel: 'APPROVE', oldValue: 'Pending', newValue: 'Approved' },
-  { datetime: '17.04.2026 09:15:33', user: 'B. Ayhan', ip: '10.12.2.7', module: 'Forecast', action: 'update', actionLabel: 'UPDATE', oldValue: 'EBITDA 360M', newValue: 'EBITDA 378M' },
-  { datetime: '16.04.2026 17:44:20', user: 'S. Özkan', ip: '10.12.9.5', module: 'Actual', action: 'import', actionLabel: 'IMPORT', oldValue: '-', newValue: 'ERP sync 18.462 kayıt' },
-  { datetime: '16.04.2026 15:12:58', user: 'A. Koç', ip: '10.12.3.18', module: 'Master Data', action: 'delete', actionLabel: 'DELETE', oldValue: 'Hesap 740.99', newValue: '-' },
-  { datetime: '16.04.2026 10:30:04', user: 'System', ip: '127.0.0.1', module: 'Rapor', action: 'export', actionLabel: 'EXPORT', oldValue: '-', newValue: 'YK Paketi PDF üretildi' },
-]
+const ACTION_CHIP: Record<string, string> = {
+  UPDATE: 'chip-info',
+  CREATE: 'chip-success',
+  APPROVE: 'chip-success',
+  IMPORT: 'chip-success',
+  DELETE: 'chip-error',
+  EXPORT: 'chip-neutral',
+  LOGIN: 'chip-neutral',
+  LOGOUT: 'chip-neutral',
+}
 
 export function AuditLogPage() {
+  const [page, setPage] = useState(1)
+  const [limit] = useState(50)
+  const [days, setDays] = useState<number | null>(7)
+
+  const fromDate = useMemo(() => {
+    if (days == null) return null
+    const d = new Date()
+    d.setDate(d.getDate() - days)
+    return d.toISOString()
+  }, [days])
+
+  const auditQuery = useQuery({
+    queryKey: ['audit-logs', page, limit, fromDate],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) })
+      if (fromDate) params.set('from', fromDate)
+      const { data } = await api.get<PagedAuditResult>(`/audit-logs?${params}`)
+      return data
+    },
+  })
+
+  const result = auditQuery.data
+  const items = useMemo(() => result?.items ?? [], [result])
+  const totalPages = result ? Math.ceil(result.totalCount / result.limit) : 1
+
+  const formatDateTime = (iso: string): string => {
+    try {
+      const d = new Date(iso)
+      return d.toLocaleString('tr-TR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+      })
+    } catch {
+      return iso
+    }
+  }
+
   return (
     <section>
       <div className="flex justify-between items-end mb-8">
@@ -36,49 +78,97 @@ export function AuditLogPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">Audit Log</h2>
         </div>
         <div className="flex gap-3">
-          <select className="select">
-            <option>Son 7 gün</option>
-            <option>Son 30 gün</option>
-            <option>Tüm</option>
+          <select
+            className="select"
+            value={days ?? ''}
+            onChange={(e) => {
+              const v = e.target.value
+              setDays(v === '' ? null : Number(v))
+              setPage(1)
+            }}
+          >
+            <option value="7">Son 7 gün</option>
+            <option value="30">Son 30 gün</option>
+            <option value="">Tüm</option>
           </select>
-          <button type="button" className="btn-secondary">
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              download
-            </span>
-            Dışa Aktar
-          </button>
         </div>
       </div>
 
       <div className="card p-0 overflow-hidden">
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th>Tarih/Saat</th>
-              <th>Kullanıcı</th>
-              <th>IP</th>
-              <th>Modül</th>
-              <th>Aksiyon</th>
-              <th>Eski Değer</th>
-              <th>Yeni Değer</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ROWS.map((r) => (
-              <tr key={`${r.datetime}-${r.user}`}>
-                <td className="font-mono text-xs">{r.datetime}</td>
-                <td>{r.user}</td>
-                <td className="font-mono text-xs">{r.ip}</td>
-                <td>{r.module}</td>
-                <td>
-                  <span className={`chip ${ACTION_CHIP[r.action]}`}>{r.actionLabel}</span>
-                </td>
-                <td className={r.oldValue.includes('M') ? 'num' : ''}>{r.oldValue}</td>
-                <td className={r.newValue.includes('M') ? 'num' : ''}>{r.newValue}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {auditQuery.isLoading ? (
+          <p className="p-6 text-sm text-on-surface-variant">Yükleniyor…</p>
+        ) : auditQuery.isError ? (
+          <p className="p-6 text-sm text-error">
+            Audit kayıtları alınamadı. Yetki veya bağlantı sorunu olabilir.
+          </p>
+        ) : items.length === 0 ? (
+          <p className="p-6 text-sm text-on-surface-variant">
+            Seçili aralıkta audit kaydı bulunmuyor.
+          </p>
+        ) : (
+          <>
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Tarih/Saat</th>
+                  <th>Kullanıcı</th>
+                  <th>IP</th>
+                  <th>Varlık</th>
+                  <th>Anahtar</th>
+                  <th>Aksiyon</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((r) => (
+                  <tr key={r.id}>
+                    <td className="font-mono text-xs">{formatDateTime(r.createdAt)}</td>
+                    <td>
+                      {r.userDisplayName ?? (r.userId != null ? `User #${r.userId}` : 'System')}
+                    </td>
+                    <td className="font-mono text-xs">{r.ipAddress ?? '—'}</td>
+                    <td>{r.entityName}</td>
+                    <td className="font-mono text-xs">{r.entityKey}</td>
+                    <td>
+                      <span
+                        className={`chip ${
+                          ACTION_CHIP[r.action.toUpperCase()] ?? 'chip-neutral'
+                        }`}
+                      >
+                        {r.action}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {totalPages > 1 ? (
+              <div className="flex items-center justify-between px-6 py-3 border-t border-outline-variant">
+                <span className="text-xs text-on-surface-variant">
+                  Toplam {result?.totalCount} kayıt · Sayfa {page} / {totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={page === 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    Önceki
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Sonraki
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </>
+        )}
       </div>
     </section>
   )
