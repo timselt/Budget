@@ -78,9 +78,6 @@ export function Sidebar() {
             FinOps<span className="text-on-surface">Tur</span>
           </h1>
         </div>
-        <p className="text-xs text-on-surface-variant font-medium mt-1 pl-10">
-          2026 Butce & Performans
-        </p>
       </div>
 
       <nav className="flex-1 overflow-y-auto pr-1">
