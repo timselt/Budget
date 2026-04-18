@@ -489,15 +489,52 @@ function CategoryModal({
 /* =====================================================================
    Product Modal
    ===================================================================== */
+interface CoverageTermDraft {
+  name: string
+  description: string
+  value: string
+}
+
 interface ProductFormState {
   productCategoryId: number
   code: string
   name: string
   description: string
-  coverageTermsJson: string
+  coverageTerms: CoverageTermDraft[]
   defaultCurrencyCode: string
   displayOrder: number
   isActive: boolean
+}
+
+function parseCoverageTermsJson(json: string | null): CoverageTermDraft[] {
+  if (!json) return []
+  try {
+    const parsed = JSON.parse(json) as { coverages?: Array<Partial<CoverageTermDraft>> }
+    if (!Array.isArray(parsed.coverages)) return []
+    return parsed.coverages.map((term) => ({
+      name: term.name ?? '',
+      description: term.description ?? '',
+      value: term.value ?? '',
+    }))
+  } catch {
+    return []
+  }
+}
+
+function serializeCoverageTerms(terms: CoverageTermDraft[]): string | null {
+  const cleaned = terms
+    .map((term) => ({
+      name: term.name.trim(),
+      description: term.description.trim(),
+      value: term.value.trim(),
+    }))
+    .filter((term) => term.name.length > 0 || term.description.length > 0 || term.value.length > 0)
+  if (cleaned.length === 0) return null
+  // Value alanı opsiyonel — boşsa JSON'dan çıkar.
+  const payload = cleaned.map((term) =>
+    term.value ? term : { name: term.name, description: term.description },
+  )
+  return JSON.stringify({ coverages: payload })
 }
 
 function ProductModal({
@@ -520,24 +557,44 @@ function ProductModal({
     code: product?.code ?? '',
     name: product?.name ?? '',
     description: product?.description ?? '',
-    coverageTermsJson: product?.coverageTermsJson ?? '',
+    coverageTerms: parseCoverageTermsJson(product?.coverageTermsJson ?? null),
     defaultCurrencyCode: product?.defaultCurrencyCode ?? 'TRY',
     displayOrder: product?.displayOrder ?? (mode === 'create' ? 10 : 0),
     isActive: product?.isActive ?? true,
   })
   const [error, setError] = useState<string | null>(null)
 
-  // Minimal JSON validation — empty allowed, else must parse.
-  const coverageIsValid = useMemo(() => {
-    const trimmed = form.coverageTermsJson.trim()
-    if (!trimmed) return true
-    try {
-      JSON.parse(trimmed)
-      return true
-    } catch {
-      return false
+  // Her teminat için name + description zorunlu (muhasebe onayı 2026-04-18).
+  const coverageValidation = useMemo(() => {
+    for (let i = 0; i < form.coverageTerms.length; i++) {
+      const term = form.coverageTerms[i]
+      if (!term.name.trim()) return { ok: false, message: `Teminat #${i + 1}: ad zorunlu.` }
+      if (!term.description.trim())
+        return { ok: false, message: `Teminat #${i + 1}: açıklama zorunlu.` }
     }
-  }, [form.coverageTermsJson])
+    return { ok: true as const, message: '' }
+  }, [form.coverageTerms])
+
+  const updateCoverage = (index: number, patch: Partial<CoverageTermDraft>) => {
+    setForm((prev) => ({
+      ...prev,
+      coverageTerms: prev.coverageTerms.map((term, i) => (i === index ? { ...term, ...patch } : term)),
+    }))
+  }
+
+  const addCoverage = () => {
+    setForm((prev) => ({
+      ...prev,
+      coverageTerms: [...prev.coverageTerms, { name: '', description: '', value: '' }],
+    }))
+  }
+
+  const removeCoverage = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      coverageTerms: prev.coverageTerms.filter((_, i) => i !== index),
+    }))
+  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -546,7 +603,7 @@ function ProductModal({
         code: form.code.trim(),
         name: form.name.trim(),
         description: form.description.trim() || null,
-        coverageTermsJson: form.coverageTermsJson.trim() || null,
+        coverageTermsJson: serializeCoverageTerms(form.coverageTerms),
         defaultCurrencyCode: form.defaultCurrencyCode,
         displayOrder: Number(form.displayOrder),
       }
@@ -582,8 +639,8 @@ function ProductModal({
         onSubmit={(e) => {
           e.preventDefault()
           setError(null)
-          if (!coverageIsValid) {
-            setError('Teminat JSON geçersiz.')
+          if (!coverageValidation.ok) {
+            setError(coverageValidation.message)
             return
           }
           saveMutation.mutate()
@@ -666,18 +723,77 @@ function ProductModal({
         ) : (
           <span />
         )}
-        <Field
-          label={`Teminat Parametreleri (JSONB) ${coverageIsValid ? '' : '— JSON geçersiz'}`}
-          className="col-span-2"
-        >
-          <textarea
-            className={`input w-full font-mono text-xs ${coverageIsValid ? '' : 'ring-2 ring-error'}`}
-            rows={3}
-            placeholder='Örn: {"days": 5, "replacements": 3, "limit_try": 15000}'
-            value={form.coverageTermsJson}
-            onChange={(e) => setForm({ ...form, coverageTermsJson: e.target.value })}
-          />
-        </Field>
+        <div className="col-span-2">
+          <div className="flex items-center justify-between mb-2">
+            <span className="label-sm">Teminatlar (ad ve açıklama zorunlu)</span>
+            <button
+              type="button"
+              className="chip chip-info"
+              onClick={addCoverage}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                add
+              </span>
+              Yeni Teminat
+            </button>
+          </div>
+          {form.coverageTerms.length === 0 ? (
+            <p className="text-xs text-on-surface-variant italic">
+              Bu ürüne henüz teminat eklenmemiş. "Yeni Teminat" ile ekleyebilirsiniz.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {form.coverageTerms.map((term, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-12 gap-2 items-start bg-surface-container-low/40 rounded-lg p-3"
+                >
+                  <div className="col-span-12 md:col-span-3">
+                    <input
+                      className="input w-full text-sm"
+                      placeholder="Ad *"
+                      value={term.name}
+                      onChange={(e) => updateCoverage(index, { name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="col-span-12 md:col-span-5">
+                    <input
+                      className="input w-full text-sm"
+                      placeholder="Açıklama *"
+                      value={term.description}
+                      onChange={(e) => updateCoverage(index, { description: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="col-span-10 md:col-span-3">
+                    <input
+                      className="input w-full text-sm"
+                      placeholder="Değer (opsiyonel)"
+                      value={term.value}
+                      onChange={(e) => updateCoverage(index, { value: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-span-2 md:col-span-1 flex justify-end">
+                    <button
+                      type="button"
+                      className="p-1 text-on-surface-variant hover:text-error transition-colors"
+                      title="Teminatı kaldır"
+                      onClick={() => removeCoverage(index)}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                        delete
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {!coverageValidation.ok ? (
+            <p className="text-xs text-error mt-2">{coverageValidation.message}</p>
+          ) : null}
+        </div>
 
         {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
 

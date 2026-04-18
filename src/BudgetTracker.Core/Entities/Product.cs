@@ -1,3 +1,4 @@
+using System.Text.Json;
 using BudgetTracker.Core.Common;
 
 namespace BudgetTracker.Core.Entities;
@@ -43,6 +44,7 @@ public sealed class Product : TenantEntity
         if (name.Length > 200) throw new ArgumentException("name max 200 characters", nameof(name));
 
         var currency = NormalizeCurrencyCode(defaultCurrencyCode);
+        ValidateCoverageTermsJson(coverageTermsJson);
 
         var entity = new Product
         {
@@ -77,6 +79,7 @@ public sealed class Product : TenantEntity
         if (name.Length > 200) throw new ArgumentException("name max 200 characters", nameof(name));
 
         var currency = NormalizeCurrencyCode(defaultCurrencyCode);
+        ValidateCoverageTermsJson(coverageTermsJson);
 
         ProductCategoryId = productCategoryId;
         Name = name;
@@ -103,5 +106,71 @@ public sealed class Product : TenantEntity
         }
 
         return trimmed.ToUpperInvariant();
+    }
+
+    /// <summary>
+    /// Teminat parametrelerinin yapısal doğrulaması (ADR-0013 §3 karar 2026-04-18):
+    /// CoverageTermsJson opsiyoneldir; dolu olduğunda
+    ///   { "coverages": [ { "name": "...", "description": "...", ... }, ... ] }
+    /// şemasına uymak zorundadır. Her teminat kaleminin `name` ve `description`
+    /// alanları boş olmayan string olmalı; diğer alanlar (value/unit/limit vb.)
+    /// serbest kullanım için açık bırakılmıştır.
+    /// </summary>
+    private static void ValidateCoverageTermsJson(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return;
+        }
+
+        JsonDocument doc;
+        try
+        {
+            doc = JsonDocument.Parse(json);
+        }
+        catch (JsonException ex)
+        {
+            throw new ArgumentException("coverageTermsJson must be valid JSON", nameof(json), ex);
+        }
+
+        using (doc)
+        {
+            if (doc.RootElement.ValueKind != JsonValueKind.Object ||
+                !doc.RootElement.TryGetProperty("coverages", out var coverages) ||
+                coverages.ValueKind != JsonValueKind.Array)
+            {
+                throw new ArgumentException(
+                    "coverageTermsJson must contain a 'coverages' array", nameof(json));
+            }
+
+            var index = 0;
+            foreach (var item in coverages.EnumerateArray())
+            {
+                if (item.ValueKind != JsonValueKind.Object)
+                {
+                    throw new ArgumentException(
+                        $"coverage term at index {index} must be an object", nameof(json));
+                }
+
+                if (!item.TryGetProperty("name", out var nameEl) ||
+                    nameEl.ValueKind != JsonValueKind.String ||
+                    string.IsNullOrWhiteSpace(nameEl.GetString()))
+                {
+                    throw new ArgumentException(
+                        $"coverage term at index {index} must have a non-empty 'name'", nameof(json));
+                }
+
+                if (!item.TryGetProperty("description", out var descEl) ||
+                    descEl.ValueKind != JsonValueKind.String ||
+                    string.IsNullOrWhiteSpace(descEl.GetString()))
+                {
+                    throw new ArgumentException(
+                        $"coverage term at index {index} must have a non-empty 'description'",
+                        nameof(json));
+                }
+
+                index++;
+            }
+        }
     }
 }
