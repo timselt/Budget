@@ -233,14 +233,7 @@ export function CustomersPage() {
       ) : null}
 
       {tab === 'matrix' ? (
-        <div className="card p-6">
-          <h3 className="text-base font-bold text-on-surface mb-2">Müşteri × Ürün Matrisi</h3>
-          <p className="text-sm text-on-surface-variant">
-            Müşteri-ürün bağlama ekranı <strong>Adım 3</strong>'te gerçek{' '}
-            <code className="font-mono text-xs">/customers/&#123;id&#125;/products</code> API'sine
-            bağlanacak. Şu an seeds/demo verileri yok.
-          </p>
-        </div>
+        <CustomerProductsPanel customers={customers} />
       ) : null}
 
       {modal.kind !== 'none' ? (
@@ -256,6 +249,415 @@ export function CustomersPage() {
         />
       ) : null}
     </section>
+  )
+}
+
+/* =====================================================================
+   CustomerProductsPanel — müşteri × ürün bağlama (Adım 3)
+   ===================================================================== */
+interface CustomerProductRow {
+  id: number
+  customerId: number
+  productId: number
+  productCode: string
+  productName: string
+  productCategoryId: number
+  productCategoryName: string | null
+  unitPriceTry: number | null
+  startDate: string | null
+  endDate: string | null
+  notes: string | null
+  isActive: boolean
+}
+
+interface ProductOption {
+  id: number
+  code: string
+  name: string
+  productCategoryId: number
+  productCategoryName: string | null
+  defaultCurrencyCode: string | null
+  isActive: boolean
+}
+
+async function getCustomerProducts(customerId: number): Promise<CustomerProductRow[]> {
+  const { data } = await api.get<CustomerProductRow[]>(`/customers/${customerId}/products`)
+  return data
+}
+
+async function getProductOptions(): Promise<ProductOption[]> {
+  const { data } = await api.get<ProductOption[]>('/products?onlyActive=true')
+  return data
+}
+
+type CpModal =
+  | { kind: 'none' }
+  | { kind: 'create' }
+  | { kind: 'edit'; link: CustomerProductRow }
+
+function CustomerProductsPanel({ customers }: { customers: CustomerRow[] }) {
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
+    customers[0]?.id ?? null,
+  )
+  const [modal, setModal] = useState<CpModal>({ kind: 'none' })
+  const queryClient = useQueryClient()
+
+  const linksQuery = useQuery({
+    queryKey: ['customer-products', selectedCustomerId],
+    queryFn: () => (selectedCustomerId ? getCustomerProducts(selectedCustomerId) : Promise.resolve([])),
+    enabled: selectedCustomerId !== null,
+  })
+
+  const productsQuery = useQuery({ queryKey: ['products-all-active'], queryFn: getProductOptions })
+
+  const links = linksQuery.data ?? []
+  const products = productsQuery.data ?? []
+  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId) ?? null
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['customer-products', selectedCustomerId] })
+
+  const linkedProductIds = useMemo(() => new Set(links.map((l) => l.productId)), [links])
+  const availableProducts = useMemo(
+    () => products.filter((p) => !linkedProductIds.has(p.id)),
+    [products, linkedProductIds],
+  )
+
+  return (
+    <>
+      <div className="card mb-4 flex items-center gap-3 flex-wrap">
+        <span className="label-sm">Müşteri</span>
+        <select
+          className="select"
+          value={selectedCustomerId ?? ''}
+          onChange={(e) => setSelectedCustomerId(e.target.value === '' ? null : Number(e.target.value))}
+        >
+          <option value="">— Seçin —</option>
+          {customers.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name} ({c.code})
+            </option>
+          ))}
+        </select>
+        <div className="ml-auto">
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!selectedCustomerId}
+            onClick={() => setModal({ kind: 'create' })}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              add_link
+            </span>
+            Ürün Bağla
+          </button>
+        </div>
+      </div>
+
+      {selectedCustomer ? (
+        <div className="card p-0 overflow-hidden">
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-bold text-on-surface">{selectedCustomer.name}</h3>
+              <p className="text-xs text-on-surface-variant">
+                {links.length} ürün bağlı · {links.filter((l) => l.isActive).length} aktif
+              </p>
+            </div>
+          </div>
+          {linksQuery.isLoading ? (
+            <p className="px-6 pb-6 text-sm text-on-surface-variant">Yükleniyor...</p>
+          ) : linksQuery.isError ? (
+            <p className="px-6 pb-6 text-sm text-error">Veri alınamadı.</p>
+          ) : links.length === 0 ? (
+            <p className="px-6 pb-6 text-sm text-on-surface-variant">
+              Bu müşteriye henüz ürün bağlanmamış. "Ürün Bağla" ile başlayın.
+            </p>
+          ) : (
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th>Kategori</th>
+                  <th>Ürün</th>
+                  <th className="text-right">Birim Fiyat (TL)</th>
+                  <th>Başlangıç</th>
+                  <th>Bitiş</th>
+                  <th>Durum</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {links.map((link) => (
+                  <tr key={link.id}>
+                    <td className="text-on-surface-variant text-sm">{link.productCategoryName ?? '-'}</td>
+                    <td>
+                      <strong>{link.productName}</strong>
+                      <p className="text-[0.65rem] font-mono text-on-surface-variant">{link.productCode}</p>
+                    </td>
+                    <td className="text-right num">
+                      {link.unitPriceTry != null
+                        ? link.unitPriceTry.toLocaleString('tr-TR', { minimumFractionDigits: 2 })
+                        : '—'}
+                    </td>
+                    <td className="text-sm">{link.startDate ?? '—'}</td>
+                    <td className="text-sm">{link.endDate ?? '—'}</td>
+                    <td>
+                      <span className={`chip ${link.isActive ? 'chip-success' : 'chip-neutral'}`}>
+                        {link.isActive ? 'Aktif' : 'Pasif'}
+                      </span>
+                    </td>
+                    <td className="text-right">
+                      <button
+                        type="button"
+                        className="p-1 text-on-surface-variant hover:text-primary transition-colors"
+                        title="Düzenle"
+                        onClick={() => setModal({ kind: 'edit', link })}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                          edit
+                        </span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : (
+        <div className="card p-6">
+          <p className="text-sm text-on-surface-variant">Bir müşteri seçin.</p>
+        </div>
+      )}
+
+      {modal.kind !== 'none' && selectedCustomerId ? (
+        <CustomerProductModal
+          customerId={selectedCustomerId}
+          mode={modal.kind === 'create' ? 'create' : 'edit'}
+          link={modal.kind === 'edit' ? modal.link : null}
+          availableProducts={availableProducts}
+          allProducts={products}
+          onClose={() => setModal({ kind: 'none' })}
+          onSaved={() => {
+            invalidate()
+            setModal({ kind: 'none' })
+          }}
+        />
+      ) : null}
+    </>
+  )
+}
+
+function CustomerProductModal({
+  customerId,
+  mode,
+  link,
+  availableProducts,
+  allProducts,
+  onClose,
+  onSaved,
+}: {
+  customerId: number
+  mode: 'create' | 'edit'
+  link: CustomerProductRow | null
+  availableProducts: ProductOption[]
+  allProducts: ProductOption[]
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const [productId, setProductId] = useState<number | ''>(
+    link?.productId ?? availableProducts[0]?.id ?? '',
+  )
+  const [unitPriceTry, setUnitPriceTry] = useState<string>(
+    link?.unitPriceTry != null ? String(link.unitPriceTry) : '',
+  )
+  const [startDate, setStartDate] = useState<string>(link?.startDate ?? '')
+  const [endDate, setEndDate] = useState<string>(link?.endDate ?? '')
+  const [notes, setNotes] = useState<string>(link?.notes ?? '')
+  const [isActive, setIsActive] = useState<boolean>(link?.isActive ?? true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (mode === 'create' && productId === '') throw new Error('Ürün seçimi zorunlu')
+      const price = unitPriceTry.trim() ? Number(unitPriceTry) : null
+      if (price !== null && (Number.isNaN(price) || price < 0))
+        throw new Error('Birim fiyat negatif olamaz')
+      if (startDate && endDate && endDate < startDate)
+        throw new Error('Bitiş tarihi başlangıçtan önce olamaz')
+
+      const body = {
+        unitPriceTry: price,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        notes: notes.trim() || null,
+      }
+      if (mode === 'create') {
+        await api.post(`/customers/${customerId}/products`, {
+          productId: Number(productId),
+          ...body,
+        })
+      } else if (link) {
+        await api.put(`/customers/${customerId}/products/${link.id}`, {
+          isActive,
+          ...body,
+        })
+      }
+    },
+    onSuccess: () => onSaved(),
+    onError: (e: unknown) => setError(e instanceof Error ? e.message : 'Kayıt başarısız'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!link) return
+      await api.delete(`/customers/${customerId}/products/${link.id}`)
+    },
+    onSuccess: () => onSaved(),
+    onError: (e: unknown) => setError(e instanceof Error ? e.message : 'Silme başarısız'),
+  })
+
+  const productList = mode === 'create' ? availableProducts : allProducts
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="card w-full max-w-2xl"
+        style={{ padding: 0 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4">
+          <h3 className="text-lg font-bold text-on-surface">
+            {mode === 'create' ? 'Ürün Bağla' : `Ürün: ${link?.productName}`}
+          </h3>
+          <button
+            type="button"
+            className="p-1 text-on-surface-variant hover:text-primary transition-colors"
+            onClick={onClose}
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <form
+          className="grid grid-cols-2 gap-4 px-6 pb-6"
+          onSubmit={(e) => {
+            e.preventDefault()
+            setError(null)
+            saveMutation.mutate()
+          }}
+        >
+          <Field label="Ürün *" className="col-span-2">
+            <select
+              className="select w-full"
+              value={productId}
+              onChange={(e) => setProductId(e.target.value === '' ? '' : Number(e.target.value))}
+              required
+              disabled={mode === 'edit'}
+            >
+              <option value="">— Seçin —</option>
+              {productList.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.productCategoryName ? `[${p.productCategoryName}] ` : ''}
+                  {p.name} ({p.code})
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Birim Fiyat (TL) — opsiyonel">
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              className="input w-full"
+              value={unitPriceTry}
+              onChange={(e) => setUnitPriceTry(e.target.value)}
+              placeholder="Ör: 80.00"
+            />
+          </Field>
+          <Field label="— boş />">
+            <div />
+          </Field>
+          <Field label="Sözleşme Başlangıç">
+            <input
+              type="date"
+              className="input w-full"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </Field>
+          <Field label="Sözleşme Bitiş">
+            <input
+              type="date"
+              className="input w-full"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </Field>
+          <Field label="Notlar (opsiyonel)" className="col-span-2">
+            <textarea
+              className="input w-full"
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </Field>
+          {mode === 'edit' ? (
+            <Field label="Durum" className="col-span-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                />
+                Aktif
+              </label>
+            </Field>
+          ) : null}
+
+          {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
+
+          <div className="col-span-2 flex items-center justify-between gap-2 mt-2">
+            {mode === 'edit' ? (
+              <button
+                type="button"
+                className="btn-tertiary"
+                onClick={() => {
+                  if (confirm('Bu ürün bağlantısı kaldırılacak. Emin misiniz?')) {
+                    deleteMutation.mutate()
+                  }
+                }}
+                disabled={deleteMutation.isPending}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                  link_off
+                </span>
+                Kaldır
+              </button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <button type="button" className="btn-secondary" onClick={onClose}>
+                Vazgeç
+              </button>
+              <button type="submit" className="btn-primary" disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
   )
 }
 
