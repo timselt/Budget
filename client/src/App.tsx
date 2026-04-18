@@ -19,6 +19,8 @@ const ProductsPage = lazy(() => import('./pages/ProductsPage').then(m => ({ defa
 const SegmentsPage = lazy(() => import('./pages/SegmentsPage').then(m => ({ default: m.SegmentsPage })))
 const BudgetPeriodsPage = lazy(() => import('./pages/BudgetPeriodsPage').then(m => ({ default: m.BudgetPeriodsPage })))
 const ExpenseCategoriesPage = lazy(() => import('./pages/ExpenseCategoriesPage').then(m => ({ default: m.ExpenseCategoriesPage })))
+const ExpenseEntriesPage = lazy(() => import('./pages/ExpenseEntriesPage').then(m => ({ default: m.ExpenseEntriesPage })))
+const SpecialItemsPage = lazy(() => import('./pages/SpecialItemsPage').then(m => ({ default: m.SpecialItemsPage })))
 const ScenariosPage = lazy(() => import('./pages/ScenariosPage').then(m => ({ default: m.ScenariosPage })))
 const ConsolidationPage = lazy(() => import('./pages/ConsolidationPage').then(m => ({ default: m.ConsolidationPage })))
 const ApprovalsPage = lazy(() => import('./pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })))
@@ -62,6 +64,8 @@ export function App() {
           <Route path="segments" element={<SegmentsPage />} />
           <Route path="budget/periods" element={<BudgetPeriodsPage />} />
           <Route path="expense-categories" element={<ExpenseCategoriesPage />} />
+          <Route path="expenses" element={<ExpenseEntriesPage />} />
+          <Route path="special-items" element={<SpecialItemsPage />} />
           <Route path="scenarios" element={<ScenariosPage />} />
           <Route path="consolidation" element={<ConsolidationPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />

@@ -13,6 +13,8 @@ const mainNav: readonly NavDef[] = [
   { to: '/budget/periods', label: 'Bütçe Versiyonları', icon: 'calendar_month' },
   { to: '/budget/planning', label: 'Bütçe Planlama', icon: 'edit_note' },
   { to: '/actuals', label: 'Gerçekleşen', icon: 'receipt_long' },
+  { to: '/expenses', label: 'Gider Girişi', icon: 'payments' },
+  { to: '/special-items', label: 'Özel Kalemler', icon: 'bookmark_star' },
   { to: '/forecast', label: 'Forecast', icon: 'trending_up' },
   { to: '/scenarios', label: 'Senaryolar', icon: 'insights' },
   { to: '/variance', label: 'Sapma Analizi', icon: 'compare_arrows' },
