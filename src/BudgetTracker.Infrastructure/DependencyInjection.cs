@@ -60,6 +60,10 @@ public static class DependencyInjection
         services.AddSingleton<Serilog.Core.ILogEventEnricher, BudgetTrackerLogEnricher>();
         services.AddSingleton<Serilog.Core.ILogEventEnricher, PiiMaskingEnricher>();
 
+        // optionsLifetime = Singleton because the matching AddDbContextFactory
+        // below is Singleton too. Default Scoped options would fail strict
+        // ValidateScopes checks (enabled in Staging/Production) because a
+        // Singleton factory cannot consume a Scoped DbContextOptions.
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             options.UseNpgsql(connectionString, npgsql =>
@@ -69,7 +73,7 @@ public static class DependencyInjection
             options.UseSnakeCaseNamingConvention();
             options.AddInterceptors(sp.GetRequiredService<TenantConnectionInterceptor>());
             options.UseOpenIddict();
-        });
+        }, contextLifetime: ServiceLifetime.Scoped, optionsLifetime: ServiceLifetime.Singleton);
 
         // ADR-0007 §2.6 — isolated context factory for audit writes. Shares the
         // Npgsql + snake-case + interceptor surface with the scoped context, but
