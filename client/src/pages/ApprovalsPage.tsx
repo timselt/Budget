@@ -1,153 +1,263 @@
-interface PendingItem {
-  title: string
-  chip: 'error' | 'warning' | 'info'
-  chipLabel: string
-  meta: string
-  actions?: boolean
+import { useMemo } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import api from '../lib/api'
+
+interface BudgetYearRow {
+  id: number
+  year: number
+  isLocked: boolean
 }
 
-const PENDING: readonly PendingItem[] = [
-  {
-    title: 'FY26 Bütçe v3 — Sağlık Segmenti',
-    chip: 'error',
-    chipLabel: 'YÜKSEK',
-    meta: 'M. Yılmaz • 14 Nis 2026 • 485M TL gelir, 81M teknik marj',
-    actions: true,
-  },
-  {
-    title: 'Q2 Forecast Revizyonu',
-    chip: 'warning',
-    chipLabel: 'ORTA',
-    meta: 'S. Öz • 12 Nis 2026 • EBITDA +18M revize',
-  },
-  {
-    title: 'Konut Segmenti Sermaye Talebi',
-    chip: 'info',
-    chipLabel: 'BİLGİ',
-    meta: 'S. Özkan • 10 Nis 2026 • KonutKonfor operasyon ek yatırım',
-  },
-]
-
-interface TimelineStep {
-  dotClass: string
-  title: string
-  titleClass?: string
-  meta: string
+interface BudgetVersionRow {
+  id: number
+  budgetYearId: number
+  name: string
+  status: string
+  isActive: boolean
+  rejectionReason: string | null
+  createdAt: string
 }
 
-const TIMELINE: readonly TimelineStep[] = [
-  {
-    dotClass: 'bg-success',
-    title: 'Departman Müdürü',
-    meta: 'M. Yılmaz • 10 Nis 14:23 • "Kontrat varsayımları güncellendi"',
-  },
-  {
-    dotClass: 'bg-success',
-    title: 'Finans Kontrol',
-    meta: 'A. Koç • 11 Nis 09:15 • Gerçekleşen sapma kontrolü: tamam',
-  },
-  {
-    dotClass: 'bg-warning pulse-ring',
-    title: 'CFO Onayı (Beklemede)',
-    titleClass: 'text-warning',
-    meta: "B. Ayhan • Beklemede — 14 Nis'ten beri",
-  },
-  {
-    dotClass: 'bg-surface-container-high',
-    title: 'CEO Onayı',
-    titleClass: 'text-on-surface-variant',
-    meta: 'T. Turan',
-  },
-]
+interface VersionWithYear extends BudgetVersionRow {
+  year: number
+}
+
+type WorkflowAction = 'submit' | 'approve/dept' | 'approve/finance' | 'approve/cfo' | 'activate' | 'reject' | 'archive'
+
+const STATUS_META: Record<string, { chip: string; label: string; nextActions: WorkflowAction[] }> = {
+  DRAFT: { chip: 'chip-neutral', label: 'Taslak', nextActions: ['submit'] },
+  SUBMITTED: { chip: 'chip-info', label: 'Gönderildi', nextActions: ['approve/dept', 'reject'] },
+  DEPTAPPROVED: { chip: 'chip-info', label: 'Departman Onaylı', nextActions: ['approve/finance', 'reject'] },
+  FINANCEAPPROVED: { chip: 'chip-info', label: 'Finans Onaylı', nextActions: ['approve/cfo', 'reject'] },
+  CFOAPPROVED: { chip: 'chip-success', label: 'CFO Onaylı', nextActions: ['activate', 'reject'] },
+  ACTIVE: { chip: 'chip-success', label: 'Aktif', nextActions: ['archive'] },
+  REJECTED: { chip: 'chip-error', label: 'Reddedildi', nextActions: ['submit'] },
+  ARCHIVED: { chip: 'chip-neutral', label: 'Arşiv', nextActions: [] },
+}
+
+const ACTION_LABELS: Record<WorkflowAction, string> = {
+  submit: 'Gönder',
+  'approve/dept': 'Dept Onayla',
+  'approve/finance': 'Finans Onayla',
+  'approve/cfo': 'CFO Onayla',
+  activate: 'Aktifleştir',
+  reject: 'Reddet',
+  archive: 'Arşivle',
+}
+
+const TERMINAL_STATUSES = new Set(['ARCHIVED'])
+
+async function getYears(): Promise<BudgetYearRow[]> {
+  const { data } = await api.get<BudgetYearRow[]>('/budget/years')
+  return data
+}
+
+async function getVersions(yearId: number): Promise<BudgetVersionRow[]> {
+  const { data } = await api.get<BudgetVersionRow[]>(`/budget/years/${yearId}/versions`)
+  return data
+}
 
 export function ApprovalsPage() {
+  const queryClient = useQueryClient()
+
+  const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
+  const years = yearsQuery.data ?? []
+
+  const versionsQueries = useQuery({
+    queryKey: ['all-budget-versions', years.map((y) => y.id).join(',')],
+    queryFn: async () => {
+      const result: VersionWithYear[] = []
+      for (const y of years) {
+        const list = await getVersions(y.id)
+        for (const v of list) {
+          result.push({ ...v, year: y.year })
+        }
+      }
+      return result
+    },
+    enabled: years.length > 0,
+  })
+
+  const versions = versionsQueries.data ?? []
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['all-budget-versions'] })
+    queryClient.invalidateQueries({ queryKey: ['budget-versions'] })
+  }
+
+  const actionMutation = useMutation({
+    mutationFn: async ({ versionId, action, reason }: { versionId: number; action: WorkflowAction; reason?: string }) => {
+      const endpoint = `/budget/versions/${versionId}/${action}`
+      const body = action === 'reject' ? { reason: reason ?? 'Belirtilmedi' } : undefined
+      await api.post(endpoint, body)
+    },
+    onSuccess: () => invalidateAll(),
+  })
+
+  const { pending, active, terminal } = useMemo(() => {
+    const pending: VersionWithYear[] = []
+    const active: VersionWithYear[] = []
+    const terminal: VersionWithYear[] = []
+    for (const v of versions) {
+      const status = (v.status ?? '').toUpperCase()
+      if (status === 'ACTIVE') active.push(v)
+      else if (TERMINAL_STATUSES.has(status)) terminal.push(v)
+      else pending.push(v)
+    }
+    pending.sort((a, b) => b.year - a.year || b.createdAt.localeCompare(a.createdAt))
+    active.sort((a, b) => b.year - a.year)
+    terminal.sort((a, b) => b.year - a.year)
+    return { pending, active, terminal }
+  }, [versions])
+
   return (
     <section>
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">Onay Akışı</h2>
+          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Onay Akışı</h2>
           <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Bütçe ve forecast versiyonlarının çok seviyeli onay sistemi (Departman → CFO → CEO →
-            YK).
+            Bütçe versiyonlarının çok seviyeli onay durumu. Sırası: Taslak → Gönderildi →
+            Departman → Finans → CFO → Aktif.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold tracking-tight text-[#002366]">
-              Bekleyen Onaylar (3)
-            </h3>
-            <span className="chip chip-warning">Aksiyon Gerekli</span>
-          </div>
-          <div className="space-y-4">
-            {PENDING.map((p) => (
-              <div key={p.title} className="bg-surface-container-low rounded-lg p-4">
-                {/* Severity expressed via leading chip — no ribbon stripe (No-Line Rule) */}
-                <div className="flex items-start justify-between mb-2 gap-3">
-                  <p className="font-bold text-sm text-[#002366]">{p.title}</p>
-                  <span className={`chip chip-${p.chip}`}>{p.chipLabel}</span>
-                </div>
-                <p className="text-xs text-on-surface-variant">{p.meta}</p>
-                {p.actions && (
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      type="button"
-                      className="btn-primary"
-                      style={{ padding: '.4rem .75rem', fontSize: '.75rem' }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                        check
-                      </span>
-                      Onayla
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      style={{ padding: '.4rem .75rem', fontSize: '.75rem' }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                        edit
-                      </span>
-                      Yorum Ekle
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-ghost"
-                      style={{ padding: '.4rem .5rem', fontSize: '.75rem' }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                        close
-                      </span>
-                      Reddet
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="card">
-          <h3 className="text-base font-bold tracking-tight text-[#002366] mb-4">
-            Onay Akışı Görünümü
-          </h3>
-          <div className="space-y-4">
-            {TIMELINE.map((t) => (
-              <div key={t.title} className="relative pl-6">
-                {/* Tonal navy ghost connector — explicit div, no border (No-Line Rule) */}
-                <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-on-secondary-fixed/15" />
-                <div
-                  className={`absolute -left-1 top-1 w-2.5 h-2.5 rounded-full ${t.dotClass}`}
-                />
-                <p className={`text-sm font-bold ${t.titleClass ?? 'text-[#002366]'}`}>{t.title}</p>
-                <p className="text-xs text-on-surface-variant">{t.meta}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="grid grid-cols-12 gap-6 mb-6">
+        <KpiCard title="Bekleyen" value={pending.length} subtitle="aksiyon gerekir" chip="chip-warning" />
+        <KpiCard title="Aktif Versiyonlar" value={active.length} subtitle="yürürlükte" chip="chip-success" />
+        <KpiCard title="Arşivli" value={terminal.length} subtitle="geçmiş" chip="chip-neutral" />
       </div>
+
+      <VersionSection
+        title={`Bekleyen Onaylar (${pending.length})`}
+        emptyText="Bekleyen onay yok — tüm versiyonlar ya aktif ya arşivli."
+        versions={pending}
+        onAction={(versionId, action, reason) =>
+          actionMutation.mutate({ versionId, action, reason })
+        }
+        actionPending={actionMutation.isPending}
+      />
+
+      <VersionSection
+        title={`Aktif Versiyonlar (${active.length})`}
+        emptyText="Henüz aktifleştirilmiş versiyon yok."
+        versions={active}
+        onAction={(versionId, action, reason) =>
+          actionMutation.mutate({ versionId, action, reason })
+        }
+        actionPending={actionMutation.isPending}
+      />
     </section>
+  )
+}
+
+function VersionSection({
+  title,
+  emptyText,
+  versions,
+  onAction,
+  actionPending,
+}: {
+  title: string
+  emptyText: string
+  versions: VersionWithYear[]
+  onAction: (versionId: number, action: WorkflowAction, reason?: string) => void
+  actionPending: boolean
+}) {
+  return (
+    <div className="card p-0 overflow-hidden mb-6">
+      <div className="p-4 border-b border-outline-variant">
+        <h3 className="text-base font-bold text-on-surface">{title}</h3>
+      </div>
+      {versions.length === 0 ? (
+        <p className="p-6 text-sm text-on-surface-variant">{emptyText}</p>
+      ) : (
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Yıl</th>
+              <th>Versiyon</th>
+              <th>Durum</th>
+              <th>Oluşturuldu</th>
+              <th>Red Sebebi</th>
+              <th className="text-right">Aksiyon</th>
+            </tr>
+          </thead>
+          <tbody>
+            {versions.map((v) => {
+              const statusKey = (v.status ?? '').toUpperCase().replace(/_/g, '')
+              const meta = STATUS_META[statusKey] ?? { chip: 'chip-neutral', label: v.status, nextActions: [] }
+              return (
+                <tr key={v.id}>
+                  <td className="font-semibold num">FY {v.year}</td>
+                  <td className="font-semibold">
+                    {v.name}
+                    {v.isActive ? <span className="chip chip-success ml-2">Aktif</span> : null}
+                  </td>
+                  <td>
+                    <span className={`chip ${meta.chip}`}>{meta.label}</span>
+                  </td>
+                  <td className="text-xs text-on-surface-variant">
+                    {new Date(v.createdAt).toLocaleDateString('tr-TR')}
+                  </td>
+                  <td className="text-xs text-on-surface-variant max-w-[240px] truncate">
+                    {v.rejectionReason ?? '—'}
+                  </td>
+                  <td className="text-right">
+                    <div className="inline-flex gap-1 flex-wrap justify-end">
+                      {meta.nextActions.map((action) => (
+                        <button
+                          key={action}
+                          type="button"
+                          className={action === 'reject' ? 'btn-ghost text-error' : 'btn-secondary'}
+                          style={{ padding: '.35rem .6rem', fontSize: '.7rem' }}
+                          disabled={actionPending}
+                          onClick={() => {
+                            if (action === 'reject') {
+                              const reason = prompt('Red sebebi giriniz:')
+                              if (!reason?.trim()) return
+                              onAction(v.id, action, reason)
+                            } else {
+                              onAction(v.id, action)
+                            }
+                          }}
+                        >
+                          {ACTION_LABELS[action]}
+                        </button>
+                      ))}
+                      {meta.nextActions.length === 0 ? (
+                        <span className="text-xs text-on-surface-variant">—</span>
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
+function KpiCard({
+  title,
+  value,
+  subtitle,
+  chip,
+}: {
+  title: string
+  value: number
+  subtitle: string
+  chip: string
+}) {
+  return (
+    <div className="col-span-12 md:col-span-4 card">
+      <div className="flex items-center gap-2">
+        <span className="label-sm">{title}</span>
+        <span className={`chip ${chip}`} />
+      </div>
+      <p className="text-2xl font-black tracking-display num mt-2">{value}</p>
+      <p className="text-xs text-on-surface-variant mt-1">{subtitle}</p>
+    </div>
   )
 }
