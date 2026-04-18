@@ -35,6 +35,29 @@ export async function getEntries(versionId: number): Promise<BudgetEntryRow[]> {
   return data
 }
 
+/**
+ * Müşterinin aktif sözleşmelerini (kontratlar) çeker. BudgetEntryPage grid
+ * satırları için. ADR-0014: contract başına bir satır.
+ */
+export interface CustomerContractRow {
+  id: number
+  customerId: number
+  productId: number
+  productName: string
+  productCode: string
+  contractCode: string
+  isActive: boolean
+}
+
+export async function getCustomerContracts(
+  customerId: number,
+): Promise<CustomerContractRow[]> {
+  const { data } = await api.get<CustomerContractRow[]>(
+    `/contracts?customerId=${customerId}`,
+  )
+  return data
+}
+
 export async function getTree(versionId: number): Promise<BudgetTree> {
   const { data } = await api.get<BudgetTree>(`/budget/versions/${versionId}/tree`)
   return data

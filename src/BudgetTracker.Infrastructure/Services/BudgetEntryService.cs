@@ -36,7 +36,8 @@ public sealed class BudgetEntryService : IBudgetEntryService
                 e.Id, e.VersionId, e.CustomerId, null,
                 e.Month, e.EntryType.ToString().ToUpperInvariant(),
                 e.AmountOriginal, e.CurrencyCode,
-                e.AmountTryFixed, e.AmountTrySpot))
+                e.AmountTryFixed, e.AmountTrySpot,
+                e.ContractId, e.ProductId))
             .ToListAsync(cancellationToken);
     }
 
@@ -111,7 +112,9 @@ public sealed class BudgetEntryService : IBudgetEntryService
                     companyId, versionId, upsert.CustomerId, upsert.Month,
                     entryType, upsert.AmountOriginal, upsert.CurrencyCode,
                     fxResult.AmountTryFixed, fxResult.AmountTrySpot,
-                    actorUserId, now);
+                    actorUserId, now,
+                    productId: upsert.ProductId,
+                    contractId: upsert.ContractId);
 
                 _db.BudgetEntries.Add(entry);
                 results.Add(ToDto(entry));
@@ -170,7 +173,9 @@ public sealed class BudgetEntryService : IBudgetEntryService
         new(e.Id, e.VersionId, e.CustomerId, null,
             e.Month, e.EntryType.ToString().ToUpperInvariant(),
             e.AmountOriginal, e.CurrencyCode,
-            e.AmountTryFixed, e.AmountTrySpot);
+            e.AmountTryFixed, e.AmountTrySpot,
+            ContractId: e.ContractId,
+            ProductId: e.ProductId);
 
     private sealed record VersionInfo(BudgetVersionStatus Status, int BudgetYearId)
     {

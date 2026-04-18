@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BudgetTreePanel } from '../components/budget-planning/BudgetTreePanel'
-import { BudgetCustomerGrid } from '../components/budget-planning/BudgetCustomerGrid'
+import {
+  BudgetCustomerGrid,
+  cellKey,
+} from '../components/budget-planning/BudgetCustomerGrid'
+import type {
+  CellId,
+  ContractRow,
+  GridValues,
+} from '../components/budget-planning/BudgetCustomerGrid'
 import { BudgetOpexGrid } from '../components/budget-planning/BudgetOpexGrid'
 import {
   CopyFromYearModal,
@@ -11,6 +19,7 @@ import { ExcelImportModal } from '../components/budget-planning/ExcelImportModal
 import {
   bulkUpsertEntries,
   deleteEntry,
+  getCustomerContracts,
   getCustomers,
   getCustomerSummary,
   getEntries,
@@ -20,6 +29,7 @@ import {
   getYears,
   submitVersion,
 } from '../components/budget-planning/api'
+import type { CustomerContractRow } from '../components/budget-planning/api'
 import {
   CURRENCIES,
   EDITABLE_STATUSES,
@@ -28,18 +38,13 @@ import {
 import type {
   BudgetEntryUpsert,
   BudgetMode,
-  CellValue,
-  EntryType,
-  RowValues,
   TreeSelection,
 } from '../components/budget-planning/types'
 import {
-  emptyRow,
   formatAmount,
   formatCompact,
   lossRatioPercent,
   marginPercent,
-  sum,
   toNumber,
 } from '../components/budget-planning/utils'
 
@@ -53,13 +58,10 @@ export function BudgetEntryPage() {
   const [scenarioId, setScenarioId] = useState<number | null>(null)
   const [currency, setCurrency] = useState<string>('TRY')
   const [selection, setSelection] = useState<TreeSelection | null>(null)
-  const [revenueRow, setRevenueRow] = useState<RowValues>(() => emptyRow())
-  const [claimRow, setClaimRow] = useState<RowValues>(() => emptyRow())
+  const [values, setValues] = useState<GridValues>({})
   const [saveError, setSaveError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [modal, setModal] = useState<Modal>(null)
-
-  // -------- Queries --------
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
   const versionsQuery = useQuery({
@@ -92,10 +94,15 @@ export function BudgetEntryPage() {
     enabled: versionId !== null && selectedCustomerId !== null,
   })
 
-  // Reference-stable derived arrays: `?? []` kullanımı her render'da yeni
-  // array üretir, bu da aşağıdaki useEffect'lerde sonsuz loop'a yol açar
-  // (entries effect: setRevenueRow → render → yeni entries ref → effect).
-  // useMemo ile kaynak verinin referansına bağlarız.
+  const contractsQuery = useQuery({
+    queryKey: ['customer-contracts', selectedCustomerId],
+    queryFn: () =>
+      selectedCustomerId
+        ? getCustomerContracts(selectedCustomerId)
+        : Promise.resolve([]),
+    enabled: selectedCustomerId !== null,
+  })
+
   const years = useMemo(() => yearsQuery.data ?? [], [yearsQuery.data])
   const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data])
   const scenarios = useMemo(() => scenariosQuery.data ?? [], [scenariosQuery.data])
@@ -105,12 +112,32 @@ export function BudgetEntryPage() {
   )
   const tree = treeQuery.data ?? null
   const entries = useMemo(() => entriesQuery.data ?? [], [entriesQuery.data])
+  const contracts = useMemo(
+    () => (contractsQuery.data ?? []).filter((c) => c.isActive),
+    [contractsQuery.data],
+  )
+
   const currentVersion = versions.find((v) => v.id === versionId) ?? null
   const isEditable = currentVersion
     ? EDITABLE_STATUSES.has(currentVersion.status)
     : false
 
-  // -------- Default selection effects --------
+  const gridContracts = useMemo<ContractRow[]>(
+    () =>
+      contracts.map((c) => ({
+        contractId: c.id,
+        productName: c.productName,
+        productCode: c.productCode,
+        contractCode: c.contractCode,
+      })),
+    [contracts],
+  )
+
+  const contractByProductId = useMemo(() => {
+    const m = new Map<number, CustomerContractRow>()
+    for (const c of contracts) m.set(c.productId, c)
+    return m
+  }, [contracts])
 
   useEffect(() => {
     if (yearId === null && years.length > 0) setYearId(years[0].id)
@@ -125,7 +152,6 @@ export function BudgetEntryPage() {
     if (scenarioId === null && scenarios.length > 0) setScenarioId(scenarios[0].id)
   }, [scenarios, scenarioId])
 
-  // Default tree selection — first segment's first customer.
   useEffect(() => {
     if (!tree || selection) return
     const firstCustomer = tree.segments.find((s) => s.customers.length > 0)?.customers[0]
@@ -135,50 +161,55 @@ export function BudgetEntryPage() {
         customerId: firstCustomer.customerId,
         segmentId: firstCustomer.segmentId,
       })
-    } else if (tree.opexCategories.length > 0) {
-      setSelection({
-        kind: 'opex',
-        expenseCategoryId: tree.opexCategories[0].expenseCategoryId,
-      })
     }
   }, [tree, selection])
 
-  // Load selected customer's entries into editable rows.
+  // Müşteri + entries + contracts değiştikçe grid value'ları yeniden kur.
   useEffect(() => {
     if (selection?.kind !== 'customer') {
-      setRevenueRow(emptyRow())
-      setClaimRow(emptyRow())
+      setValues({})
       return
     }
+
+    const next: GridValues = {}
     const customerEntries = entries.filter((e) => e.customerId === selection.customerId)
-    const revenue = emptyRow()
-    const claim = emptyRow()
+
     for (const e of customerEntries) {
-      const cell: CellValue = { id: e.id, amount: e.amountOriginal.toString() }
-      if (e.entryType === 'REVENUE') revenue[e.month] = cell
-      else claim[e.month] = cell
+      let contractId: number | null = null
+      if (e.contractId) {
+        contractId = e.contractId
+      } else if (e.productId && contractByProductId.has(e.productId)) {
+        contractId = contractByProductId.get(e.productId)!.id
+      }
+      const key = cellKey({
+        contractId,
+        kind: e.entryType,
+        month: e.month,
+      })
+      next[key] = { id: e.id, amount: e.amountOriginal.toString() }
     }
-    setRevenueRow(revenue)
-    setClaimRow(claim)
+
+    setValues(next)
+
     const firstCurrency = customerEntries.find((e) => e.currencyCode)?.currencyCode
     if (firstCurrency) setCurrency(firstCurrency)
-  }, [selection, entries])
+  }, [selection, entries, contractByProductId])
 
-  // -------- Derived KPIs --------
+  const { revenueTotal, claimTotal } = useMemo(() => {
+    let rev = 0
+    let cla = 0
+    for (const key of Object.keys(values)) {
+      const [, kind] = key.split(':')
+      const amount = toNumber(values[key].amount)
+      if (kind === 'REVENUE') rev += amount
+      else if (kind === 'CLAIM') cla += amount
+    }
+    return { revenueTotal: rev, claimTotal: cla }
+  }, [values])
 
-  const revenueTotal = useMemo(
-    () => sum(Object.values(revenueRow).map((c) => toNumber(c.amount))),
-    [revenueRow],
-  )
-  const claimTotal = useMemo(
-    () => sum(Object.values(claimRow).map((c) => toNumber(c.amount))),
-    [claimRow],
-  )
   const margin = revenueTotal - claimTotal
   const lossRatio = lossRatioPercent(revenueTotal, claimTotal)
   const marginPct = marginPercent(revenueTotal, claimTotal)
-
-  // -------- Mutations --------
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -186,24 +217,33 @@ export function BudgetEntryPage() {
         throw new Error('Yıl, versiyon ve müşteri seçin')
       }
       const upserts: BudgetEntryUpsert[] = []
-      const collect = (row: RowValues, type: EntryType) => {
-        for (let m = 1; m <= 12; m += 1) {
-          const cell = row[m]
-          const amount = toNumber(cell.amount)
-          const hasContent = cell.amount.trim() !== ''
-          if (!hasContent && cell.id === null) continue
-          upserts.push({
-            id: cell.id,
-            customerId: selection.customerId,
-            month: m,
-            entryType: type,
-            amountOriginal: amount,
-            currencyCode: currency,
-          })
-        }
+      for (const key of Object.keys(values)) {
+        const cell = values[key]
+        const [rawContractId, kind, monthStr] = key.split(':')
+        const amount = toNumber(cell.amount)
+        const hasContent = cell.amount.trim() !== ''
+        if (!hasContent && cell.id === null) continue
+
+        const contractId =
+          rawContractId === 'fb' || rawContractId === ''
+            ? null
+            : Number(rawContractId)
+        const productId =
+          contractId != null
+            ? contracts.find((c) => c.id === contractId)?.productId ?? null
+            : null
+
+        upserts.push({
+          id: cell.id,
+          customerId: selection.customerId,
+          month: Number(monthStr),
+          entryType: kind as 'REVENUE' | 'CLAIM',
+          amountOriginal: amount,
+          currencyCode: currency,
+          contractId,
+          productId,
+        })
       }
-      collect(revenueRow, 'REVENUE')
-      collect(claimRow, 'CLAIM')
       await bulkUpsertEntries(versionId, upserts)
     },
     onSuccess: () => {
@@ -242,19 +282,23 @@ export function BudgetEntryPage() {
     },
   })
 
-  // -------- Handlers --------
-
-  const updateCell = (type: EntryType, month: number, value: string) => {
-    const setter = type === 'REVENUE' ? setRevenueRow : setClaimRow
-    setter((prev) => ({ ...prev, [month]: { ...prev[month], amount: value } }))
+  const updateCell = (cell: CellId, amount: string) => {
+    setValues((prev) => {
+      const key = cellKey(cell)
+      const existing = prev[key]
+      return {
+        ...prev,
+        [key]: {
+          id: existing?.id ?? null,
+          amount,
+        },
+      }
+    })
   }
 
-  const deleteCell = (type: EntryType, month: number) => {
-    const row = type === 'REVENUE' ? revenueRow : claimRow
-    const cell = row[month]
-    if (!cell?.id) return
-    if (!confirm(`${MONTHS[month - 1]} için kayıt silinecek. Emin misiniz?`)) return
-    deleteMutation.mutate(cell.id)
+  const deleteCellHandler = (cell: CellId, entryId: number) => {
+    if (!confirm(`${MONTHS[cell.month - 1]} kaydı silinecek. Emin misiniz?`)) return
+    deleteMutation.mutate(entryId)
   }
 
   const handleModalSuccess = () => {
@@ -262,8 +306,6 @@ export function BudgetEntryPage() {
     queryClient.invalidateQueries({ queryKey: ['budget-tree', versionId] })
     queryClient.invalidateQueries({ queryKey: ['customer-summary', versionId] })
   }
-
-  // -------- Selected node metadata --------
 
   const selectedCustomer =
     selection?.kind === 'customer'
@@ -279,16 +321,15 @@ export function BudgetEntryPage() {
 
   const selectedOpex =
     selection?.kind === 'opex'
-      ? tree?.opexCategories.find((o) => o.expenseCategoryId === selection.expenseCategoryId)
+      ? tree?.opexCategories.find(
+          (o) => o.expenseCategoryId === selection.expenseCategoryId,
+        )
       : null
 
   const summary = summaryQuery.data ?? null
 
-  // -------- Render --------
-
   return (
     <section>
-      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
@@ -310,7 +351,9 @@ export function BudgetEntryPage() {
           <button
             type="button"
             className="btn-secondary"
-            disabled={!isEditable || saveMutation.isPending || selection?.kind !== 'customer'}
+            disabled={
+              !isEditable || saveMutation.isPending || selection?.kind !== 'customer'
+            }
             onClick={() => {
               setSaveError(null)
               saveMutation.mutate()
@@ -339,7 +382,6 @@ export function BudgetEntryPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 mb-4 bg-surface-container-low rounded-lg p-1 w-fit">
         <button
           type="button"
@@ -363,7 +405,6 @@ export function BudgetEntryPage() {
         </button>
       </div>
 
-      {/* Filters + legend */}
       <div className="card mb-4 flex flex-wrap items-center gap-3">
         <span className="label-sm">Filtre</span>
         <select
@@ -435,25 +476,13 @@ export function BudgetEntryPage() {
         </div>
       </div>
 
-      {/* Error rows */}
       {saveError ? (
-        <div className="card mb-4 text-sm text-error">
-          <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
-            error
-          </span>
-          {saveError}
-        </div>
+        <div className="card mb-4 text-sm text-error">{saveError}</div>
       ) : null}
       {submitError ? (
-        <div className="card mb-4 text-sm text-error">
-          <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
-            error
-          </span>
-          {submitError}
-        </div>
+        <div className="card mb-4 text-sm text-error">{submitError}</div>
       ) : null}
 
-      {/* KPI cards */}
       <div className="grid grid-cols-12 gap-4 mb-4">
         <KpiCard title="Plan Gelir" value={formatCompact(revenueTotal)} chipClass="chip-error" />
         <KpiCard title="Plan Hasar" value={formatCompact(claimTotal)} chipClass="chip-warning" />
@@ -470,7 +499,6 @@ export function BudgetEntryPage() {
         />
       </div>
 
-      {/* Body: tree or customer mode */}
       {mode === 'tree' ? (
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 lg:col-span-3">
@@ -494,17 +522,17 @@ export function BudgetEntryPage() {
             />
             {selection?.kind === 'customer' ? (
               <BudgetCustomerGrid
-                revenueRow={revenueRow}
-                claimRow={claimRow}
+                contracts={gridContracts}
+                values={values}
                 disabled={!isEditable}
                 onCellChange={updateCell}
-                onCellDelete={deleteCell}
+                onCellDelete={deleteCellHandler}
               />
             ) : selectedOpex ? (
               <BudgetOpexGrid opex={selectedOpex} />
             ) : (
               <div className="card text-sm text-on-surface-variant">
-                Soldan bir müşteri veya gider kalemi seçin.
+                Soldan bir müşteri seçin.
               </div>
             )}
           </div>
@@ -563,11 +591,11 @@ export function BudgetEntryPage() {
 
           {selection?.kind === 'customer' ? (
             <BudgetCustomerGrid
-              revenueRow={revenueRow}
-              claimRow={claimRow}
+              contracts={gridContracts}
+              values={values}
               disabled={!isEditable}
               onCellChange={updateCell}
-              onCellDelete={deleteCell}
+              onCellDelete={deleteCellHandler}
             />
           ) : (
             <div className="card text-sm text-on-surface-variant">
@@ -577,7 +605,6 @@ export function BudgetEntryPage() {
         </div>
       )}
 
-      {/* Modals */}
       {modal === 'copy' && versionId ? (
         <CopyFromYearModal
           versionId={versionId}

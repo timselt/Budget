@@ -10,4 +10,6 @@ public sealed record BudgetEntryDto(
     decimal AmountOriginal,
     string CurrencyCode,
     decimal AmountTryFixed,
-    decimal AmountTrySpot);
+    decimal AmountTrySpot,
+    int? ContractId = null,
+    int? ProductId = null);

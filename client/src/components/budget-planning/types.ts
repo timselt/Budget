@@ -41,6 +41,8 @@ export interface BudgetEntryRow {
   currencyCode: string
   amountTryFixed: number
   amountTrySpot: number
+  contractId: number | null
+  productId: number | null
 }
 
 export interface BudgetEntryUpsert {
@@ -50,6 +52,8 @@ export interface BudgetEntryUpsert {
   entryType: EntryType
   amountOriginal: number
   currencyCode: string
+  contractId?: number | null
+  productId?: number | null
 }
 
 export interface BudgetTreeCustomer {

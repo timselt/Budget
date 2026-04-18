@@ -6,4 +6,6 @@ public sealed record BudgetEntryUpsert(
     int Month,
     string EntryType,
     decimal AmountOriginal,
-    string CurrencyCode);
+    string CurrencyCode,
+    int? ContractId = null,
+    int? ProductId = null);

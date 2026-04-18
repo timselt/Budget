@@ -130,44 +130,7 @@ export function BudgetTreePanel({ tree, selection, onSelect, loading }: Props) {
           ))}
         </details>
 
-        {filtered.opex.length > 0 ? (
-          <details open className="group border-t border-surface-container-low">
-            <summary className="tree-summary font-bold px-4 py-3 cursor-pointer flex items-center gap-2 hover:bg-surface-container-low">
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                receipt_long
-              </span>
-              <span className="flex-1">OPEX & Personel</span>
-              <span className="text-xs num text-on-surface-variant">
-                {formatCompact(tree.expenseTotalTry)}
-              </span>
-            </summary>
-
-            {filtered.opex.map((opex) => {
-              const isSelected =
-                selection?.kind === 'opex' && selection.expenseCategoryId === opex.expenseCategoryId
-              return (
-                <button
-                  key={opex.expenseCategoryId}
-                  type="button"
-                  className={`tree-item w-full text-left px-5 py-2 flex items-center gap-2 hover:bg-surface-container-low ${
-                    isSelected ? 'bg-primary-container text-on-primary-container font-semibold' : ''
-                  }`}
-                  onClick={() =>
-                    onSelect({ kind: 'opex', expenseCategoryId: opex.expenseCategoryId })
-                  }
-                >
-                  <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 16 }}>
-                    list_alt
-                  </span>
-                  <span className="flex-1 truncate">{opex.categoryName}</span>
-                  <span className="text-xs num text-on-surface-variant">
-                    {formatCompact(opex.totalTry)}
-                  </span>
-                </button>
-              )
-            })}
-          </details>
-        ) : null}
+        {/* OPEX & Personel kaldırıldı — gider girişi ayrı sayfada. */}
       </div>
     </div>
   )
