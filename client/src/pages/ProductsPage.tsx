@@ -84,10 +84,6 @@ export function ProductsPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Ürün Yönetimi
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Ürün kategorileri ve teminat-bazlı ürün kataloğu. Müşteri-ürün eşleşmesi ve
-            bütçe girişinde referans alınan katalog buradan yönetilir (ADR-0013).
-          </p>
         </div>
         <div className="flex gap-3">
           <button
@@ -104,6 +100,7 @@ export function ProductsPage() {
             type="button"
             className="btn-primary"
             disabled={!selectedCategoryId}
+            title={selectedCategoryId ? undefined : 'Önce soldaki listeden bir kategori seçin'}
             onClick={() => selectedCategoryId && setModal({ kind: 'product', mode: 'create', categoryId: selectedCategoryId })}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
@@ -121,8 +118,6 @@ export function ProductsPage() {
           value={`${activeProductsCount} / ${products.length}`}
           subtitle={selectedCategory ? `Kategori: ${selectedCategory.name}` : 'Tüm kategoriler'}
         />
-        <KpiCard title="Teminat Parametreleri" value="JSONB" subtitle="Esnek alan (gün, sefer, limit TL)" />
-        <KpiCard title="Müşteri Bağı" value="CustomerProduct" subtitle="Sözleşme tarihleri + notlar" />
       </div>
 
       <div className="grid grid-cols-12 gap-6">

@@ -34,9 +34,6 @@ export function AuditLogPage() {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">Audit Log</h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Değişmez değişiklik kaydı — KVKK + SOC 2 + iç denetim gereksinimleri.
-          </p>
         </div>
         <div className="flex gap-3">
           <select className="select">

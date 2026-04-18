@@ -36,9 +36,13 @@ public sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         b.Property(x => x.FullTitle).HasMaxLength(500);
         b.Property(x => x.IsActive).IsRequired();
         b.Property(x => x.IsOtherFlag).IsRequired().HasDefaultValue(false);
+        b.Property(x => x.ShortId).IsRequired().HasDefaultValue(0);
         b.Property(x => x.CreatedAt).IsRequired();
 
         b.HasIndex(x => new { x.CompanyId, x.Code }).IsUnique();
+        b.HasIndex(x => new { x.CompanyId, x.ShortId })
+            .IsUnique()
+            .HasFilter("deleted_at IS NULL AND short_id > 0");
         b.HasQueryFilter(x => x.DeletedAt == null);
     }
 }

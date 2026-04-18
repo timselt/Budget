@@ -114,10 +114,6 @@ export function ApprovalsPage() {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Onay Akışı</h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Bütçe versiyonlarının çok seviyeli onay durumu. Sırası: Taslak → Gönderildi →
-            Departman → Finans → CFO → Aktif.
-          </p>
         </div>
       </div>
 

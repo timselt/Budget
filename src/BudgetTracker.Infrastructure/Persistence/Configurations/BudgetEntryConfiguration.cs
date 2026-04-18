@@ -26,6 +26,10 @@ public sealed class BudgetEntryConfiguration : IEntityTypeConfiguration<BudgetEn
         b.Property(x => x.ProductId);
         b.HasOne<Product>().WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.Restrict);
 
+        // ADR-0014 §2.6 — kontrat bazlı giriş; ProductId ile paralel geçiş.
+        b.Property(x => x.ContractId);
+        b.HasOne<Contract>().WithMany().HasForeignKey(x => x.ContractId).OnDelete(DeleteBehavior.Restrict);
+
         b.Property(x => x.Month).IsRequired();
 
         // ADR-0013 §5 — adet. UnitPriceTry × Quantity = AmountOriginal

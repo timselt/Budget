@@ -55,9 +55,6 @@ export function ForecastPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
             Rolling Forecast
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Aylık güncellenen 12-ay forecast. Plan / Gerçekleşen / Tahmin katmanlı görünüm.
-          </p>
         </div>
         <div className="flex gap-3">
           <select className="select">

@@ -164,14 +164,6 @@ export function ActualsPage() {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Gerçekleşen</h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Yıl/versiyon bazında gerçekleşen gider kayıtları. Kategori kırılımı ve bütçe
-            karşılaştırması. Veri girişi{' '}
-            <Link className="text-primary underline" to="/expenses">
-              Gider Girişi
-            </Link>{' '}
-            sayfasından yapılır.
-          </p>
         </div>
       </div>
 

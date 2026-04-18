@@ -63,9 +63,6 @@ export function VariancePage() {
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
             Sapma Analizi
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Plan − Gerçekleşen × Segment × Ay. Waterfall + sürücü ayrıştırması.
-          </p>
         </div>
         <div className="flex gap-3">
           <select className="select">

@@ -44,11 +44,6 @@ export function ExpenseCategoriesPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Gider Kategorileri
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            PERSONEL, IT, HOLDING, FINANSMAN gibi gider kalemlerinin master listesi. Her
-            kategori bir sınıflandırmaya bağlıdır (Teknik / Genel / Finansal / Olağandışı);
-            bu sınıflandırma P&L raporunda alt-toplamı belirler.
-          </p>
         </div>
         <button
           type="button"

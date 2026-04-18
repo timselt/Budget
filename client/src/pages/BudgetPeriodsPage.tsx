@@ -111,10 +111,6 @@ export function BudgetPeriodsPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Bütçe Dönemleri & Versiyonları
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Bütçe yıllarını aç, her yıl için birden fazla versiyon (taslak, revize, final)
-            oluştur ve state machine üzerinden onay akışını yürüt.
-          </p>
         </div>
         <div className="flex gap-3">
           <button

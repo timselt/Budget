@@ -56,10 +56,6 @@ export function PnlReportPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             P&L Raporu — Butce 2026
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-3xl">
-            Gelir → Hasar → Teknik Marj → Giderler → Finansal Kalemler → EBITDA zinciri.
-            Manuel Excel butce formatinin sistem karsiligi.
-          </p>
         </div>
         <div className="flex gap-3">
           <select className="select"><option>Tur Assist (Ana)</option></select>

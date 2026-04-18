@@ -29,6 +29,13 @@ public sealed class Customer : TenantEntity
     /// </summary>
     public bool IsOtherFlag { get; private set; }
 
+    /// <summary>
+    /// Şirket başına sequential 2-haneli (0-99) kontrat kodu segmenti #6
+    /// (ADR-0014 §2.4). 99'a ulaşıldığında 3-haneye geçiş için ayrı ADR.
+    /// Reserved: 0 = sistem müşterileri (SGK-TESVIK).
+    /// </summary>
+    public int ShortId { get; private set; }
+
     private Customer() { }
 
     public static Customer Create(
@@ -49,10 +56,13 @@ public sealed class Customer : TenantEntity
         string? defaultCurrencyCode = null,
         string? sourceSheet = null,
         string? notes = null,
-        bool isOtherFlag = false)
+        bool isOtherFlag = false,
+        int shortId = 0)
     {
         if (companyId <= 0) throw new ArgumentOutOfRangeException(nameof(companyId));
         if (segmentId <= 0) throw new ArgumentOutOfRangeException(nameof(segmentId));
+        if (shortId is < 0 or > 99)
+            throw new ArgumentOutOfRangeException(nameof(shortId), "short id 0-99");
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         if (code.Length > 30) throw new ArgumentException("code max 30 characters", nameof(code));
@@ -77,9 +87,22 @@ public sealed class Customer : TenantEntity
             Notes = notes,
             IsActive = true,
             IsOtherFlag = isOtherFlag,
+            ShortId = shortId,
             CreatedAt = createdAt,
             CreatedByUserId = createdByUserId
         };
+    }
+
+    /// <summary>
+    /// Company başına sequential ShortId atama — servis/migration katmanı.
+    /// </summary>
+    public void AssignShortId(int shortId, int actorUserId, DateTimeOffset updatedAt)
+    {
+        if (shortId is < 0 or > 99)
+            throw new ArgumentOutOfRangeException(nameof(shortId), "short id 0-99");
+        ShortId = shortId;
+        UpdatedAt = updatedAt;
+        UpdatedByUserId = actorUserId;
     }
 
     public void Update(

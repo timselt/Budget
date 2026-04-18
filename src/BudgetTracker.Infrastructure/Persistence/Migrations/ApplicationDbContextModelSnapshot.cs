@@ -314,6 +314,10 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("company_id");
 
+                    b.Property<int?>("ContractId")
+                        .HasColumnType("integer")
+                        .HasColumnName("contract_id");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -377,6 +381,9 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_budget_entries");
+
+                    b.HasIndex("ContractId")
+                        .HasDatabaseName("ix_budget_entries_contract_id");
 
                     b.HasIndex("CurrencyCode")
                         .HasDatabaseName("ix_budget_entries_currency_code");
@@ -727,6 +734,170 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                     b.ToTable("companies", (string)null);
                 });
 
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Contract", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdjustmentClause")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("adjustment_clause");
+
+                    b.Property<string>("BusinessLine")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("business_line");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("company_id");
+
+                    b.Property<string>("ContractCode")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("contract_code");
+
+                    b.Property<string>("ContractForm")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("contract_form");
+
+                    b.Property<string>("ContractKind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("contract_kind");
+
+                    b.Property<string>("ContractType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("contract_type");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("customer_id");
+
+                    b.Property<int>("CustomerShortId")
+                        .HasColumnType("integer")
+                        .HasColumnName("customer_short_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PaymentFrequency")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("payment_frequency");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer")
+                        .HasColumnName("product_id");
+
+                    b.Property<string>("ProductType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("product_type");
+
+                    b.Property<int>("RevisionCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision_count");
+
+                    b.Property<string>("SalesType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("sales_type");
+
+                    b.Property<string>("ServiceArea")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("service_area");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<decimal?>("UnitPriceTry")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("unit_price_try");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<string>("VehicleType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("vehicle_type");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_contracts");
+
+                    b.HasIndex("CompanyId", "ContractCode")
+                        .IsUnique()
+                        .HasDatabaseName("ix_contracts_company_id_contract_code")
+                        .HasFilter("deleted_at IS NULL");
+
+                    b.HasIndex("CustomerId", "IsActive")
+                        .HasDatabaseName("ix_contracts_customer_id_is_active");
+
+                    b.HasIndex("ProductId", "IsActive")
+                        .HasDatabaseName("ix_contracts_product_id_is_active");
+
+                    b.HasIndex("CompanyId", "CustomerId", "ProductId", "StartDate")
+                        .IsUnique()
+                        .HasDatabaseName("ix_contracts_company_id_customer_id_product_id_start_date");
+
+                    b.ToTable("contracts", (string)null);
+                });
+
             modelBuilder.Entity("BudgetTracker.Core.Entities.Currency", b =>
                 {
                     b.Property<string>("Code")
@@ -851,6 +1022,12 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("segment_id");
 
+                    b.Property<int>("ShortId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("short_id");
+
                     b.Property<string>("SourceSheet")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
@@ -893,88 +1070,12 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_customers_company_id_code");
 
-                    b.ToTable("customers", (string)null);
-                });
-
-            modelBuilder.Entity("BudgetTracker.Core.Entities.CustomerProduct", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CompanyId")
-                        .HasColumnType("integer")
-                        .HasColumnName("company_id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<int?>("CreatedByUserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("created_by_user_id");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("integer")
-                        .HasColumnName("customer_id");
-
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
-
-                    b.Property<int?>("DeletedByUserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("deleted_by_user_id");
-
-                    b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date")
-                        .HasColumnName("end_date");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text")
-                        .HasColumnName("notes");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer")
-                        .HasColumnName("product_id");
-
-                    b.Property<DateOnly?>("StartDate")
-                        .HasColumnType("date")
-                        .HasColumnName("start_date");
-
-                    b.Property<decimal?>("UnitPriceTry")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("unit_price_try");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.Property<int?>("UpdatedByUserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("updated_by_user_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_customer_products");
-
-                    b.HasIndex("CustomerId", "IsActive")
-                        .HasDatabaseName("ix_customer_products_customer_id_is_active");
-
-                    b.HasIndex("ProductId", "IsActive")
-                        .HasDatabaseName("ix_customer_products_product_id_is_active");
-
-                    b.HasIndex("CompanyId", "CustomerId", "ProductId", "StartDate")
+                    b.HasIndex("CompanyId", "ShortId")
                         .IsUnique()
-                        .HasDatabaseName("ix_customer_products_company_id_customer_id_product_id_start_d");
+                        .HasDatabaseName("ix_customers_company_id_short_id")
+                        .HasFilter("deleted_at IS NULL AND short_id > 0");
 
-                    b.ToTable("customer_products", (string)null);
+                    b.ToTable("customers", (string)null);
                 });
 
             modelBuilder.Entity("BudgetTracker.Core.Entities.ExpenseCategory", b =>
@@ -2351,6 +2452,12 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_budget_entries_companies_company_id");
 
+                    b.HasOne("BudgetTracker.Core.Entities.Contract", null)
+                        .WithMany()
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_budget_entries_contracts_contract_id");
+
                     b.HasOne("BudgetTracker.Core.Entities.Currency", null)
                         .WithMany()
                         .HasForeignKey("CurrencyCode")
@@ -2434,6 +2541,30 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                     b.Navigation("ImportPeriod");
                 });
 
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Contract", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_contracts_companies_company_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_contracts_customers_customer_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_contracts_products_product_id");
+                });
+
             modelBuilder.Entity("BudgetTracker.Core.Entities.Customer", b =>
                 {
                     b.HasOne("BudgetTracker.Core.Entities.Company", null)
@@ -2449,30 +2580,6 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_customers_segments_segment_id");
-                });
-
-            modelBuilder.Entity("BudgetTracker.Core.Entities.CustomerProduct", b =>
-                {
-                    b.HasOne("BudgetTracker.Core.Entities.Company", null)
-                        .WithMany()
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_customer_products_companies_company_id");
-
-                    b.HasOne("BudgetTracker.Core.Entities.Customer", null)
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_customer_products_customers_customer_id");
-
-                    b.HasOne("BudgetTracker.Core.Entities.Product", null)
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_customer_products_products_product_id");
                 });
 
             modelBuilder.Entity("BudgetTracker.Core.Entities.ExpenseCategory", b =>

@@ -25,5 +25,5 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<CollectionInvoice> CollectionInvoices { get; }
     DbSet<ProductCategory> ProductCategories { get; }
     DbSet<Product> Products { get; }
-    DbSet<CustomerProduct> CustomerProducts { get; }
+    DbSet<Contract> Contracts { get; }
 }

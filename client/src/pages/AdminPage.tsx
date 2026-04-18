@@ -64,9 +64,6 @@ export function AdminPage() {
       <div className="flex justify-between items-end mb-6">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Yönetim</h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Kullanıcı rolleri ve şirket (tenant) yönetimi. Yalnızca Admin rolü erişebilir.
-          </p>
         </div>
       </div>
 

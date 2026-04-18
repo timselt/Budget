@@ -105,6 +105,8 @@ public static class AuthenticationExtensions
             options.AddPolicy("Admin", p => p.RequireRole(RoleNames.Admin));
             options.AddPolicy("CFO", p => p.RequireRole(RoleNames.Cfo, RoleNames.Admin));
             options.AddPolicy("Finance", p => p.RequireRole(RoleNames.FinanceManager, RoleNames.Admin));
+            // Controllers `RequireFinanceRole` ismini kullanıyor — `Finance` policy'siyle eş anlamlı.
+            options.AddPolicy("RequireFinanceRole", p => p.RequireRole(RoleNames.FinanceManager, RoleNames.Admin));
             options.AddPolicy("DepartmentHead", p =>
                 p.RequireRole(RoleNames.DepartmentHead, RoleNames.Admin));
             options.AddPolicy("Viewer", p => p.RequireRole(

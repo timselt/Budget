@@ -127,10 +127,6 @@ export function ExpenseEntriesPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Gider Girişi
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Kategori bazlı aylık gider tutarları. BUDGET (bütçe planı) ve ACTUAL (gerçekleşen)
-            giriş tipleri ayrı. TCMB spot ve sabit kur otomatik hesaplanır.
-          </p>
         </div>
         <button
           type="button"

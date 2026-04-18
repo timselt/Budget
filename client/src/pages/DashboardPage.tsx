@@ -91,10 +91,6 @@ export function DashboardPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
             Executive Dashboard
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Tur Assist Grubu FY26 bütçesinin konsolide performans görünümü — gerçekleşen vs. plan,
-            teknik marj ve EBITDA momentum.
-          </p>
         </div>
         <div className="flex gap-3">
           <button type="button" className="btn-secondary">

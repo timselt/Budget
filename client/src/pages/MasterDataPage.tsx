@@ -37,10 +37,6 @@ export function MasterDataPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
             Master Data Yönetimi
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            İlk dikey dilim olarak müşteri master ekranı gerçek API verisine bağlandı. Import
-            şablonundaki müşteri alanlarının kritik kısmı artık sistemde taşınabiliyor.
-          </p>
         </div>
         <button type="button" className="btn-primary" disabled>
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>

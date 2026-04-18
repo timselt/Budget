@@ -16,12 +16,19 @@ public sealed class BudgetEntry : TenantEntity
     /// </summary>
     public int? ProductId { get; private set; }
 
+    /// <summary>
+    /// Kontrat bazlı bütçe girişi için opsiyonel FK (ADR-0014 §2.6). ProductId
+    /// ile paralel geçiş döneminde yaşar; sonraki ADR'de ProductId drop edilip
+    /// ContractId NOT NULL'a geçirilecek.
+    /// </summary>
+    public int? ContractId { get; private set; }
+
     public int Month { get; private set; }
     public EntryType EntryType { get; private set; }
 
     /// <summary>
     /// Adet — ADR-0013 §5 kararı (2026-04-18): ürün bazlı bütçe satırı için
-    /// operatör "adet" girer, tutar `CustomerProduct.UnitPriceTry × Quantity`
+    /// operatör "adet" girer, tutar `Contract.UnitPriceTry × Quantity`
     /// ile service katmanında hesaplanır. Geçiş döneminde nullable.
     /// </summary>
     public int? Quantity { get; private set; }
@@ -48,7 +55,8 @@ public sealed class BudgetEntry : TenantEntity
         DateTimeOffset createdAt,
         string? notes = null,
         int? productId = null,
-        int? quantity = null)
+        int? quantity = null,
+        int? contractId = null)
     {
         ValidateMonth(month);
         ValidateCurrencyCode(currencyCode);
@@ -56,6 +64,7 @@ public sealed class BudgetEntry : TenantEntity
         if (versionId <= 0) throw new ArgumentOutOfRangeException(nameof(versionId));
         if (customerId <= 0) throw new ArgumentOutOfRangeException(nameof(customerId));
         if (productId is <= 0) throw new ArgumentOutOfRangeException(nameof(productId));
+        if (contractId is <= 0) throw new ArgumentOutOfRangeException(nameof(contractId));
         if (quantity is < 0)
             throw new ArgumentOutOfRangeException(nameof(quantity), "quantity must be non-negative");
 
@@ -65,6 +74,7 @@ public sealed class BudgetEntry : TenantEntity
             VersionId = versionId,
             CustomerId = customerId,
             ProductId = productId,
+            ContractId = contractId,
             Quantity = quantity,
             Month = month,
             EntryType = entryType,

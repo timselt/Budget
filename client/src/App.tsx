@@ -16,6 +16,7 @@ const PnlReportPage = lazy(() => import('./pages/PnlReportPage').then(m => ({ de
 const MasterDataPage = lazy(() => import('./pages/MasterDataPage').then(m => ({ default: m.MasterDataPage })))
 const CustomersPage = lazy(() => import('./pages/CustomersPage').then(m => ({ default: m.CustomersPage })))
 const ProductsPage = lazy(() => import('./pages/ProductsPage').then(m => ({ default: m.ProductsPage })))
+const ContractsPage = lazy(() => import('./pages/ContractsPage').then(m => ({ default: m.ContractsPage })))
 const SegmentsPage = lazy(() => import('./pages/SegmentsPage').then(m => ({ default: m.SegmentsPage })))
 const BudgetPeriodsPage = lazy(() => import('./pages/BudgetPeriodsPage').then(m => ({ default: m.BudgetPeriodsPage })))
 const ExpenseCategoriesPage = lazy(() => import('./pages/ExpenseCategoriesPage').then(m => ({ default: m.ExpenseCategoriesPage })))
@@ -63,6 +64,7 @@ export function App() {
           <Route path="master-data" element={<MasterDataPage />} />
           <Route path="customers" element={<CustomersPage />} />
           <Route path="products" element={<ProductsPage />} />
+          <Route path="contracts" element={<ContractsPage />} />
           <Route path="segments" element={<SegmentsPage />} />
           <Route path="budget/periods" element={<BudgetPeriodsPage />} />
           <Route path="expense-categories" element={<ExpenseCategoriesPage />} />

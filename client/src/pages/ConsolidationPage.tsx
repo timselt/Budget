@@ -24,9 +24,6 @@ export function ConsolidationPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
             Konsolidasyon
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Tur Asistans Grubu — şirket içi eliminasyonlar ve konsolide mali tablo.
-          </p>
         </div>
         <button type="button" className="btn-primary">
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>

@@ -91,10 +91,6 @@ export function ScenariosPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Senaryolar
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Bir bütçe versiyonu üzerinden "What-if" senaryoları. Gelir / hasar / gider
-            değişim yüzdeleri uygulanarak P&L etkisi öngörülür.
-          </p>
         </div>
         <button
           type="button"

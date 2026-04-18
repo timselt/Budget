@@ -1,9 +1,11 @@
 using BudgetTracker.Application.Audit;
 using BudgetTracker.Application.BackgroundJobs;
 using BudgetTracker.Application.BudgetEntries;
+using BudgetTracker.Application.BudgetOperations;
+using BudgetTracker.Application.BudgetTree;
 using BudgetTracker.Application.Collections;
 using BudgetTracker.Application.Common.Abstractions;
-using BudgetTracker.Application.CustomerProducts;
+using BudgetTracker.Application.Contracts;
 using BudgetTracker.Application.Customers;
 using BudgetTracker.Application.ExpenseCategories;
 using BudgetTracker.Application.Expenses;
@@ -105,8 +107,10 @@ public static class DependencyInjection
         services.AddScoped<IExpenseCategoryService, ExpenseCategoryService>();
         services.AddScoped<IProductCategoryService, ProductCategoryService>();
         services.AddScoped<IProductService, ProductService>();
-        services.AddScoped<ICustomerProductService, CustomerProductService>();
+        services.AddScoped<IContractService, ContractService>();
         services.AddScoped<IBudgetEntryService, BudgetEntryService>();
+        services.AddScoped<IBudgetTreeService, BudgetTreeService>();
+        services.AddScoped<IBudgetOperationsService, BudgetOperationsService>();
         services.AddScoped<IExpenseEntryService, ExpenseEntryService>();
         services.AddScoped<ISpecialItemService, SpecialItemService>();
         services.AddScoped<IVarianceService, VarianceService>();

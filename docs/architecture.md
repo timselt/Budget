@@ -1272,6 +1272,149 @@ Mevcut veri seti (var olan bütçe girişleri) product_id'siz → migration anı
 
 ---
 
+## ADR-0014 — Kontrat Kodu (Akıllı Kod) Domain'i: Contract Entity + 14 Segment
+
+**Tarih:** 2026-04-18
+**Statü:** Kabul edildi — implementasyon başlatıldı
+**Karar Sahibi:** Timur Turan
+
+### 1. Bağlam
+
+Tur Assist Group, sözleşmeleri **14 segmentli "akıllı kod"** ile tanımlıyor (örn. `TA1SGK0B000101010000013652CC1-V1`). Kod, operasyon ve muhasebenin tek ortak dili: hangi şirket, iş kolu, satış tipi, ürün tipi, araç tipi, müşteri, sözleşme şekli, ürün ID, ödeme şekli, ayarlama klozu, clean-cut/run-off, hizmet alanı ve versiyon tek stringte taşınıyor.
+
+Mevcut domain'de (ADR-0013 sonrası) kontrat karşılığı `CustomerProduct` (müşteri × ürün bağ tablosu) + `BudgetEntry.ProductId`. Ancak:
+- 14 segmentin hiçbiri domain'de modellenmemiş (grep: `Kontrat`/`ContractCode` sıfır eşleşme)
+- Operatör Excel formatında sözleşme takibi yapamıyor
+- Raporlama "hangi iş kolunda/araç tipinde ne kadar bütçe?" sorusuna cevap veremiyor
+- Versiyonlama kuralları (limit değişti → V++, prim değişti → aynı kod, kapsam değişti → yeni kod) domain'de yok
+
+### 2. Karar — Önerilen Domain Modeli
+
+#### 2.1 `CustomerProduct` → `Contract` rename + extend
+
+`CustomerProduct` zaten kontrat satırının kendisi (`CustomerId + ProductId + StartDate + EndDate + UnitPriceTry`). Paralel `Contract` entity duplication doğurur. **Karar:** rename + 10 metadata kolonu + `Version` + stored `ContractCode` kolonu.
+
+**Alan ekleri (tümü NOT NULL, default değerleri migration backfill'de):**
+
+| Alan | Tip | Kaynak segment | Default (mevcut satırlar için) |
+|---|---|---|---|
+| `BusinessLine` | `smallint` enum | #2 iş kolu | `0` (DIGER) |
+| `SalesType` | `varchar(2)` enum | #3 satış tipi | müşterinin `Segment.Code`'undan map |
+| `ProductType` | `varchar(2)` enum | #4 ürün tipi | `D0` (DIGER) |
+| `VehicleType` | `varchar(3)` enum | #5 araç tipi | `000` (boş) |
+| `ContractForm` | `smallint` enum | #7 sözleşme şekli | `2` (Hizmet bazlı) |
+| `ContractType` | `smallint` enum | #8 sözleşme tipi | `1` (Poliçe başı) |
+| `PaymentFrequency` | `varchar(4)` enum | #10 ödeme şekli | `P00` (peşin) |
+| `AdjustmentClause` | `smallint` enum | #11 ayarlama | `2` (klozsuz) |
+| `ContractKind` | `varchar(2)` enum | #12 tür | `CC` (Clean Cut) |
+| `ServiceArea` | `smallint` enum | #13 hizmet alanı | `1` (yurt içi) |
+| `Version` | `smallint` | #14 versiyon | `1` |
+| `ContractCode` | `varchar(40)` stored | full string | migration sonrası `Regenerate()` |
+
+**Unique index:** `(company_id, contract_code) WHERE deleted_at IS NULL` — aynı kod iki kez aktif olamaz.
+
+#### 2.2 `ProductType` ve `VehicleType` konumu
+
+Q: Bu iki segment `Product` katalog satırında mı, `Contract` sözleşme satırında mı?
+
+**Karar: Contract kolonları.** Gerekçe: Spec'teki Örnek 1 ve Örnek 3 aynı müşterideki (Mapfre `01`) aynı ProductType'ta (`K0`) ama farklı Product ID'lerde (`0000001` vs `0000023`) kontratlar. Yani aynı katalog ürünü farklı sigorta türü / araç kapsamı altında satılabiliyor — `ProductType` ve `VehicleType` **satış anı özellikleri**, katalog özellikleri değil.
+
+`Product` entity'si sade kalır: `Code + Name + ProductCategoryId + CoverageTermsJson`.
+
+#### 2.3 Versiyonlama kuralları — operator-driven
+
+Operatör UI'dan revizyon başlatırken `ContractChangeType` seçer:
+
+| ContractChangeType | Domain davranışı | Kontrat kodu sonucu |
+|---|---|---|
+| `LimitChange` | Yeni satır: Version++ | aynı kod, `-V(n+1)` |
+| `PriceChange` | Mevcut satır: UnitPriceTry update, versiyon atlatma | aynı kod |
+| `LimitAndPrice` | Yeni satır: Version++ | aynı kod, `-V(n+1)` |
+| `CoverageChange` | Yeni Product (yeni 7-digit ID), yeni Contract | **tamamen yeni kod** |
+| `VehicleChange` | İkame araç üretim böl → Version++ | aynı kod, `-V(n+1)` |
+| `PeriodRenewal` | Dönem yenileme → Version++ | aynı kod, `-V(n+1)` |
+
+Spec'teki "T2R5 (2 Teklif 5 Revize)" koda yansımaz — UI'da revizyon sayacı gösterilir, domain'de bir sütun (`RevisionCount`).
+
+#### 2.4 Müşteri 2-haneli ID
+
+Yeni kolon: `Customer.ShortId SMALLINT` (0-99 arası). Company başına sequential, unique index `(company_id, short_id)`.
+
+**Kapasite uyarısı:** Prod'da ~98 müşteri var. Sınıra yakın. 99'a yaklaşınca 3-hane migration gerekecek (`-S3-SozlesmeKodu-3-Hane-Genisletme` ADR'si açılacak).
+
+Reserved: `00` = sistem müşterileri (SGK-TESVIK vb.), `01-99` = gerçek müşteriler.
+
+#### 2.5 Ürün 7-haneli ID
+
+`Product.Id SERIAL int` zaten var. Kod render'ında `.ToString("D7")` ile zero-pad. Şema değişikliği yok.
+
+#### 2.6 `BudgetEntry` kontrat bağı
+
+`BudgetEntry.ProductId` (nullable) yanına `ContractId` (nullable) FK eklenir. Geçiş döneminde ikisi paralel:
+- Yeni satırlar: `ContractId` zorunlu (application validator).
+- Eski satırlar: `ProductId` kalır, `ContractId = NULL`.
+
+Sonraki ADR'de (ADR-0015, veri temizliği sonrası) `ProductId` drop + `ContractId` NOT NULL.
+
+#### 2.7 ContractCode üretim/parse
+
+- Üretim: `Core/Services/ContractCodeBuilder` — entity field'larından 14 segmenti birleştirir.
+- Parse: `Core/Services/ContractCodeParser` — string'i segmentlere ayırır (T365 ↔ 365 çift kabul — spec örneklerinde tutarsız).
+- Stored kolon: Contract create/update sırasında domain service `Regenerate()` çağırır. Read-only hesaplama değil — indekslenebilsin diye gerçek kolon.
+- Payment frequency render: `T365` → `"365"` (spec örnek 1 ve 3 ile uyumlu, T'siz 3 hane); diğerleri (T01, T02, T03, T12) prefix korur; `P00` olduğu gibi.
+
+### 3. Reddedilen Alternatifler
+
+**A) Contract entity yeni tablo olsun, CustomerProduct korunsun:**
+Lifecycle duplication — StartDate/EndDate/UnitPrice hangisinde? Dağıtık state. Reddedildi.
+
+**B) ContractCode computed column (PostgreSQL generated):**
+Enum → string map'i C# tarafında; DB'de aynı mantığı SQL fonksiyonu ile tekrar yazmak drift riski. Stored kolon + application-side regenerate tercih edildi.
+
+**C) Versiyonlama otomatik diff (CoverageTermsJson karşılaştır):**
+"Limit" ile "kapsam" ayrımı JSON'dan programatik çıkmaz (hangi key limit? hangisi scope?). Operator-driven seçim daha deterministik, audit için de açık.
+
+**D) ProductType/VehicleType Product katalog kolonları:**
+Spec örnekleri farklı ProductType'ta aynı Product ID kullanımına izin verir görünmüyor ama aynı müşterinin aynı ProductType ile farklı Product ID'li kontratları var — yani ProductType Product'a bağlı değil, Contract'a bağlı. Reddedildi.
+
+### 4. Sonuçlar
+
+**Pozitif:**
+- Operasyon ve muhasebe tek dil (14 segment kod)
+- Raporlama: iş kolu, araç tipi, satış kanalı kırılımıyla zengin
+- Versiyonlama domain-layer'da enforced
+- Excel export: kontrat kodu kolonu bire bir
+
+**Negatif:**
+- 1 büyük migration (rename + 10 kolon + ShortId + BudgetEntry.ContractId)
+- 11 enum + 1 value object + 2 service + revizyon service
+- Frontend: yeni ContractsPage + BudgetEntryPage/CustomersPage güncellemesi
+- Mevcut unit testler (CustomerProductTests) Contract adıyla güncellenmeli
+
+**Risk:**
+- 2-haneli ShortId sınırı: 99 müşteriye dayanınca ADR-0015 (3 haneye geçiş) şart
+- Parse esnekliği (T365 ↔ 365) gelecekte kafa karıştırabilir — builder default'u örnek-uyumlu ("365") sabitlendi
+- Versiyonlama kararı operatör elinde → yanlış seçim yanlış kod üretir; UI'da her ChangeType'ın domain sonucu gösterilecek
+
+### 5. Açık Doğrulama (Muhasebe)
+
+- [ ] Her enum için Tur Assist'in resmi kodları (SG/OM/DK/OF/MD satış tipi; K0/T0/G0/W0/B0/F0/İ0/K1/FK/K2/İ1/Y0/D0 ürün tipi) doğru mu?
+- [ ] `Segment.Code` ↔ `SalesType` map'i (mevcut SIGORTA→SG, OTOMOTIV→OM, FILO→OF, ALTERNATIF→DK, SGK_TESVIK→MD) doğru mu?
+- [ ] İş kolu 7 "Seyahat" enum'da var ama şu an kullanımı olmayabilir — seed'e gerek var mı?
+- [ ] Payment frequency `T365` render formatı (T'li mi, T'siz mi?) — şimdilik T'siz ("365")
+
+### 6. Implementation Fazları
+
+1. Core enums + ContractCode VO + Builder/Parser + unit tests
+2. CustomerProduct → Contract rename + entity metadata
+3. Customer.ShortId + migration + backfill
+4. Versioning service + ContractChangeType + tests
+5. Application + API layer
+6. Frontend (ContractsPage + BudgetEntry/Customers güncellemeleri)
+7. Integration tests
+
+---
+
 ## ADR-XXXX — [Başlık]
 
 **Tarih:** YYYY-MM-DD

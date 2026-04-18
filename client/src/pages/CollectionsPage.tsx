@@ -137,10 +137,6 @@ export function CollectionsPage() {
       <div className="flex justify-between items-end mb-6">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Tahsilat</h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Müşteri alacakları, vade dağılımı ve tahsilat riski. Excel import ile dönem
-            bazlı fatura/tahsilat verisi yüklenir.
-          </p>
         </div>
       </div>
 

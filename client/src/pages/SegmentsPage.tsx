@@ -34,10 +34,6 @@ export function SegmentsPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Müşteri Kategorileri (Segment)
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Sigorta, Otomotiv, Filo, Alternatif Kanallar gibi müşteri kategorileri. Müşteri
-            oluştururken bu listeden seçim yapılır.
-          </p>
         </div>
         <button
           type="button"

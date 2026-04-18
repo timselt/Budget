@@ -130,10 +130,6 @@ export function SpecialItemsPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Özel Kalemler
           </h2>
-          <p className="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            P&L dışı düzeltme kalemleri: muallak hasar, demo filo, finansal gelir, T_Katılım,
-            amortisman. Versiyon bazlı; onay akışına tabi.
-          </p>
         </div>
         <button
           type="button"

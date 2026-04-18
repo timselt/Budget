@@ -27,6 +27,7 @@ const mgmtNav: readonly NavDef[] = [
   { to: '/segments', label: 'Kategori Yönetimi', icon: 'category' },
   { to: '/customers', label: 'Müşteri Yönetimi', icon: 'groups' },
   { to: '/products', label: 'Ürün Yönetimi', icon: 'inventory_2' },
+  { to: '/contracts', label: 'Sözleşmeler', icon: 'assignment' },
   { to: '/expense-categories', label: 'Gider Kategorileri', icon: 'receipt' },
   { to: '/collections', label: 'Tahsilat', icon: 'account_balance_wallet' },
   { to: '/consolidation', label: 'Konsolidasyon', icon: 'hub' },
