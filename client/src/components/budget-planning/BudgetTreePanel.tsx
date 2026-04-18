@@ -84,53 +84,36 @@ export function BudgetTreePanel({ tree, selection, onSelect, loading }: Props) {
             </span>
           </summary>
 
-          {filtered.segments.map((segment) => (
-            <details key={segment.segmentId} open className="group ml-2">
-              <summary className="tree-summary font-semibold px-3 py-2 cursor-pointer flex items-center gap-2 hover:bg-surface-container-low">
+          {filtered.segments.map((segment) => {
+            const isSelected =
+              selection?.kind === 'segment' && selection.segmentId === segment.segmentId
+            return (
+              <button
+                key={segment.segmentId}
+                type="button"
+                className={`tree-item w-full text-left px-4 py-2.5 flex items-center gap-2 hover:bg-surface-container-low ml-2 ${
+                  isSelected ? 'bg-primary-container text-on-primary-container font-semibold' : ''
+                }`}
+                onClick={() => onSelect({ kind: 'segment', segmentId: segment.segmentId })}
+              >
                 <span
                   className={`inline-block w-2 h-2 rounded-full ${
                     SEGMENT_COLOR[segment.segmentCode] ?? 'bg-on-surface-variant'
                   }`}
                 />
-                <span className="flex-1">{segment.segmentName}</span>
+                <span className="flex-1 font-semibold">{segment.segmentName}</span>
+                <span className="text-xs num text-on-surface-variant">
+                  {segment.customers.length} müşteri
+                </span>
                 <span className="text-xs num text-on-surface-variant">
                   {formatCompact(segment.revenueTotalTry)}
                 </span>
-              </summary>
-
-              {segment.customers.map((customer) => {
-                const isSelected =
-                  selection?.kind === 'customer' && selection.customerId === customer.customerId
-                return (
-                  <button
-                    key={customer.customerId}
-                    type="button"
-                    className={`tree-item w-full text-left px-5 py-2 flex items-center gap-2 hover:bg-surface-container-low ${
-                      isSelected ? 'bg-primary-container text-on-primary-container font-semibold' : ''
-                    }`}
-                    onClick={() =>
-                      onSelect({
-                        kind: 'customer',
-                        customerId: customer.customerId,
-                        segmentId: segment.segmentId,
-                      })
-                    }
-                  >
-                    <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 16 }}>
-                      apartment
-                    </span>
-                    <span className="flex-1 truncate">{customer.customerName}</span>
-                    <span className="text-xs num text-on-surface-variant">
-                      {formatCompact(customer.revenueTotalTry)}
-                    </span>
-                  </button>
-                )
-              })}
-            </details>
-          ))}
+              </button>
+            )
+          })}
         </details>
 
-        {/* OPEX & Personel kaldırıldı — gider girişi ayrı sayfada. */}
+        {/* Müşteri detayı Müşteri Odaklı Giriş (C) sekmesinde; OPEX ayrı sayfada. */}
       </div>
     </div>
   )

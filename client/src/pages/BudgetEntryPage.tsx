@@ -21,7 +21,6 @@ import {
   deleteEntry,
   getCustomerContracts,
   getCustomers,
-  getCustomerSummary,
   getEntries,
   getScenarios,
   getTree,
@@ -85,15 +84,6 @@ export function BudgetEntryPage() {
   const selectedCustomerId =
     selection?.kind === 'customer' ? selection.customerId : null
 
-  const summaryQuery = useQuery({
-    queryKey: ['customer-summary', versionId, selectedCustomerId],
-    queryFn: () =>
-      versionId && selectedCustomerId
-        ? getCustomerSummary(versionId, selectedCustomerId)
-        : Promise.resolve(null),
-    enabled: versionId !== null && selectedCustomerId !== null,
-  })
-
   const contractsQuery = useQuery({
     queryKey: ['customer-contracts', selectedCustomerId],
     queryFn: () =>
@@ -150,17 +140,29 @@ export function BudgetEntryPage() {
     if (scenarioId === null && scenarios.length > 0) setScenarioId(scenarios[0].id)
   }, [scenarios, scenarioId])
 
+  // Mode'a göre default selection:
+  //  - A (tree) → ilk segment
+  //  - C (customer) → ilk müşteri
   useEffect(() => {
-    if (!tree || selection) return
-    const firstCustomer = tree.segments.find((s) => s.customers.length > 0)?.customers[0]
-    if (firstCustomer) {
-      setSelection({
-        kind: 'customer',
-        customerId: firstCustomer.customerId,
-        segmentId: firstCustomer.segmentId,
-      })
+    if (!tree) return
+    if (mode === 'tree') {
+      if (selection?.kind === 'segment') return
+      const firstSegment = tree.segments[0]
+      if (firstSegment) {
+        setSelection({ kind: 'segment', segmentId: firstSegment.segmentId })
+      }
+    } else {
+      if (selection?.kind === 'customer') return
+      const firstCustomer = tree.segments.find((s) => s.customers.length > 0)?.customers[0]
+      if (firstCustomer) {
+        setSelection({
+          kind: 'customer',
+          customerId: firstCustomer.customerId,
+          segmentId: firstCustomer.segmentId,
+        })
+      }
     }
-  }, [tree, selection])
+  }, [tree, selection, mode])
 
   // Müşteri + entries + contracts değiştikçe grid value'ları yeniden kur.
   useEffect(() => {
@@ -305,16 +307,9 @@ export function BudgetEntryPage() {
     queryClient.invalidateQueries({ queryKey: ['customer-summary', versionId] })
   }
 
-  const selectedCustomer =
-    selection?.kind === 'customer'
-      ? tree?.segments
-          .find((s) => s.segmentId === selection.segmentId)
-          ?.customers.find((c) => c.customerId === selection.customerId)
-      : null
-
-  const selectedSegment =
-    selection?.kind === 'customer'
-      ? tree?.segments.find((s) => s.segmentId === selection.segmentId)
+  const selectedSegmentData =
+    selection?.kind === 'segment'
+      ? tree?.segments.find((s) => s.segmentId === selection.segmentId) ?? null
       : null
 
   const selectedOpex =
@@ -323,8 +318,6 @@ export function BudgetEntryPage() {
           (o) => o.expenseCategoryId === selection.expenseCategoryId,
         )
       : null
-
-  const summary = summaryQuery.data ?? null
 
   return (
     <section>
@@ -508,29 +501,23 @@ export function BudgetEntryPage() {
             />
           </div>
           <div className="col-span-12 lg:col-span-9">
-            <SelectedNodeHeader
-              customerName={selectedCustomer?.customerName ?? null}
-              customerCode={selectedCustomer?.customerCode ?? null}
-              segmentName={selectedSegment?.segmentName ?? null}
-              opex={selectedOpex ?? null}
-              summary={summary}
-              canEdit={isEditable && selection?.kind === 'customer'}
-              onCopy={() => setModal('copy')}
-              onGrow={() => setModal('grow')}
-            />
-            {selection?.kind === 'customer' ? (
-              <BudgetCustomerGrid
-                contracts={gridContracts}
-                values={values}
-                disabled={!isEditable}
-                onCellChange={updateCell}
-                onCellDelete={deleteCellHandler}
+            {selection?.kind === 'segment' && selectedSegmentData ? (
+              <SegmentSummaryPanel
+                segment={selectedSegmentData}
+                onGoToCustomerMode={(customerId) => {
+                  setSelection({
+                    kind: 'customer',
+                    customerId,
+                    segmentId: selectedSegmentData.segmentId,
+                  })
+                  setMode('customer')
+                }}
               />
             ) : selectedOpex ? (
               <BudgetOpexGrid opex={selectedOpex} />
             ) : (
               <div className="card text-sm text-on-surface-variant">
-                Soldan bir müşteri seçin.
+                Soldan bir kategori seçin.
               </div>
             )}
           </div>
@@ -632,97 +619,6 @@ export function BudgetEntryPage() {
   )
 }
 
-function SelectedNodeHeader({
-  customerName,
-  customerCode,
-  segmentName,
-  opex,
-  summary,
-  canEdit,
-  onCopy,
-  onGrow,
-}: {
-  customerName: string | null
-  customerCode: string | null
-  segmentName: string | null
-  opex: { categoryName: string; totalTry: number } | null
-  summary: { activeContractCount: number; lossRatioPercent: number } | null
-  canEdit: boolean
-  onCopy: () => void
-  onGrow: () => void
-}) {
-  if (opex) {
-    return (
-      <div className="card mb-4 flex items-center gap-4">
-        <div>
-          <p className="text-[0.65rem] text-on-surface-variant font-semibold uppercase tracking-[0.08em]">
-            Seçili gider kalemi
-          </p>
-          <h3 className="text-[1.5rem] leading-none font-black tracking-display text-on-surface mt-1">
-            {opex.categoryName}
-          </h3>
-          <p className="text-sm text-on-surface-variant mt-1">
-            OPEX · Toplam {formatCompact(opex.totalTry)}
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  if (customerName) {
-    return (
-      <div className="card mb-4 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-          <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
-            apartment
-          </span>
-        </div>
-        <div className="flex-1">
-          <p className="text-[0.65rem] text-on-surface-variant font-semibold uppercase tracking-[0.08em]">
-            Seçili müşteri
-          </p>
-          <h3 className="text-[1.5rem] leading-none font-black tracking-display text-on-surface mt-1">
-            {customerName}{' '}
-            {segmentName ? <span className="chip chip-error ml-2">{segmentName}</span> : null}
-          </h3>
-          <p className="text-sm text-on-surface-variant mt-1">
-            {customerCode}
-            {summary
-              ? ` • ${summary.activeContractCount} aktif sözleşme • Loss Ratio %${formatAmount(summary.lossRatioPercent)}`
-              : ''}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            className="btn-secondary"
-            disabled={!canEdit}
-            onClick={onCopy}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-              content_copy
-            </span>
-            Geçen Yıl Kopyala
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            disabled={!canEdit}
-            onClick={onGrow}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-              trending_up
-            </span>
-            +%X Büyüt
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  return null
-}
-
 function KpiCard({
   title,
   value,
@@ -743,5 +639,160 @@ function KpiCard({
       <p className="text-2xl font-black tracking-display num mt-2">{value}</p>
       {note ? <p className="text-xs text-on-surface-variant mt-1">{note}</p> : null}
     </div>
+  )
+}
+
+interface SegmentCustomerRow {
+  customerId: number
+  customerCode: string
+  customerName: string
+  revenueTotalTry: number
+  claimTotalTry: number
+  lossRatioPercent: number
+  activeContractCount: number
+}
+
+interface SegmentSummary {
+  segmentId: number
+  segmentCode: string
+  segmentName: string
+  revenueTotalTry: number
+  claimTotalTry: number
+  customers: SegmentCustomerRow[]
+}
+
+function SegmentSummaryPanel({
+  segment,
+  onGoToCustomerMode,
+}: {
+  segment: SegmentSummary
+  onGoToCustomerMode: (customerId: number) => void
+}) {
+  const segmentLossRatio =
+    segment.revenueTotalTry > 0
+      ? (segment.claimTotalTry / segment.revenueTotalTry) * 100
+      : 0
+  const segmentMargin = segment.revenueTotalTry - segment.claimTotalTry
+  const marginPct = segment.revenueTotalTry > 0
+    ? (segmentMargin / segment.revenueTotalTry) * 100
+    : 0
+
+  return (
+    <>
+      <div className="card mb-4 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
+            category
+          </span>
+        </div>
+        <div className="flex-1">
+          <p className="text-[0.65rem] text-on-surface-variant font-semibold uppercase tracking-[0.08em]">
+            Seçili kategori
+          </p>
+          <h3 className="text-[1.5rem] leading-none font-black tracking-display text-on-surface mt-1">
+            {segment.segmentName}
+          </h3>
+          <p className="text-sm text-on-surface-variant mt-1">
+            {segment.customers.length} müşteri · Toplam gelir {formatCompact(segment.revenueTotalTry)} · Loss Ratio %
+            {formatAmount(segmentLossRatio)}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4 mb-4">
+        <KpiCard
+          title="Plan Gelir"
+          value={formatCompact(segment.revenueTotalTry)}
+          chipClass="chip-info"
+        />
+        <KpiCard
+          title="Plan Hasar"
+          value={formatCompact(segment.claimTotalTry)}
+          chipClass="chip-error"
+        />
+        <KpiCard
+          title="Teknik Marj"
+          value={formatCompact(segmentMargin)}
+          chipClass="chip-neutral"
+          note={`%${formatAmount(marginPct)} marj`}
+        />
+        <KpiCard
+          title="Loss Ratio"
+          value={`%${formatAmount(segmentLossRatio)}`}
+          chipClass="chip-neutral"
+        />
+      </div>
+
+      <div className="card p-0 overflow-hidden">
+        <div className="p-4 flex items-center justify-between border-b border-outline-variant">
+          <div>
+            <h4 className="text-base font-bold">Kategoriye bağlı müşteriler</h4>
+            <p className="text-xs text-on-surface-variant mt-1">
+              Detaylı aylık giriş için müşteri satırına tıkla — Müşteri Odaklı Giriş
+              sekmesine geçilir.
+            </p>
+          </div>
+        </div>
+        {segment.customers.length === 0 ? (
+          <p className="p-6 text-sm text-on-surface-variant">
+            Bu kategoride henüz müşteri yok.
+          </p>
+        ) : (
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>Müşteri</th>
+                <th className="text-right">Plan Gelir (TL)</th>
+                <th className="text-right">Plan Hasar (TL)</th>
+                <th className="text-right">Loss Ratio</th>
+                <th className="text-right">Aktif Kontrat</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {segment.customers.map((c) => (
+                <tr key={c.customerId}>
+                  <td>
+                    <div className="font-semibold">{c.customerName}</div>
+                    <div className="text-[0.65rem] text-on-surface-variant font-mono">
+                      {c.customerCode}
+                    </div>
+                  </td>
+                  <td className="text-right num">{formatAmount(c.revenueTotalTry)}</td>
+                  <td className="text-right num">{formatAmount(c.claimTotalTry)}</td>
+                  <td className="text-right">
+                    <LossRatioBadge value={c.lossRatioPercent} />
+                  </td>
+                  <td className="text-right num">{c.activeContractCount}</td>
+                  <td className="text-right">
+                    <button
+                      type="button"
+                      className="p-1 text-on-surface-variant hover:text-primary"
+                      title="Bu müşteriyi Müşteri Odaklı Giriş'te aç"
+                      onClick={() => onGoToCustomerMode(c.customerId)}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                        arrow_forward
+                      </span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
+  )
+}
+
+function LossRatioBadge({ value }: { value: number }) {
+  if (value <= 0) return <span className="text-on-surface-variant">—</span>
+  const chip =
+    value <= 55 ? 'chip-success' : value <= 70 ? 'chip-warning' : 'chip-error'
+  return (
+    <span className={`chip ${chip}`}>
+      %{formatAmount(value)}
+    </span>
   )
 }

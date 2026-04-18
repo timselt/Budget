@@ -110,6 +110,7 @@ export interface CustomerBudgetSummary {
 }
 
 export type TreeSelection =
+  | { kind: 'segment'; segmentId: number }
   | { kind: 'customer'; customerId: number; segmentId: number }
   | { kind: 'opex'; expenseCategoryId: number }
 

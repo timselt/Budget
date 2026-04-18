@@ -254,8 +254,8 @@ body {
 .tbl thead th {
   position: sticky;
   top: 0;
-  background: var(--color-surface-container-low);
-  color: #5c403b;
+  background: var(--color-surface-container-high);
+  color: var(--color-on-surface);
   font-weight: 700;
   font-size: .65rem;
   letter-spacing: .05em;
@@ -351,11 +351,13 @@ body {
   vertical-align: middle;
   margin-right: .5rem;
 }
+/* Band renkleri: GELİR mavi, HASAR kırmızı (primary).
+   #005b9f mevcut chip-info ile tutarlı; --color-primary zaten kırmızı. */
 .budget-band-revenue {
-  background: var(--color-primary) !important;
+  background: #005b9f !important;
 }
 .budget-band-claim {
-  background: var(--color-warning) !important;
+  background: var(--color-primary) !important;
 }
 
 /* Loss Ratio üstündeki siyah separator */
