@@ -28,9 +28,11 @@ const mgmtNav: readonly NavDef[] = [
   { to: '/customers', label: 'Müşteri Yönetimi', icon: 'groups' },
   { to: '/products', label: 'Ürün Yönetimi', icon: 'inventory_2' },
   { to: '/expense-categories', label: 'Gider Kategorileri', icon: 'receipt' },
+  { to: '/collections', label: 'Tahsilat', icon: 'account_balance_wallet' },
   { to: '/consolidation', label: 'Konsolidasyon', icon: 'hub' },
   { to: '/approvals', label: 'Onay Akışı', icon: 'verified' },
   { to: '/audit', label: 'Audit Log', icon: 'history' },
+  { to: '/admin', label: 'Yönetim', icon: 'admin_panel_settings' },
 ]
 
 function SidebarLink({ to, label, icon, end }: NavDef) {
