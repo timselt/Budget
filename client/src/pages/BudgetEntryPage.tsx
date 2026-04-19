@@ -28,6 +28,7 @@ import {
   getCustomerContracts,
   getCustomers,
   getEntries,
+  getExpenseEntries,
   getScenarios,
   getTree,
   getVersions,
@@ -87,6 +88,14 @@ export function BudgetEntryPage() {
     queryKey: ['budget-entries', versionId],
     queryFn: () => (versionId ? getEntries(versionId) : Promise.resolve([])),
     enabled: versionId !== null,
+  })
+  const expenseEntriesQuery = useQuery({
+    queryKey: ['expense-entries', yearId, versionId],
+    queryFn: () =>
+      yearId && versionId
+        ? getExpenseEntries(yearId, versionId)
+        : Promise.resolve([]),
+    enabled: yearId !== null && versionId !== null,
   })
 
   const years = useMemo(() => yearsQuery.data ?? [], [yearsQuery.data])
@@ -277,11 +286,16 @@ export function BudgetEntryPage() {
     IN_PROGRESS_STATUSES.has(v.status as BudgetVersionStatus),
   )
 
+  const expenseEntries = useMemo(
+    () => expenseEntriesQuery.data ?? [],
+    [expenseEntriesQuery.data],
+  )
+
   // Onaya hazırlık checklist (esnek: 1 sert + 4 yumuşak kural)
   const checklist = useSubmissionChecklist({
     customers,
     entries,
-    expenseEntries: [],
+    expenseEntries,
     scenarioId,
   })
 

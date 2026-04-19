@@ -85,6 +85,28 @@ export async function deleteEntry(versionId: number, entryId: number): Promise<v
   await api.delete(`/budget/versions/${versionId}/entries/${entryId}`)
 }
 
+/**
+ * OPEX gider satırlarını çeker — useSubmissionChecklist OPEX kuralı için.
+ * Backend route `/api/v1/expenses/{yearId}/entries?versionId=X` ikisini de ister.
+ */
+export interface ExpenseEntryRow {
+  id: number
+  expenseCategoryId: number
+  amountOriginal: number
+  currencyCode: string
+  month: number
+}
+
+export async function getExpenseEntries(
+  yearId: number,
+  versionId: number,
+): Promise<ExpenseEntryRow[]> {
+  const { data } = await api.get<ExpenseEntryRow[]>(
+    `/expenses/${yearId}/entries?versionId=${versionId}`,
+  )
+  return data
+}
+
 /** Draft | Rejected → PendingFinance (RejectionReason backend'de temizlenir). */
 export async function submitVersion(versionId: number): Promise<BudgetVersionRow> {
   const { data } = await api.post<BudgetVersionRow>(
