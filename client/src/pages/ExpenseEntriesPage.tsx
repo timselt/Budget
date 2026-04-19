@@ -96,13 +96,34 @@ export function ExpenseEntriesPage() {
   const entries = allEntries.filter((e) => e.entryType === entryType)
 
   useEffect(() => {
-    if (yearId === null && years.length > 0) setYearId(years[0].id)
+    if (yearId !== null || years.length === 0) return
+    const now = new Date().getFullYear()
+    const current = years.find((y) => y.year === now)
+    setYearId((current ?? years[0]).id)
   }, [years, yearId])
 
+  // Önce düzenlenebilir versiyon (Draft/Rejected), yoksa Active, yoksa ilk
   useEffect(() => {
-    if (versionId === null && versions.length > 0) setVersionId(versions[0].id)
-    if (versions.length === 0) setVersionId(null)
+    if (versions.length === 0) {
+      setVersionId(null)
+      return
+    }
+    if (versionId !== null && versions.some((v) => v.id === versionId)) return
+    const editable = versions.find((v) =>
+      ['Draft', 'Rejected', 'DRAFT', 'REJECTED'].includes(v.status),
+    )
+    if (editable) {
+      setVersionId(editable.id)
+      return
+    }
+    const active = versions.find((v) => v.isActive)
+    setVersionId((active ?? versions[0]).id)
   }, [versions, versionId])
+
+  const currentVersion = versions.find((v) => v.id === versionId) ?? null
+  const isEditable =
+    currentVersion !== null &&
+    ['Draft', 'Rejected', 'DRAFT', 'REJECTED'].includes(currentVersion.status)
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['expense-entries', yearId, versionId] })
@@ -131,7 +152,12 @@ export function ExpenseEntriesPage() {
         <button
           type="button"
           className="btn-primary"
-          disabled={!versionId || categories.length === 0}
+          disabled={!versionId || !isEditable || categories.length === 0}
+          title={
+            !isEditable && currentVersion
+              ? `Bu versiyon (${currentVersion.status}) düzenlenemez. Yeni gider eklemek için Taslak veya Reddedilen versiyon seçin.`
+              : undefined
+          }
           onClick={() => setShowModal(true)}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
@@ -185,6 +211,23 @@ export function ExpenseEntriesPage() {
           ))}
         </div>
       </div>
+
+      {currentVersion && !isEditable ? (
+        <div className="card mb-4 flex items-center gap-3 border-l-4 border-primary text-sm">
+          <span className="material-symbols-outlined text-primary" style={{ fontSize: 20 }}>
+            lock
+          </span>
+          <div>
+            <strong>{currentVersion.name}</strong> versiyonu durumu{' '}
+            <strong>{currentVersion.status}</strong> — gider girişi yapılamaz.
+            <br />
+            <span className="text-xs text-on-surface-variant">
+              Yeni gider eklemek için Bütçe Versiyonları sayfasından bir Taslak versiyon
+              oluştur veya Reddedilen bir versiyon seç.
+            </span>
+          </div>
+        </div>
+      ) : null}
 
       <div className="card p-0 overflow-hidden">
         {!versionId ? (

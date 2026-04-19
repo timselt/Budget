@@ -215,9 +215,9 @@ export function DashboardPage() {
           )}
           {concentration ? (
             <p className="text-[0.65rem] text-on-surface-variant mt-4">
-              HHI: {concentration.herfindahlIndex.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+              HHI: {(concentration.herfindahlIndex ?? 0).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
               {' · '}
-              Top-{topCustomers.length} pay: {fmtPct(concentration.topNSharePercent)}
+              Top-{topCustomers.length} pay: {fmtPct(concentration.topNSharePercent ?? 0)}
             </p>
           ) : null}
         </div>
