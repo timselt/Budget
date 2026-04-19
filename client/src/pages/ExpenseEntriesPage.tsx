@@ -5,6 +5,7 @@ import { translateApiError } from '../lib/api-error'
 import { isEditableStatus, getStatusLabel } from '../components/budget-planning/types'
 import { Stepper } from '../components/budget-planning/Stepper'
 import { showToast } from '../components/shared/Toast'
+import { PageIntro } from '../components/shared/PageIntro'
 
 interface BudgetYearRow {
   id: number
@@ -143,33 +144,28 @@ export function ExpenseEntriesPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
-            Gider Girişi
-          </h2>
-          <p className="page-context-hint">
-            OPEX kategorileri için aylık bütçe gider planı.
-            Tutarlar yıllık toplam KPI'lara dahil olur.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          disabled={!versionId || !isEditable || categories.length === 0}
-          title={
-            !isEditable && currentVersion
-              ? `Bu versiyon (${currentVersion.status}) düzenlenemez. Yeni gider eklemek için Taslak veya Reddedilen versiyon seçin.`
-              : undefined
-          }
-          onClick={() => setShowModal(true)}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            add
-          </span>
-          Yeni Gider
-        </button>
-      </div>
+      <PageIntro
+        title="Gider Girişi"
+        purpose="OPEX kategorileri için aylık bütçe gider planı — Personel, Kira, BT/Altyapı vb. Tutarlar yıllık toplam KPI'lara ve P&L raporuna dahil olur. Sadece Taslak / Reddedildi versiyonlarda düzenlenebilir."
+        actions={
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!versionId || !isEditable || categories.length === 0}
+            title={
+              !isEditable && currentVersion
+                ? `Bu versiyon (${currentVersion.status}) düzenlenemez. Yeni gider eklemek için Taslak veya Reddedilen versiyon seçin.`
+                : undefined
+            }
+            onClick={() => setShowModal(true)}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              add
+            </span>
+            Yeni Gider
+          </button>
+        }
+      />
 
       <div className="card mb-4 flex gap-3 flex-wrap items-center">
         <label className="label-sm">Yıl</label>

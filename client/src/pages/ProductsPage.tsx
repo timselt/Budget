@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { PageIntro } from '../components/shared/PageIntro'
 
 interface ProductCategoryRow {
   id: number
@@ -79,37 +80,36 @@ export function ProductsPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
-            Ürün Yönetimi
-          </h2>
-        </div>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => setModal({ kind: 'category', mode: 'create' })}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              category
-            </span>
-            Yeni Kategori
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={!selectedCategoryId}
-            title={selectedCategoryId ? undefined : 'Önce soldaki listeden bir kategori seçin'}
-            onClick={() => selectedCategoryId && setModal({ kind: 'product', mode: 'create', categoryId: selectedCategoryId })}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              add
-            </span>
-            Yeni Ürün
-          </button>
-        </div>
-      </div>
+      <PageIntro
+        title="Ürünler"
+        purpose="Sigorta + asistans + yan ürün katalog yönetimi. Önce soldan kategori seçin, sonra sağda ürün ekleyin — ürünler sözleşmelerde ve bütçe planlamada kullanılır."
+        actions={
+          <>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setModal({ kind: 'category', mode: 'create' })}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                category
+              </span>
+              Yeni Kategori
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={!selectedCategoryId}
+              title={selectedCategoryId ? undefined : 'Önce soldaki listeden bir kategori seçin'}
+              onClick={() => selectedCategoryId && setModal({ kind: 'product', mode: 'create', categoryId: selectedCategoryId })}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                add
+              </span>
+              Yeni Ürün
+            </button>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-12 gap-6 mb-6">
         <KpiCard title="Kategori" value={`${activeCategoriesCount} / ${categories.length}`} subtitle="Aktif / Toplam" />

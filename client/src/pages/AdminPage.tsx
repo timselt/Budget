@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { resetOnboardingTour } from '../components/shared/OnboardingTour'
+import { PageIntro } from '../components/shared/PageIntro'
 
 type Tab = 'users' | 'companies'
 
@@ -62,25 +63,26 @@ export function AdminPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-6">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Yönetim</h2>
-        </div>
-        <button
-          type="button"
-          className="btn-secondary"
-          onClick={() => {
-            resetOnboardingTour()
-            window.location.reload()
-          }}
-          title="İlk kullanım rehber balonlarını yeniden başlat"
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            replay
-          </span>
-          Tanıtımı Tekrar Göster
-        </button>
-      </div>
+      <PageIntro
+        title="Sistem Yönetimi"
+        purpose="Kullanıcı + şirket + rol yönetimi ve uygulama tanıtımını sıfırlama — sadece yetkili rollere açık."
+        actions={
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => {
+              resetOnboardingTour()
+              window.location.reload()
+            }}
+            title="İlk kullanım rehber balonlarını yeniden başlat"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              replay
+            </span>
+            Tanıtımı Tekrar Göster
+          </button>
+        }
+      />
 
       <div className="flex gap-1 mb-4 bg-surface-container-low rounded-lg p-1 w-fit">
         {TABS.map((t) => (
