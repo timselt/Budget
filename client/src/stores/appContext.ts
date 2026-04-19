@@ -23,10 +23,15 @@ interface AppContextState {
   selectedYear: number
   selectedScenario: string
   searchQuery: string
+  // Aktif bütçe versiyonu — sidebar bağlam satırı + BudgetEntryPage senkronu
+  selectedVersionId: number | null
+  selectedVersionLabel: string | null
+  selectedVersionStatus: string | null
   setCompany: (id: string | null) => void
   setYear: (year: number) => void
   setScenario: (scenario: string) => void
   setSearchQuery: (query: string) => void
+  setVersion: (v: { id: number; label: string; status: string } | null) => void
 }
 
 export const useAppContextStore = create<AppContextState>((set) => ({
@@ -34,9 +39,18 @@ export const useAppContextStore = create<AppContextState>((set) => ({
   selectedYear: 2026,
   selectedScenario: 'base',
   searchQuery: '',
+  selectedVersionId: null,
+  selectedVersionLabel: null,
+  selectedVersionStatus: null,
 
   setCompany: (id) => set({ selectedCompanyId: id }),
   setYear: (year) => set({ selectedYear: year }),
   setScenario: (scenario) => set({ selectedScenario: scenario }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setVersion: (v) =>
+    set({
+      selectedVersionId: v?.id ?? null,
+      selectedVersionLabel: v?.label ?? null,
+      selectedVersionStatus: v?.status ?? null,
+    }),
 }))
