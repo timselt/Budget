@@ -1,5 +1,6 @@
 import '../lib/chart-config'
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
 import { useActiveVersion } from '../lib/useActiveVersion'
@@ -91,7 +92,7 @@ export function DashboardPage() {
     return (
       <section>
         <h2 className="text-3xl font-extrabold tracking-display text-[#002366] mb-6">
-          Executive Dashboard
+          Ana Sayfa
         </h2>
         <div className="card p-6 text-sm text-on-surface-variant">Yükleniyor…</div>
       </section>
@@ -102,10 +103,31 @@ export function DashboardPage() {
     return (
       <section>
         <h2 className="text-3xl font-extrabold tracking-display text-[#002366] mb-6">
-          Executive Dashboard
+          Ana Sayfa
         </h2>
-        <div className="card p-6 text-sm text-on-surface-variant">
-          Aktif bütçe versiyonu bulunamadı. Bütçe Versiyonları sayfasından bir versiyon oluşturun.
+        <div className="card p-8 text-center">
+          <span
+            className="material-symbols-outlined text-on-surface-variant"
+            style={{ fontSize: 48 }}
+          >
+            calendar_add_on
+          </span>
+          <p className="text-base font-semibold text-on-surface mt-3">
+            Henüz aktif bütçe versiyonu yok
+          </p>
+          <p className="text-sm text-on-surface-variant mt-1 max-w-md mx-auto">
+            Çalışmaya başlamak için bir bütçe yılı + versiyon oluşturun.
+            Tüm dashboard, sapma ve raporlar bu versiyon üzerinden hesaplanır.
+          </p>
+          <Link
+            to="/budget/planning?tab=versions"
+            className="btn-primary mt-4 inline-flex"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              add
+            </span>
+            Yeni Versiyon Oluştur
+          </Link>
         </div>
       </section>
     )
@@ -116,7 +138,7 @@ export function DashboardPage() {
       <div className="flex justify-between items-end mb-6">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
-            Executive Dashboard
+            Ana Sayfa
           </h2>
           {versionName && year ? (
             <p className="text-sm text-on-surface-variant mt-1">
