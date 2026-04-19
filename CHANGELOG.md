@@ -4,6 +4,48 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### Sprint 2 — Mutabakat Case/Line Otomatik Üretim + UI (2026-04-19 / 2026-04-20)
+
+Sprint 1 PR #25'in üzerine Case/Line auto-creation + PriceBook lookup entegrasyonu + 3 yeni UI ekranı + state machine enforce. Design: `docs/plans/2026-04-19-reconciliation-sprint2-3-design.md`, plan: `docs/plans/2026-04-19-reconciliation-sprint2-plan.md`.
+
+#### Eklendi
+
+- **ADR-0016** (`docs/architecture.md`) — Mutabakat modülü entity ID tipi `int` kararı (Guid refactor maliyeti MVP için yüksek, dış API'de UUID teşhir yok).
+- **Pilot PriceBook seed** — `docs/Mutabakat_Modulu/seed/` altında 6 item CSV'si (3 sigorta + 3 otomotiv, ~41 mock fiyat) + 5-adım curl yükleme rehberi.
+- **Case Auto-Creation** — `IReconciliationCaseAutoCreator` + `ReconciliationCaseAutoCreator` (Application + Infrastructure/Reconciliation/Cases). Parse sonrası Ok SourceRow'lar customer_id'ye göre gruplanıp Case + Line üretir. Customer eşleşmeyen satırlar atlanır (Task 8 bucket). Idempotent re-run mevcut Case'leri yeniden kullanır.
+- **PriceBook Lookup Entegrasyonu** — `ILinePricingResolver` + `LinePricingResolver`. `IPricingLookupService` üzerinden sonucu Line domain metodlarına map'ler: Found → Ready, PricingMismatch → PricingMismatch (+contract price), ContractNotFound/ProductNotFound/MultipleContracts → Rejected.
+- **ReconciliationCasesController** — 5 endpoint: GET cases, GET case/{id}, POST assign-owner, PATCH lines/{id}, POST lines/{id}/ready. Policy: Reconciliation.ViewReports (reads) + Reconciliation.Manage (mutations).
+- **Unmatched Customers Bucket** — GET `/batches/{id}/unmatched-customers` + POST `/batches/{id}/unmatched-customers/{ref}/link` (Customer.LinkExternalRef 00a çağrısı + autoCreator idempotent re-run).
+- **S3 Batch Detay** (`ReconciliationBatchDetailPage.tsx`) — üst özet + 3 tab (Case'ler / Eşlenmemiş / Parse Hataları) + Draft sil butonu + link modal. Route: `/mutabakat/batches/:id`. Batch Listesi satır tıklama aktif.
+- **S4/S5 Case Listesi** (`ReconciliationCasesPage.tsx`) — Sigorta/Otomotiv tab + dönem/status filtre + custom table. Sidebar "Case Listesi" satırı eklendi. Route: `/mutabakat/cases`.
+- **S6 Case Detay** (`ReconciliationCaseDetailPage.tsx`) — AG-Grid Community lines editor; inline edit quantity/unit_price, PricingMismatch line'a "Ready" butonu, Sahibi Üstlen + Müşteriye Gönder (Sprint 3'e disabled). Route: `/mutabakat/cases/:id`.
+- **State Machine Enforcement** — `ReconciliationCase.AssignOwner` Draft → UnderControl, `MarkPricingMatched` UnderControl → PricingMatched (tüm line'lar Ready zorunlu). Invalid transition → `InvalidCaseTransitionException` (409 Conflict, from/to extensions).
+- **Line Domain Metodları** — `UpdateQuantityAndPrice` (PendingReview/PricingMismatch), `MarkReady` (PricingMismatch → Ready), `ResolveAsReady`/`ResolveAsPricingMismatch`/`ResolveAsRejected` (Task 5 resolver).
+- **3 Audit Event** — `ReconciliationCaseOpened`, `ReconciliationLineResolved` (placeholder, MVP'de tetiklenmiyor), `ReconciliationUnmatchedCustomerDetected`.
+
+#### Değişti
+
+- **PriceBooksController** — `RequireFinanceRole` → `PriceBook.Edit` (ReconAgent dahil), `Cfo` → `PriceBook.Approve` (semantik isim). Spec 00c §4 uyumu.
+- **ContractsController.Activate/Terminate** — `RequireFinanceRole` → `Cfo` (spec 00c §3 matrix: Contract onayı Admin+Cfo).
+- **ReconciliationBatchService.ImportAsync** — parse sonrası autoCreator çağrısı + audit context genişlemesi (cases_created, lines_created, unmatched_rows).
+
+#### Test
+
+- **xUnit** — 3 yeni test dosyası, 14 assertion: `ControllerPolicyAttributeTests` (6), `ReconciliationCasesControllerPolicyTests` (5), `CaseStateMachineTests` (5), `LinePricingResolverTests` (5). `ReconAgentRolePolicyTests`'e 2 yeni `PriceBook.Edit` senaryosu eklendi. Toplam 391+ unit test, yeşil.
+- **Integration** — `ReconciliationCaseAutoCreatorTests` (Testcontainers) — 3 senaryo: tam eşleşme, kısmi unmatched, idempotent re-run.
+- **HTTP WAF** — Reconciliation controller'ları için tam HTTP 403/200 coverage Task 13 sonrasında sprint 3 öncesi ayrı bir PR'da kurulacak (WebApplicationFactory setup + TestAuthHandler).
+
+#### Takip Maddeleri (Sprint 3+)
+
+- HTTP WAF testi kurulumu + Cases/Lines API 403/200 smoke suite
+- Müşteri onay UX'i (C.1 Y1) — e-posta PDF + manuel cevap kaydı (S7/S8)
+- Evidence saklama Railway Volume entegrasyonu (C.2)
+- Dispute reason kod zorunluluğu — OTHER için not zorunlu (C.3)
+- Muhasebe export (S9), risk kuralı UI (S10), dönem yönetimi (S11), dashboard (S1) — Sprint 4
+- Pilot seed gerçek fiyat güncelleme (muhasebe seansı)
+
+---
+
 ### Sprint 1 Deep — Ekran Yeniden Tasarımı (2026-04-19)
 
 7 ekran iyileştirme işi, Sidebar redesign'ın ardından "ekranlar kendini anlatır mı?" sorusunu kapatır. Audit (2026-04-19) Sprint 1 paketinin %70'i zaten kodlanmıştı; bu PR geriye kalan görünürlük + navigasyon eksikliklerini ve C kapsamı derinleştirmesini birleştirir.
