@@ -1,8 +1,9 @@
+# TEMP DISABLED 2026-04-20 — railwayapp/railway-cli-action reference broken.
+   # Re-enable with correct Railway deploy action when needed.
+
 name: Deploy
 
 on:
-  push:
-    branches: [main, develop]
   workflow_dispatch:
     inputs:
       target:
