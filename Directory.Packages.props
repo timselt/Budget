@@ -47,6 +47,9 @@
     <!-- Excel export/import -->
     <PackageVersion Include="ClosedXML" Version="0.104.2" />
 
+    <!-- CSV import (Mutabakat parser) -->
+    <PackageVersion Include="CsvHelper" Version="33.0.1" />
+
     <!-- PDF report generation -->
     <PackageVersion Include="QuestPDF" Version="2025.1.2" />
 

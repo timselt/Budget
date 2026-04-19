@@ -36,6 +36,7 @@
     <PackageReference Include="OpenIddict.AspNetCore" />
     <PackageReference Include="OpenIddict.EntityFrameworkCore" />
     <PackageReference Include="ClosedXML" />
+    <PackageReference Include="CsvHelper" />
     <PackageReference Include="QuestPDF" />
     <PackageReference Include="Hangfire.Core" />
     <PackageReference Include="Hangfire.AspNetCore" />
