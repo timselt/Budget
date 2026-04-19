@@ -1,3 +1,4 @@
+using BudgetTracker.Application.Authorization;
 using BudgetTracker.Application.Calculations;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +11,7 @@ public static class DependencyInjection
     {
         services.AddValidatorsFromAssemblyContaining<IKpiCalculationEngine>(ServiceLifetime.Scoped);
         services.AddScoped<IKpiCalculationEngine, KpiCalculationEngine>();
+        services.AddSingleton<ISegregationOfDutiesGuard, SegregationOfDutiesGuard>();
 
         return services;
     }

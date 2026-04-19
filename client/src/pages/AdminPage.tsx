@@ -23,21 +23,32 @@ interface AdminCompany {
   createdAt: string
 }
 
-const ROLES = ['Admin', 'CFO', 'FinanceManager', 'DepartmentHead', 'Viewer'] as const
+const ROLES = ['Admin', 'CFO', 'FinanceManager', 'ReconAgent', 'DepartmentHead', 'Viewer'] as const
 type Role = (typeof ROLES)[number]
 
 const ROLE_LABEL: Record<Role, string> = {
   Admin: 'Admin',
   CFO: 'CFO',
   FinanceManager: 'Finans Yöneticisi',
+  ReconAgent: 'Mutabakat Uzmanı',
   DepartmentHead: 'Departman Müdürü',
   Viewer: 'İzleyici',
+}
+
+const ROLE_DESCRIPTION: Record<Role, string> = {
+  Admin: 'Tüm yetkiler — kullanıcı, şirket ve sistem yönetimi',
+  CFO: 'Bütçe versiyon onayı, kilitleme ve risk kuralları',
+  FinanceManager: 'Bütçe hazırlık, versiyon submit, muhasebe export',
+  ReconAgent: 'Mutabakat ekibi — sigorta ve otomotiv mutabakat süreçlerini yürütür',
+  DepartmentHead: 'Kendi departmanı için bütçe giriş yetkisi',
+  Viewer: 'Salt okunur — rapor görüntüleme',
 }
 
 const ROLE_CHIP: Record<Role, string> = {
   Admin: 'chip-error',
   CFO: 'chip-info',
   FinanceManager: 'chip-info',
+  ReconAgent: 'chip-info',
   DepartmentHead: 'chip-warning',
   Viewer: 'chip-neutral',
 }
@@ -186,17 +197,18 @@ function UsersTab() {
                           className="select text-xs"
                           style={{ minWidth: 140 }}
                           value={primaryRole}
+                          title={ROLE_DESCRIPTION[primaryRole] ?? ''}
                           disabled={updateRoleMutation.isPending}
                           onChange={(e) => {
                             const role = e.target.value as Role
                             if (role === primaryRole) return
-                            if (confirm(`${u.displayName} kullanıcısının rolü ${ROLE_LABEL[role]} olarak değiştirilecek. Emin misiniz?`)) {
+                            if (confirm(`${u.displayName} kullanıcısının rolü ${ROLE_LABEL[role]} olarak değiştirilecek. Emin misiniz?\n\n${ROLE_DESCRIPTION[role]}`)) {
                               updateRoleMutation.mutate({ userId: u.id, role })
                             }
                           }}
                         >
                           {ROLES.map((r) => (
-                            <option key={r} value={r}>
+                            <option key={r} value={r} title={ROLE_DESCRIPTION[r]}>
                               {ROLE_LABEL[r]}
                             </option>
                           ))}

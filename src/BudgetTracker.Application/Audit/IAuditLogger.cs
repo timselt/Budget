@@ -41,6 +41,16 @@ public static class AuditActions
     public const string PriceBookVersionCreated = "PRICEBOOK_VERSION_CREATED";
     public const string PriceBookApproved = "PRICEBOOK_APPROVED";
     public const string PriceBookItemsChanged = "PRICEBOOK_ITEMS_CHANGED";
+
+    // Mutabakat önkoşul #3 (00c) — Reconciliation olay tipleri.
+    // Spec: docs/Mutabakat_Modulu/docs/specs/00c_prereq_recon_agent_role.md §7.
+    // Yazımları sprint 1 (Reconciliation) ile bağlanır. PriceBookApproved 00b'de tanımlı.
+    public const string ReconciliationCaseOwnershipChanged = "RECONCILIATION_CASE_OWNERSHIP_CHANGED";
+    public const string ReconciliationSentToCustomer = "RECONCILIATION_SENT_TO_CUSTOMER";
+    public const string ReconciliationCustomerResponseReceived = "RECONCILIATION_CUSTOMER_RESPONSE_RECEIVED";
+    public const string AccountingInstructionExported = "ACCOUNTING_INSTRUCTION_EXPORTED";
+    public const string AccountingInstructionAcked = "ACCOUNTING_INSTRUCTION_ACKED";
+    public const string RiskRuleChanged = "RISK_RULE_CHANGED";
 }
 
 public static class AuditEntityNames
