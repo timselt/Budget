@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
 import { useActiveVersion } from '../lib/useActiveVersion'
 import { WaterfallChart } from '../components/variance/WaterfallChart'
+import { PageIntro } from '../components/shared/PageIntro'
 
 interface MonthlyVarianceDto {
   month: number
@@ -77,6 +78,32 @@ export function VariancePage() {
   const summary = summaryQuery.data ?? null
   const customers = useMemo(() => customersQuery.data ?? [], [customersQuery.data])
 
+  // En kritik 3 sapma: gelir veya hasar sapmasının absolute değeri en yüksek
+  // 3 müşteri. Tek tablo özetine kıyasla operasyon kullanıcısının "kim
+  // aksiyon gerektiriyor?" sorusunu hızlı yanıtlar.
+  const criticalCustomers = useMemo(() => {
+    return [...customers]
+      .map((c) => ({
+        ...c,
+        magnitude: Math.max(
+          Math.abs(c.revenueVariancePercent),
+          Math.abs(c.claimsVariancePercent),
+        ),
+        // En kritik metric: gelirden mi hasardan mı geliyor + nasıl?
+        kind:
+          Math.abs(c.revenueVariancePercent) >= Math.abs(c.claimsVariancePercent)
+            ? c.revenueVariancePercent >= 0
+              ? 'revenue-up'
+              : 'revenue-down'
+            : c.claimsVariancePercent >= 0
+              ? 'claims-up'
+              : 'claims-down',
+      }))
+      .filter((c) => c.magnitude >= 10) // %10 altı yorum gerektirmez
+      .sort((a, b) => b.magnitude - a.magnitude)
+      .slice(0, 3)
+  }, [customers])
+
   const revenueVar = summary ? summary.totalActualRevenue - summary.totalBudgetRevenue : 0
   const revenueVarPct = summary && summary.totalBudgetRevenue > 0
     ? (revenueVar / summary.totalBudgetRevenue) * 100
@@ -118,22 +145,94 @@ export function VariancePage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
-            Sapma Analizi
-          </h2>
-          {versionName && year ? (
-            <p className="text-sm text-on-surface-variant mt-1">
-              FY{year} · {versionName} · Plan vs Gerçekleşen
+      <PageIntro
+        title="Sapma Analizi"
+        purpose="Plan vs gerçekleşen karşılaştırma — hangi müşteri/kategori beklenen değerden saptı? Üstte kritik sapmalar, altta detay tablo + EBITDA waterfall."
+        context={
+          versionName && year ? (
+            <p className="text-sm text-on-surface-variant">
+              FY{year} · {versionName}
             </p>
-          ) : null}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
       {summaryQuery.isError || customersQuery.isError ? (
         <div className="card mb-6 text-sm text-error">Veri alınırken hata oluştu.</div>
       ) : null}
+
+      {criticalCustomers.length > 0 && (
+        <div className="card mb-6 border-l-4 border-l-error">
+          <div className="flex items-center gap-2 mb-3">
+            <span
+              className="material-symbols-outlined text-error"
+              style={{ fontSize: 20 }}
+            >
+              warning
+            </span>
+            <h3 className="text-base font-bold text-on-surface">
+              En Kritik {criticalCustomers.length} Sapma
+            </h3>
+            <span className="text-xs text-on-surface-variant ml-1">
+              %10+ sapması olan müşteriler
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {criticalCustomers.map((c) => {
+              const kindMeta: Record<typeof c.kind, { icon: string; tone: string; action: string }> = {
+                'revenue-up': {
+                  icon: 'trending_up',
+                  tone: 'text-success',
+                  action: 'Gelir hedefin üstünde — fırsatları çoğalt',
+                },
+                'revenue-down': {
+                  icon: 'trending_down',
+                  tone: 'text-error',
+                  action: 'Gelir hedefin altında — kontrat/tahsilat gözden geçir',
+                },
+                'claims-up': {
+                  icon: 'arrow_outward',
+                  tone: 'text-warning',
+                  action: 'Hasar planın üstünde — risk profilini incele',
+                },
+                'claims-down': {
+                  icon: 'south_west',
+                  tone: 'text-success',
+                  action: 'Hasar planın altında — pozitif sürpriz',
+                },
+              }
+              const meta = kindMeta[c.kind]
+              return (
+                <div
+                  key={c.customerId}
+                  className="rounded-md bg-surface-container-low p-3"
+                >
+                  <div className="flex items-start gap-2">
+                    <span
+                      className={`material-symbols-outlined ${meta.tone}`}
+                      style={{ fontSize: 18 }}
+                      aria-hidden
+                    >
+                      {meta.icon}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate">
+                        {c.customerName}
+                      </p>
+                      <p className={`text-lg font-black num ${meta.tone}`}>
+                        {fmtPct(c.magnitude * (c.kind.includes('down') ? -1 : 1))}
+                      </p>
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        {meta.action}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-4 gap-4 mb-6">
         <div className="card">
