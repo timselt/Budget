@@ -1,6 +1,7 @@
 import { useAuthStore } from '../../stores/auth'
 import { SIDEBAR_SECTIONS } from './sidebar-config'
 import { SidebarSection } from './SidebarSection'
+import { SidebarContextBar } from './SidebarContextBar'
 
 function getInitials(name: string | undefined): string {
   if (!name) return '?'
@@ -34,6 +35,8 @@ export function Sidebar() {
           </h1>
         </div>
       </div>
+
+      <SidebarContextBar />
 
       <nav className="flex-1 overflow-y-auto pr-1 space-y-1">
         {SIDEBAR_SECTIONS.map((section) => (
