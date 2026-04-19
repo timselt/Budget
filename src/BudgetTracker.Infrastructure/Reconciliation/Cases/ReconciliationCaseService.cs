@@ -191,13 +191,28 @@ public sealed class ReconciliationCaseService : IReconciliationCaseService
             .ConfigureAwait(false)
             ?? throw new InvalidOperationException($"line {lineId} not found");
 
-        var kaseExists = await _db.ReconciliationCases.AsNoTracking()
-            .AnyAsync(c => c.Id == line.CaseId && c.CompanyId == companyId, cancellationToken)
-            .ConfigureAwait(false);
-        if (!kaseExists)
-            throw new InvalidOperationException($"line {lineId} not in company {companyId}");
+        var kase = await _db.ReconciliationCases
+            .FirstOrDefaultAsync(c => c.Id == line.CaseId && c.CompanyId == companyId, cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new InvalidOperationException($"line {lineId} not in company {companyId}");
 
-        line.MarkReady(_time.GetUtcNow());
+        var now = _time.GetUtcNow();
+        line.MarkReady(now);
+
+        // Sprint 2 Task 12 — tüm line'lar Ready olduysa Case UnderControl → PricingMatched.
+        // line şu an Ready'ye geçti, diğerleri DB'de kontrol edilir.
+        var allReady = !await _db.ReconciliationLines.AsNoTracking()
+            .AnyAsync(l => l.CaseId == line.CaseId
+                && l.Id != line.Id
+                && l.Status != ReconciliationLineStatus.Ready,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        if (allReady && kase.Status == ReconciliationCaseStatus.UnderControl)
+        {
+            kase.MarkPricingMatched(true, now);
+        }
+
         await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
         return new LineDto(

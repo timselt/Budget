@@ -1,5 +1,6 @@
 using BudgetTracker.Application.Reconciliation.Cases;
 using BudgetTracker.Core.Common;
+using BudgetTracker.Core.Entities.Reconciliation;
 using BudgetTracker.Core.Enums.Reconciliation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -117,6 +118,16 @@ public sealed class ReconciliationCasesController : ControllerBase
         {
             var result = await _service.MarkLineReadyAsync(id, companyId, actorId, cancellationToken);
             return Ok(result);
+        }
+        catch (InvalidCaseTransitionException ex)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Case state transition rejected",
+                Detail = ex.Message,
+                Extensions = { ["from"] = ex.From.ToString(), ["to"] = ex.To.ToString() },
+            });
         }
         catch (InvalidOperationException ex)
         {
