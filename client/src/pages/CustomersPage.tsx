@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { PageIntro } from '../components/shared/PageIntro'
 
 interface CustomerRow {
   id: number
@@ -92,23 +93,22 @@ export function CustomersPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
-            Müşteri Yönetimi
-          </h2>
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => setModal({ kind: 'create' })}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            person_add
-          </span>
-          Yeni Müşteri
-        </button>
-      </div>
+      <PageIntro
+        title="Müşteriler"
+        purpose='Aktif müşteri kartları, segment + "Grup İçi" flag yönetimi. Bütçe planlama ve sapma analizi bu liste üzerinden çalışır; grup-içi müşteriler konsolidasyonda elimine edilir.'
+        actions={
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setModal({ kind: 'create' })}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              person_add
+            </span>
+            Yeni Müşteri
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-12 gap-6 mb-6">
         <KpiCard title="Toplam Müşteri" value={`${customers.length}`} subtitle={`${activeCount} aktif · ${passiveCount} pasif`} />
