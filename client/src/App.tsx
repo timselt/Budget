@@ -28,6 +28,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m
 const ScenariosPage = lazy(() => import('./pages/ScenariosPage').then(m => ({ default: m.ScenariosPage })))
 const ConsolidationPage = lazy(() => import('./pages/ConsolidationPage').then(m => ({ default: m.ConsolidationPage })))
 const ApprovalsPage = lazy(() => import('./pages/ApprovalsPage').then(m => ({ default: m.ApprovalsPage })))
+const RevisionsPage = lazy(() => import('./pages/RevisionsPage').then(m => ({ default: m.RevisionsPage })))
 const AuditLogPage = lazy(() => import('./pages/AuditLogPage').then(m => ({ default: m.AuditLogPage })))
 
 function PageLoader() {
@@ -77,6 +78,7 @@ export function App() {
           <Route path="scenarios" element={<ScenariosPage />} />
           <Route path="consolidation" element={<ConsolidationPage />} />
           <Route path="approvals" element={<ApprovalsPage />} />
+          <Route path="revisions" element={<RevisionsPage />} />
           <Route path="audit" element={<AuditLogPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
