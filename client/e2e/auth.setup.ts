@@ -19,6 +19,16 @@ const AUTH_FILE = path.join(__dirname, '.auth/user.json')
 setup('authenticate', async ({ page }) => {
   const email = process.env.E2E_TEST_EMAIL
   const password = process.env.E2E_TEST_PASSWORD
+  const isCI = process.env.CI === 'true'
+
+  // Fork PR'larda veya secrets henüz konfigüre edilmemiş ortamlarda
+  // CI'ı hard-fail yerine skip et. Lokal dev'de yine sert hata.
+  setup.skip(
+    isCI && (!email || !password),
+    'E2E_TEST_EMAIL/E2E_TEST_PASSWORD secrets not configured for this CI run. ' +
+      'Add them in Repo Settings -> Secrets and variables -> Actions to enable smoke coverage.',
+  )
+
   if (!email || !password) {
     throw new Error(
       'E2E_TEST_EMAIL ve E2E_TEST_PASSWORD environment variables gerekli.\n' +
