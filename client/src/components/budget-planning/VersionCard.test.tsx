@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import {
   VersionCard,
-  sortVersionsForDisplay,
   type VersionCardVersion,
   type VersionCardRoles,
   type VersionCardHandlers,
 } from './VersionCard'
+import { sortVersionsForDisplay } from './sortVersionsForDisplay'
 
 const baseVersion: VersionCardVersion = {
   id: 1,

@@ -192,23 +192,3 @@ export function VersionCard({
   )
 }
 
-/**
- * Kart grid sıralaması: Aktif önce, sonra Archived dışındakiler createdAt
- * DESC, en altta Archived. Stable sort — aynı bucket'ta orijinal sıra korunur.
- */
-export function sortVersionsForDisplay<T extends VersionCardVersion>(
-  versions: ReadonlyArray<T>,
-): T[] {
-  const bucket = (v: T): number => {
-    if (v.isActive || v.status === 'Active') return 0
-    if (v.status === 'Archived') return 2
-    return 1
-  }
-  return [...versions].sort((a, b) => {
-    const ba = bucket(a)
-    const bb = bucket(b)
-    if (ba !== bb) return ba - bb
-    // Aynı bucket → createdAt desc (en yeni üstte)
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  })
-}

@@ -24,6 +24,10 @@ interface FormErrors {
 
 const PERIOD_REGEX = /^(20\d{2})-(0[1-9]|1[0-2])$/
 
+function defaultSourceFor(flow: ReconciliationFlow): ReconciliationSourceType {
+  return flow === 'Insurance' ? 'InsurerList' : 'TarsPowerBi'
+}
+
 /**
  * Sprint 1 — Yeni mutabakat batch upload modal'ı (spec §6.1-6.2).
  * Form alanları: file + flow + period_code + source_type + opsiyonel notes.
@@ -41,7 +45,7 @@ export function UploadBatchModal({ defaultFlow, onClose, onSuccess }: Props) {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
   const [sourceType, setSourceType] = useState<ReconciliationSourceType>(
-    flow === 'Insurance' ? 'InsurerList' : 'TarsPowerBi',
+    defaultSourceFor(flow),
   )
   const [notes, setNotes] = useState<string>('')
   const [errors, setErrors] = useState<FormErrors>({})
@@ -53,14 +57,14 @@ export function UploadBatchModal({ defaultFlow, onClose, onSuccess }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  // Flow değişimi → varsayılan source type
-  useEffect(() => {
-    if (flow === 'Insurance' && sourceType === 'TarsPowerBi') {
-      setSourceType('InsurerList')
-    } else if (flow === 'Automotive' && sourceType === 'InsurerList') {
-      setSourceType('TarsPowerBi')
-    }
-  }, [flow, sourceType])
+  // Flow değişiminde sourceType reset — useEffect yerine handler içinde
+  // doğrudan setState (react-hooks/set-state-in-effect uyarısı). Kullanıcı
+  // sourceType'ı manuel değiştirdiyse o seçim korunur; sadece flow değişince
+  // varsayılan dönüyor.
+  function handleFlowChange(next: ReconciliationFlow) {
+    setFlow(next)
+    setSourceType(defaultSourceFor(next))
+  }
 
   const mutation = useMutation({
     mutationFn: uploadBatch,
@@ -144,7 +148,7 @@ export function UploadBatchModal({ defaultFlow, onClose, onSuccess }: Props) {
             <select
               className="select w-full"
               value={flow}
-              onChange={(e) => setFlow(e.target.value as ReconciliationFlow)}
+              onChange={(e) => handleFlowChange(e.target.value as ReconciliationFlow)}
               disabled={mutation.isPending}
             >
               <option value="Insurance">{t('reconciliation.batchList.flow.insurance')}</option>
