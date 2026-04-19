@@ -90,9 +90,12 @@ function formatCompact(value: number): string {
   return formatAmount(value)
 }
 
+type ActualsView = 'overview' | 'comparison'
+
 export function ActualsPage() {
   const [yearId, setYearId] = useState<number | null>(null)
   const [versionId, setVersionId] = useState<number | null>(null)
+  const [view, setView] = useState<ActualsView>('overview')
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
   const versionsQuery = useQuery({
@@ -107,9 +110,9 @@ export function ActualsPage() {
     enabled: yearId !== null && versionId !== null,
   })
 
-  const years = yearsQuery.data ?? []
-  const versions = versionsQuery.data ?? []
-  const categories = categoriesQuery.data ?? []
+  const years = useMemo(() => yearsQuery.data ?? [], [yearsQuery.data])
+  const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data])
+  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
   const allExpenses = expensesQuery.data ?? []
   const actuals = allExpenses.filter((e) => e.entryType === 'ACTUAL')
   const budgets = allExpenses.filter((e) => e.entryType === 'BUDGET')
@@ -164,8 +167,31 @@ export function ActualsPage() {
     <section>
       <PageIntro
         title="Gerçekleşen"
-        purpose="Aylık fiili (gerçekleşen) tutarları girin — aktüel gelir/hasar/gider. Bütçe planıyla otomatik karşılaştırma Sapma Analizi ekranında."
+        purpose="Aylık fiili (gerçekleşen) gider izleme. Özet sekmesinde sadece gerçek tutarlar; Bütçe Karşılaştırma sekmesinde plan vs gerçek + bütçe kullanım %. Müşteri bazlı sapma için Sapma Analizi ekranı."
       />
+
+      <div className="flex gap-1 mb-4 bg-surface-container-low rounded-lg p-1 w-fit">
+        <button
+          type="button"
+          className={`tab ${view === 'overview' ? 'active' : ''}`}
+          onClick={() => setView('overview')}
+        >
+          <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
+            receipt_long
+          </span>
+          Özet
+        </button>
+        <button
+          type="button"
+          className={`tab ${view === 'comparison' ? 'active' : ''}`}
+          onClick={() => setView('comparison')}
+        >
+          <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
+            compare_arrows
+          </span>
+          Bütçe Karşılaştırma
+        </button>
+      </div>
 
       <div className="card mb-4 flex flex-wrap items-center gap-3">
         <label className="label-sm">Yıl</label>
@@ -234,8 +260,19 @@ export function ActualsPage() {
 
       <div className="card p-0 overflow-hidden">
         <div className="p-4 border-b border-outline-variant flex items-center justify-between">
-          <h3 className="text-base font-bold text-on-surface">Kategori × Ay Detayı</h3>
-          <span className="text-xs text-on-surface-variant">TRY (sabit kur)</span>
+          <h3 className="text-base font-bold text-on-surface">
+            {view === 'overview'
+              ? 'Kategori × Ay — Gerçekleşen'
+              : 'Kategori × Ay — Plan vs Gerçek'}
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-on-surface-variant">TRY (sabit kur)</span>
+            {view === 'comparison' && (
+              <Link to="/variance" className="text-xs text-primary underline">
+                Müşteri sapması →
+              </Link>
+            )}
+          </div>
         </div>
         {!versionId ? (
           <p className="p-6 text-sm text-on-surface-variant">
@@ -264,8 +301,8 @@ export function ActualsPage() {
                     </th>
                   ))}
                   <th className="text-right bg-[#1e293b] text-white">Gerçek</th>
-                  <th className="text-right">Bütçe</th>
-                  <th className="text-right">Kullanım</th>
+                  {view === 'comparison' && <th className="text-right">Bütçe</th>}
+                  {view === 'comparison' && <th className="text-right">Kullanım</th>}
                 </tr>
               </thead>
               <tbody>
@@ -307,14 +344,18 @@ export function ActualsPage() {
                       <td className="text-right num font-bold bg-surface-container-low">
                         {formatAmount(total)}
                       </td>
-                      <td className="text-right num text-on-surface-variant">
-                        {budgetForCat === 0 ? '—' : formatAmount(budgetForCat)}
-                      </td>
-                      <td className="text-right">
-                        <span className={`chip ${usageChip}`}>
-                          {budgetForCat === 0 ? '—' : `%${formatAmount(usage)}`}
-                        </span>
-                      </td>
+                      {view === 'comparison' && (
+                        <td className="text-right num text-on-surface-variant">
+                          {budgetForCat === 0 ? '—' : formatAmount(budgetForCat)}
+                        </td>
+                      )}
+                      {view === 'comparison' && (
+                        <td className="text-right">
+                          <span className={`chip ${usageChip}`}>
+                            {budgetForCat === 0 ? '—' : `%${formatAmount(usage)}`}
+                          </span>
+                        </td>
+                      )}
                     </tr>
                   )
                 })}
