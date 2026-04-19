@@ -23,6 +23,7 @@ const PriceBookEditorPage = lazy(() => import('./pages/PriceBookEditorPage').the
 const PriceLookupPage = lazy(() => import('./pages/PriceLookupPage').then(m => ({ default: m.PriceLookupPage })))
 const ReconciliationBatchesPage = lazy(() => import('./pages/ReconciliationBatchesPage').then(m => ({ default: m.ReconciliationBatchesPage })))
 const ReconciliationBatchDetailPage = lazy(() => import('./pages/ReconciliationBatchDetailPage').then(m => ({ default: m.ReconciliationBatchDetailPage })))
+const ReconciliationCasesPage = lazy(() => import('./pages/ReconciliationCasesPage').then(m => ({ default: m.ReconciliationCasesPage })))
 const SegmentsPage = lazy(() => import('./pages/SegmentsPage').then(m => ({ default: m.SegmentsPage })))
 // BudgetPeriodsPage Bütçe Planlama sayfasının "Versiyonlar" tab'ı içine
 // gömüldü; ayrı route artık kaldırıldı (sol menüden de çıkarıldı).
@@ -93,6 +94,7 @@ export function App() {
           <Route path="mutabakat" element={<Navigate to="/mutabakat/batches" replace />} />
           <Route path="mutabakat/batches" element={<ReconciliationBatchesPage />} />
           <Route path="mutabakat/batches/:id" element={<ReconciliationBatchDetailPage />} />
+          <Route path="mutabakat/cases" element={<ReconciliationCasesPage />} />
           <Route path="segments" element={<SegmentsPage />} />
           {/* Eski /budget/periods URL'i Bütçe Planlama Versiyonlar tab'ına yönlendir. */}
           <Route path="budget/periods" element={<Navigate to="/budget/planning" replace />} />
