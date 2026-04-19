@@ -121,6 +121,73 @@
         "flowRequired": "Flow type selection is required.",
         "sourceRequired": "Source type selection is required."
       }
+    },
+    "batchDetail": {
+      "title": "Batch Detail",
+      "subtitle": "Parse summary, cases, unmatched customers, and error rows.",
+      "notFound": "Batch not found",
+      "deleteDraft": "Delete Draft",
+      "confirmDelete": "Are you sure you want to permanently delete this Draft batch?",
+      "deleteSuccess": "Batch deleted.",
+      "tabs": {
+        "cases": "Cases",
+        "unmatched": "Unmatched Customers",
+        "errors": "Parse Errors"
+      },
+      "emptyCases": "No cases created from this batch (all rows may be unmatched).",
+      "allMatched": "All customers matched — great!",
+      "errorsPlaceholderTitle": "Parse errors (MVP skeleton)",
+      "errorsPlaceholderDescription": "This tab will expand to a row-level error list in Task 13."
+    },
+    "cases": {
+      "title": "Reconciliation Cases",
+      "subtitle": "Insurance and automotive flows, customer × period reconciliation files.",
+      "tabs": {
+        "insurance": "Insurance",
+        "automotive": "Automotive"
+      },
+      "columns": {
+        "customer": "Customer",
+        "period": "Period",
+        "status": "Status",
+        "owner": "Owner",
+        "lineCount": "Lines",
+        "totalAmount": "Total",
+        "openedAt": "Opened"
+      },
+      "empty": {
+        "title": "No cases yet",
+        "description": "Upload a batch and wait for cases to be created."
+      }
+    },
+    "caseDetail": {
+      "title": "Case Detail",
+      "subtitle": "Inline line edit + state transitions.",
+      "assignOwner": "Assign Me",
+      "sendToCustomer": "Send to Customer",
+      "sendToCustomerDisabled": "Activates in Sprint 3",
+      "markLineReady": "Ready",
+      "columns": {
+        "productCode": "Product Code",
+        "productName": "Product Name",
+        "quantity": "Qty",
+        "unitPrice": "Unit Price",
+        "amount": "Amount",
+        "status": "Status",
+        "actions": "Action"
+      }
+    },
+    "unmatched": {
+      "link": "Link Customer",
+      "modalTitle": "Pick customer for '{externalRef}'",
+      "customerIdLabel": "Customer ID (from Definitions → Customers)",
+      "linkSuccess": "{cases} new cases, {lines} new lines created.",
+      "columns": {
+        "externalRef": "External Ref",
+        "rowCount": "Rows",
+        "samples": "Sample Docs",
+        "action": "Action"
+      }
     }
   }
 }

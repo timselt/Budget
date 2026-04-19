@@ -121,6 +121,73 @@
         "flowRequired": "Akış türü seçimi zorunlu.",
         "sourceRequired": "Kaynak tipi seçimi zorunlu."
       }
+    },
+    "batchDetail": {
+      "title": "Batch Detayı",
+      "subtitle": "Parse özeti, case'ler, eşlenmemiş müşteriler ve hata satırları.",
+      "notFound": "Batch bulunamadı",
+      "deleteDraft": "Draft'ı Sil",
+      "confirmDelete": "Bu Draft batch'i kalıcı olarak silmek istediğinize emin misiniz?",
+      "deleteSuccess": "Batch silindi.",
+      "tabs": {
+        "cases": "Case'ler",
+        "unmatched": "Eşlenmemiş Müşteriler",
+        "errors": "Parse Hataları"
+      },
+      "emptyCases": "Bu batch'ten case oluşturulmadı (tüm satırlar eşlenmemiş olabilir).",
+      "allMatched": "Tüm müşteriler eşlendi — harika!",
+      "errorsPlaceholderTitle": "Parse hataları (MVP iskelet)",
+      "errorsPlaceholderDescription": "Bu sekme Task 13 kapanışında satır seviyesinde hata listesine genişletilecek."
+    },
+    "cases": {
+      "title": "Mutabakat Case'leri",
+      "subtitle": "Sigorta ve otomotiv akışlarında müşteri × dönem bazlı mutabakat dosyaları.",
+      "tabs": {
+        "insurance": "Sigorta",
+        "automotive": "Otomotiv"
+      },
+      "columns": {
+        "customer": "Müşteri",
+        "period": "Dönem",
+        "status": "Durum",
+        "owner": "Sahip",
+        "lineCount": "Satır",
+        "totalAmount": "Toplam",
+        "openedAt": "Açılma"
+      },
+      "empty": {
+        "title": "Henüz case yok",
+        "description": "Batch yükleyip case'lerin oluşmasını bekleyin."
+      }
+    },
+    "caseDetail": {
+      "title": "Case Detayı",
+      "subtitle": "Satır seviyesinde inline edit + state geçişleri.",
+      "assignOwner": "Sahibi Üstlen",
+      "sendToCustomer": "Müşteriye Gönder",
+      "sendToCustomerDisabled": "Sprint 3'te aktifleşir",
+      "markLineReady": "Ready",
+      "columns": {
+        "productCode": "Ürün Kodu",
+        "productName": "Ürün Adı",
+        "quantity": "Adet",
+        "unitPrice": "Birim Fiyat",
+        "amount": "Tutar",
+        "status": "Durum",
+        "actions": "İşlem"
+      }
+    },
+    "unmatched": {
+      "link": "Müşteriye Eşle",
+      "modalTitle": "'{externalRef}' için müşteri seç",
+      "customerIdLabel": "Müşteri ID (Tanımlar → Müşteriler'den alın)",
+      "linkSuccess": "{cases} yeni case, {lines} yeni satır üretildi.",
+      "columns": {
+        "externalRef": "Dış Ref",
+        "rowCount": "Satır",
+        "samples": "Örnek Belge",
+        "action": "İşlem"
+      }
     }
   }
 }
