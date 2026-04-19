@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { ChecklistResult } from './useSubmissionChecklist'
 
 const LEVEL_ICON: Record<string, string> = {
@@ -17,13 +17,21 @@ export function SubmissionChecklist({ result }: { result: ChecklistResult }) {
   const [open, setOpen] = useState(
     result.warnCount > 0 || result.hardFailCount > 0,
   )
-
-  // Yeni warn/fail oluşursa otomatik aç
-  useEffect(() => {
+  // React docs — "Storing information from previous renders": count değişirse
+  // useEffect'e ihtiyaç duymadan render sırasında setState çağrılabilir.
+  const [prevCounts, setPrevCounts] = useState({
+    warn: result.warnCount,
+    fail: result.hardFailCount,
+  })
+  if (
+    prevCounts.warn !== result.warnCount ||
+    prevCounts.fail !== result.hardFailCount
+  ) {
+    setPrevCounts({ warn: result.warnCount, fail: result.hardFailCount })
     if (result.warnCount > 0 || result.hardFailCount > 0) {
       setOpen(true)
     }
-  }, [result.warnCount, result.hardFailCount])
+  }
 
   if (result.items.length === 0) return null
 

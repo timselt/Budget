@@ -1,6 +1,6 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { AgGridReact } from 'ag-grid-react'
-import type { ColDef, GridReadyEvent, ProcessDataFromClipboardParams } from 'ag-grid-community'
+import type { ColDef, ProcessDataFromClipboardParams } from 'ag-grid-community'
 import { toast } from 'sonner'
 import { useClipboardRange } from '../hooks/useClipboardRange'
 import { parseTrNumber } from '../lib/parseTrNumber'
@@ -57,7 +57,9 @@ export interface BudgetGridProps {
 export function BudgetGrid({ rows, onRowsChange }: BudgetGridProps) {
   const { handlePaste } = useClipboardRange()
   const rowsRef = useRef(rows)
-  rowsRef.current = rows
+  useEffect(() => {
+    rowsRef.current = rows
+  })
 
   const columnDefs = useMemo<ColDef<BudgetRow>[]>(
     () => [
@@ -106,7 +108,7 @@ export function BudgetGrid({ rows, onRowsChange }: BudgetGridProps) {
     return grid.values.map((row) => row.map((cell) => (cell === null ? '' : String(cell))))
   }
 
-  const onGridReady = (_event: GridReadyEvent<BudgetRow>) => {
+  const onGridReady = () => {
     // No-op for now; reserved for future keyboard-shortcut wiring and
     // single-range copy behaviour when we graduate to AG-Grid Enterprise.
   }

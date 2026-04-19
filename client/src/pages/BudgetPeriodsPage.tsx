@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
@@ -108,7 +108,7 @@ interface BudgetPeriodsPageProps {
 }
 
 export function BudgetPeriodsPage({ embedded = false }: BudgetPeriodsPageProps = {}) {
-  const [selectedYearId, setSelectedYearId] = useState<number | null>(null)
+  const [yearOverride, setYearOverride] = useState<number | null>(null)
   const [modal, setModal] = useState<ModalState>({ kind: 'none' })
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -123,25 +123,26 @@ export function BudgetPeriodsPage({ embedded = false }: BudgetPeriodsPageProps =
   }
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
+  const years = useMemo(() => yearsQuery.data ?? [], [yearsQuery.data])
+  const selectedYearId = useMemo(() => {
+    if (yearOverride !== null && years.some((y) => y.id === yearOverride)) {
+      return yearOverride
+    }
+    return years[0]?.id ?? null
+  }, [yearOverride, years])
+  const setSelectedYearId = setYearOverride
+
   const versionsQuery = useQuery({
     queryKey: ['budget-versions', selectedYearId],
     queryFn: () => (selectedYearId ? getVersions(selectedYearId) : Promise.resolve([])),
     enabled: selectedYearId !== null,
   })
 
-  const years = yearsQuery.data ?? []
-  const versions = versionsQuery.data ?? []
+  const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data])
   const selectedYear = years.find((y) => y.id === selectedYearId) ?? null
   const hasInProgressDraft = versions.some((v) =>
     IN_PROGRESS_STATUSES.has(v.status as BudgetVersionStatus),
   )
-
-  // Auto-select first year once data loads
-  useEffect(() => {
-    if (selectedYearId === null && years.length > 0) {
-      setSelectedYearId(years[0].id)
-    }
-  }, [years, selectedYearId])
 
   const invalidateVersions = () =>
     queryClient.invalidateQueries({ queryKey: ['budget-versions', selectedYearId] })

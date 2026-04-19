@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 
@@ -421,16 +421,19 @@ function PeriodsTab({
 }
 
 function ImportTab({ segments }: { segments: SegmentRow[] }) {
-  const [segmentId, setSegmentId] = useState<number | ''>(segments[0]?.id ?? '')
+  const [segmentOverride, setSegmentOverride] = useState<number | ''>('')
+  const segmentId = useMemo<number | ''>(() => {
+    if (segmentOverride !== '' && segments.some((s) => s.id === segmentOverride)) {
+      return segmentOverride
+    }
+    return segments[0]?.id ?? ''
+  }, [segmentOverride, segments])
+  const setSegmentId = setSegmentOverride
   const [file, setFile] = useState<File | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
-
-  useEffect(() => {
-    if (segmentId === '' && segments.length > 0) setSegmentId(segments[0].id)
-  }, [segments, segmentId])
 
   const uploadMutation = useMutation({
     mutationFn: async () => {

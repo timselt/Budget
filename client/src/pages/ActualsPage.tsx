@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
@@ -90,15 +90,31 @@ function formatCompact(value: number): string {
 }
 
 export function ActualsPage() {
-  const [yearId, setYearId] = useState<number | null>(null)
-  const [versionId, setVersionId] = useState<number | null>(null)
+  const [yearOverride, setYearOverride] = useState<number | null>(null)
+  const [versionOverride, setVersionOverride] = useState<number | null>(null)
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
+  const years = useMemo(() => yearsQuery.data ?? [], [yearsQuery.data])
+  const yearId = useMemo(() => {
+    if (yearOverride !== null && years.some((y) => y.id === yearOverride)) {
+      return yearOverride
+    }
+    return years[0]?.id ?? null
+  }, [yearOverride, years])
+
   const versionsQuery = useQuery({
     queryKey: ['budget-versions', yearId],
     queryFn: () => (yearId ? getVersions(yearId) : Promise.resolve([])),
     enabled: yearId !== null,
   })
+  const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data])
+  const versionId = useMemo(() => {
+    if (versionOverride !== null && versions.some((v) => v.id === versionOverride)) {
+      return versionOverride
+    }
+    return versions[0]?.id ?? null
+  }, [versionOverride, versions])
+
   const categoriesQuery = useQuery({ queryKey: ['expense-categories'], queryFn: getCategories })
   const expensesQuery = useQuery({
     queryKey: ['expense-entries-actuals', yearId, versionId],
@@ -106,21 +122,13 @@ export function ActualsPage() {
     enabled: yearId !== null && versionId !== null,
   })
 
-  const years = yearsQuery.data ?? []
-  const versions = versionsQuery.data ?? []
-  const categories = categoriesQuery.data ?? []
+  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
   const allExpenses = expensesQuery.data ?? []
   const actuals = allExpenses.filter((e) => e.entryType === 'ACTUAL')
   const budgets = allExpenses.filter((e) => e.entryType === 'BUDGET')
 
-  useEffect(() => {
-    if (yearId === null && years.length > 0) setYearId(years[0].id)
-  }, [years, yearId])
-
-  useEffect(() => {
-    if (versionId === null && versions.length > 0) setVersionId(versions[0].id)
-    if (versions.length === 0) setVersionId(null)
-  }, [versions, versionId])
+  const setYearId = setYearOverride
+  const setVersionId = setVersionOverride
 
   const actualByCategory = useMemo(() => {
     const map = new Map<number, { category: ExpenseCategoryRow | null; monthly: number[]; total: number }>()
