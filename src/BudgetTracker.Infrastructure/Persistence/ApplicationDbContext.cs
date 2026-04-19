@@ -1,6 +1,7 @@
 using BudgetTracker.Application.Common.Abstractions;
 using BudgetTracker.Core.Common;
 using BudgetTracker.Core.Entities;
+using BudgetTracker.Core.Entities.Reconciliation;
 using BudgetTracker.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +42,15 @@ public sealed class ApplicationDbContext : IdentityDbContext<User, Role, int>, I
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<PriceBook> PriceBooks => Set<PriceBook>();
     public DbSet<PriceBookItem> PriceBookItems => Set<PriceBookItem>();
+
+    // Mutabakat Sprint 1 — Faz 1 spec §3
+    public DbSet<ReconciliationBatch> ReconciliationBatches => Set<ReconciliationBatch>();
+    public DbSet<ReconciliationSourceRow> ReconciliationSourceRows => Set<ReconciliationSourceRow>();
+    public DbSet<ReconciliationCase> ReconciliationCases => Set<ReconciliationCase>();
+    public DbSet<ReconciliationLine> ReconciliationLines => Set<ReconciliationLine>();
+    public DbSet<ReconciliationDecision> ReconciliationDecisions => Set<ReconciliationDecision>();
+    public DbSet<AccountingInstruction> AccountingInstructions => Set<AccountingInstruction>();
+    public DbSet<RiskRuleSet> RiskRuleSets => Set<RiskRuleSet>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => base.SaveChangesAsync(cancellationToken);

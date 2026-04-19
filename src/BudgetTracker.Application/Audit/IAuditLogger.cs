@@ -45,6 +45,7 @@ public static class AuditActions
     // Mutabakat önkoşul #3 (00c) — Reconciliation olay tipleri.
     // Spec: docs/Mutabakat_Modulu/docs/specs/00c_prereq_recon_agent_role.md §7.
     // Yazımları sprint 1 (Reconciliation) ile bağlanır. PriceBookApproved 00b'de tanımlı.
+    public const string ReconciliationBatchImported = "RECONCILIATION_BATCH_IMPORTED";
     public const string ReconciliationCaseOwnershipChanged = "RECONCILIATION_CASE_OWNERSHIP_CHANGED";
     public const string ReconciliationSentToCustomer = "RECONCILIATION_SENT_TO_CUSTOMER";
     public const string ReconciliationCustomerResponseReceived = "RECONCILIATION_CUSTOMER_RESPONSE_RECEIVED";
@@ -59,4 +60,5 @@ public static class AuditEntityNames
     public const string BudgetVersion = "BudgetVersion";
     public const string Customer = "Customer";
     public const string PriceBook = "PriceBook";
+    public const string ReconciliationBatch = "ReconciliationBatch";
 }

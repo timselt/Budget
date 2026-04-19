@@ -2,6 +2,11 @@ import { useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { PageIntro } from '../components/shared/PageIntro'
+import {
+  formatAmount,
+  formatCompactAmount,
+  formatPercent,
+} from '../lib/number-format'
 
 type Tab = 'dashboard' | 'periods' | 'import'
 
@@ -98,22 +103,6 @@ async function getDashboard(periodId?: number): Promise<ConsolidatedDashboard> {
   return data
 }
 
-function formatCompact(value: number): string {
-  if (Math.abs(value) >= 1_000_000) {
-    const millions = value / 1_000_000
-    return `${millions.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`
-  }
-  return value.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-}
-
-function formatAmount(value: number): string {
-  return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function formatPct(value: number): string {
-  return `%${value.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`
-}
-
 export function CollectionsPage() {
   const [tab, setTab] = useState<Tab>('dashboard')
   const [periodFilter, setPeriodFilter] = useState<number | null>(null)
@@ -158,8 +147,8 @@ export function CollectionsPage() {
             müşteride yüksek risk —{' '}
             <strong>
               {(dashboard.riskDistribution.highAmount / 1_000_000).toLocaleString('tr-TR', {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
               })}M TL
             </strong>{' '}
             tahsilat takibi gerekiyor. Detay için aşağıdaki segment kırılımını
@@ -255,19 +244,19 @@ function DashboardTab({
       </div>
 
       <div className="grid grid-cols-12 gap-4 mb-6">
-        <KpiCard title="Toplam Alacak" value={formatCompact(dashboard.totalReceivable)} chip="chip-info" subtitle="TRY" />
+        <KpiCard title="Toplam Alacak" value={formatCompactAmount(dashboard.totalReceivable)} chip="chip-info" subtitle="TRY" />
         <KpiCard
           title="Vadesi Geçmiş"
-          value={formatCompact(dashboard.totalOverdue)}
+          value={formatCompactAmount(dashboard.totalOverdue)}
           chip="chip-error"
-          subtitle={formatPct(dashboard.overdueRatio)}
+          subtitle={formatPercent(dashboard.overdueRatio)}
         />
-        <KpiCard title="Bekleyen" value={formatCompact(dashboard.totalPending)} chip="chip-warning" subtitle="Vadesi gelmemiş" />
+        <KpiCard title="Bekleyen" value={formatCompactAmount(dashboard.totalPending)} chip="chip-warning" subtitle="Vadesi gelmemiş" />
         <KpiCard
           title="Yüksek Risk"
           value={`${dashboard.riskDistribution.highCount}`}
           chip="chip-error"
-          subtitle={`${formatCompact(dashboard.riskDistribution.highAmount)} TRY`}
+          subtitle={`${formatCompactAmount(dashboard.riskDistribution.highAmount)} TRY`}
         />
       </div>
 
@@ -309,7 +298,7 @@ function DashboardTab({
                               : 'chip-success'
                         }`}
                       >
-                        {formatPct(s.overdueRatio)}
+                        {formatPercent(s.overdueRatio)}
                       </span>
                     </td>
                     <td className="text-right num">
@@ -346,7 +335,7 @@ function DashboardTab({
                     <td className="font-semibold text-sm">{c.customerName}</td>
                     <td className="text-right num">{formatAmount(c.amount)}</td>
                     <td className="text-right">
-                      <span className="chip chip-warning">{formatPct(c.sharePercent)}</span>
+                      <span className="chip chip-warning">{formatPercent(c.sharePercent)}</span>
                     </td>
                   </tr>
                 ))}
@@ -573,7 +562,7 @@ function ImportTab({ segments }: { segments: SegmentRow[] }) {
               <div className="bg-surface-container-low rounded-lg p-3">
                 <p className="label-sm">Toplam</p>
                 <p className="text-sm font-bold num mt-1">
-                  {formatCompact(result.totalAmount)}
+                  {formatCompactAmount(result.totalAmount)}
                 </p>
               </div>
             </div>

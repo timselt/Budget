@@ -4,7 +4,6 @@ import type { ChecklistResult } from './useSubmissionChecklist'
 export type NextStepActionKind =
   | 'jump-to-customer'
   | 'jump-to-opex'
-  | 'highlight-scenario'
   | 'none'
 
 export interface NextStepAction {
@@ -43,7 +42,7 @@ export interface NavigatorContext {
 
 /**
  * Checklist + bağlamdan tek priority navigation hedefi türetir.
- * Sıra: fail (eksik müşteri) > empty-month > claim-missing > opex > scenario > pass.
+ * Sıra: fail (eksik müşteri) > empty-month > claim-missing > opex > pass.
  * Hiç item yoksa null. Pure derivation, useMemo wrapper hook sonra.
  */
 export function deriveNextStep(
@@ -130,18 +129,7 @@ export function deriveNextStep(
     }
   }
 
-  // 5) scenario warn — senaryo seçilmedi
-  const scenario = checklist.items.find((i) => i.id === 'scenario')
-  if (scenario?.level === 'warn') {
-    return {
-      message: scenario.message,
-      ctaLabel: 'Düzelt →',
-      level: 'warn',
-      action: { kind: 'highlight-scenario' },
-    }
-  }
-
-  // 6) hepsi pass
+  // 5) hepsi pass
   if (checklist.canSubmit && checklist.warnCount === 0) {
     return {
       message: 'Onaya hazır.',

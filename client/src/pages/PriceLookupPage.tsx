@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
+import { formatPrice } from '../lib/number-format'
 
 /**
  * Mutabakat ekibi için hızlı fiyat arama aracı (00b §4, P1).
@@ -184,9 +185,7 @@ function ResultCard({ result }: { result: LookupResult }) {
           <InfoBox label="Ürün Adı" value={result.priceBookItem.productName} />
           <InfoBox
             label="Birim Fiyat"
-            value={`${result.priceBookItem.unitPrice.toLocaleString('tr-TR', {
-              minimumFractionDigits: 2,
-            })} ${result.priceBookItem.currencyCode}`}
+            value={formatPrice(result.priceBookItem.unitPrice, result.priceBookItem.currencyCode)}
           />
           <InfoBox label="Birim" value={result.priceBookItem.unit} />
           {result.priceBookItem.taxRate != null ? (

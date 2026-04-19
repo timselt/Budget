@@ -10,6 +10,10 @@ using BudgetTracker.Application.Customers;
 using BudgetTracker.Application.ExpenseCategories;
 using BudgetTracker.Application.Expenses;
 using BudgetTracker.Application.PriceBooks;
+using BudgetTracker.Application.Reconciliation.Batches;
+using BudgetTracker.Application.Reconciliation.Import;
+using BudgetTracker.Infrastructure.Reconciliation.Batches;
+using BudgetTracker.Infrastructure.Reconciliation.Import;
 using BudgetTracker.Application.Pricing;
 using BudgetTracker.Application.Products;
 using BudgetTracker.Application.FxRates;
@@ -117,6 +121,12 @@ public static class DependencyInjection
         // paylaşıldığı için request'lar arası tutarlı.
         services.AddMemoryCache();
         services.AddScoped<IPricingLookupService, PricingLookupService>();
+
+        // Mutabakat Sprint 1 — import parser stack + batch service.
+        services.AddScoped<XlsxStreamReader>();
+        services.AddScoped<CsvStreamReader>();
+        services.AddScoped<IReconciliationImportParser, ReconciliationImportParser>();
+        services.AddScoped<IReconciliationBatchService, ReconciliationBatchService>();
         services.AddScoped<IBudgetEntryService, BudgetEntryService>();
         services.AddScoped<IBudgetTreeService, BudgetTreeService>();
         services.AddScoped<IBudgetOperationsService, BudgetOperationsService>();

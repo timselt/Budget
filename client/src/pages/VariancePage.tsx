@@ -2,6 +2,10 @@ import '../lib/chart-config'
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
+import {
+  formatCompactAmount,
+  formatSignedPercent,
+} from '../lib/number-format'
 import { useActiveVersion } from '../lib/useActiveVersion'
 import { WaterfallChart } from '../components/variance/WaterfallChart'
 import { PageIntro } from '../components/shared/PageIntro'
@@ -40,18 +44,6 @@ interface CustomerVarianceDto {
   actualClaims: number
   claimsVariance: number
   claimsVariancePercent: number
-}
-
-function fmtM(value: number): string {
-  const m = value / 1_000_000
-  return m.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-}
-
-function fmtPct(value: number, digits = 1): string {
-  return `${value >= 0 ? '+' : ''}${value.toLocaleString('tr-TR', {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  })}%`
 }
 
 export function VariancePage() {
@@ -220,7 +212,7 @@ export function VariancePage() {
                         {c.customerName}
                       </p>
                       <p className={`text-lg font-black num ${meta.tone}`}>
-                        {fmtPct(c.magnitude * (c.kind.includes('down') ? -1 : 1))}
+                        {formatSignedPercent(c.magnitude * (c.kind.includes('down') ? -1 : 1))}
                       </p>
                       <p className="text-xs text-on-surface-variant mt-0.5">
                         {meta.action}
@@ -238,37 +230,37 @@ export function VariancePage() {
         <div className="card">
           <span className="label-sm">Gelir Sapması</span>
           <p className={`text-2xl font-black num mt-2 ${revenueVar >= 0 ? 'text-success' : 'text-error'}`}>
-            {summary ? `${revenueVar >= 0 ? '+' : ''}${fmtM(revenueVar)}M` : '—'}
+            {summary ? `${revenueVar >= 0 ? '+' : ''}${formatCompactAmount(revenueVar)}` : '—'}
           </p>
           <p className="text-xs font-bold mt-1">
-            {summary ? `${fmtPct(revenueVarPct)} vs Plan` : '—'}
+            {summary ? `${formatSignedPercent(revenueVarPct)} vs Plan` : '—'}
           </p>
         </div>
         <div className="card">
           <span className="label-sm">Hasar Sapması</span>
           <p className={`text-2xl font-black num mt-2 ${claimsVar <= 0 ? 'text-success' : 'text-warning'}`}>
-            {summary ? `${claimsVar >= 0 ? '+' : ''}${fmtM(claimsVar)}M` : '—'}
+            {summary ? `${claimsVar >= 0 ? '+' : ''}${formatCompactAmount(claimsVar)}` : '—'}
           </p>
           <p className="text-xs font-bold mt-1">
-            {summary ? `${fmtPct(claimsVarPct)} vs Plan` : '—'}
+            {summary ? `${formatSignedPercent(claimsVarPct)} vs Plan` : '—'}
           </p>
         </div>
         <div className="card">
           <span className="label-sm">Teknik Marj Sapması</span>
           <p className={`text-2xl font-black num mt-2 ${marginVar >= 0 ? 'text-success' : 'text-error'}`}>
-            {summary ? `${marginVar >= 0 ? '+' : ''}${fmtM(marginVar)}M` : '—'}
+            {summary ? `${marginVar >= 0 ? '+' : ''}${formatCompactAmount(marginVar)}` : '—'}
           </p>
           <p className="text-xs font-bold mt-1">
-            {summary ? `${fmtPct(marginVarPct)} vs Plan` : '—'}
+            {summary ? `${formatSignedPercent(marginVarPct)} vs Plan` : '—'}
           </p>
         </div>
         <div className="card">
           <span className="label-sm">Toplam Plan Gelir</span>
           <p className="text-2xl font-black num mt-2 text-[#002366]">
-            {summary ? `${fmtM(summary.totalBudgetRevenue)}M` : '—'}
+            {summary ? formatCompactAmount(summary.totalBudgetRevenue) : '—'}
           </p>
           <p className="text-xs text-on-surface-variant mt-1">
-            Gerçekleşen: {summary ? `${fmtM(summary.totalActualRevenue)}M` : '—'}
+            Gerçekleşen: {summary ? formatCompactAmount(summary.totalActualRevenue) : '—'}
           </p>
         </div>
       </div>
@@ -303,22 +295,22 @@ export function VariancePage() {
                       {c.customerCode}
                     </div>
                   </td>
-                  <td className="text-right num">{fmtM(c.budgetRevenue)}</td>
-                  <td className="text-right num">{fmtM(c.actualRevenue)}</td>
+                  <td className="text-right num">{formatCompactAmount(c.budgetRevenue)}</td>
+                  <td className="text-right num">{formatCompactAmount(c.actualRevenue)}</td>
                   <td
                     className={`text-right num ${
                       c.revenueVariance >= 0 ? 'text-success' : 'text-error'
                     }`}
                   >
                     {c.revenueVariance >= 0 ? '+' : ''}
-                    {fmtM(c.revenueVariance)}
+                    {formatCompactAmount(c.revenueVariance)}
                   </td>
                   <td
                     className={`text-right num ${
                       c.revenueVariance >= 0 ? 'text-success' : 'text-error'
                     }`}
                   >
-                    {fmtPct(c.revenueVariancePercent)}
+                    {formatSignedPercent(c.revenueVariancePercent)}
                   </td>
                   <td
                     className={`text-right num ${
@@ -326,7 +318,7 @@ export function VariancePage() {
                     }`}
                   >
                     {c.claimsVariance >= 0 ? '+' : ''}
-                    {fmtM(c.claimsVariance)}
+                    {formatCompactAmount(c.claimsVariance)}
                   </td>
                 </tr>
               ))}

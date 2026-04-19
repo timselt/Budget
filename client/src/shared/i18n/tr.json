@@ -52,5 +52,75 @@
     "forbidden": "Bu sayfayı görüntüleme yetkiniz yok.",
     "notFound": "Sayfa bulunamadı.",
     "unexpected": "Beklenmedik bir hata oluştu."
+  },
+  "reconciliation": {
+    "batchList": {
+      "title": "Mutabakat Batch Listesi",
+      "subtitle": "Dönem bazlı mutabakat dosyaları — sigorta poliçe listeleri + otomotiv TARS/Power BI export'ları.",
+      "newBatchButton": "Yeni Batch Yükle",
+      "tabs": {
+        "all": "Tümü",
+        "insurance": "Sigorta",
+        "automotive": "Otomotiv"
+      },
+      "filters": {
+        "period": "Dönem",
+        "status": "Durum",
+        "anyPeriod": "Tüm dönemler",
+        "anyStatus": "Tüm durumlar"
+      },
+      "columns": {
+        "flow": "Akış",
+        "periodCode": "Dönem",
+        "sourceType": "Kaynak",
+        "sourceFileName": "Dosya",
+        "rowCount": "Satır",
+        "status": "Durum",
+        "importedAt": "Yüklenme",
+        "notes": "Notlar"
+      },
+      "status": {
+        "draft": "Taslak",
+        "parsed": "Ayrıştırıldı",
+        "mapped": "Eşleştirildi",
+        "archived": "Arşivlendi"
+      },
+      "flow": {
+        "insurance": "Sigorta",
+        "automotive": "Otomotiv"
+      },
+      "sourceType": {
+        "insurerList": "Sigorta Listesi",
+        "tarsPowerBi": "TARS / Power BI",
+        "manualCsv": "Elle CSV"
+      },
+      "empty": {
+        "title": "Henüz batch yüklenmemiş",
+        "description": "Dönem başı sigorta şirketi poliçe listesini veya TARS export'unu yükleyin — parser satırları ayrıştırıp case'lere dağıtır.",
+        "cta": "İlk Batch'i Yükle"
+      }
+    },
+    "upload": {
+      "modalTitle": "Yeni Mutabakat Batch'i",
+      "stepFlow": "Akış Türü",
+      "stepPeriod": "Dönem (YYYY-MM)",
+      "stepSource": "Kaynak Tipi",
+      "stepFile": "Dosya",
+      "stepNotes": "Notlar (opsiyonel)",
+      "fileHint": ".xlsx veya .csv — maks 25 MB, 20.000 satır",
+      "notesPlaceholder": "Örn: Nisan 2026 Anadolu Sigorta poliçe listesi (revize)",
+      "submit": "Yükle ve Ayrıştır",
+      "submitting": "Yükleniyor…",
+      "cancel": "Vazgeç",
+      "success": "Batch yüklendi: {rowCount} satır ayrıştırıldı ({okCount} OK, {warningCount} uyarı, {errorCount} hata).",
+      "duplicateError": "Bu dosya daha önce yüklenmiş (batch #{existingBatchId}). Aynı içerik tekrar yüklenemez.",
+      "readError": "Dosya okunamadı — format bozuk veya desteklenmiyor.",
+      "validation": {
+        "fileRequired": "Dosya seçimi zorunlu.",
+        "periodFormat": "Dönem YYYY-MM formatında olmalı (örn. 2026-04).",
+        "flowRequired": "Akış türü seçimi zorunlu.",
+        "sourceRequired": "Kaynak tipi seçimi zorunlu."
+      }
+    }
   }
 }

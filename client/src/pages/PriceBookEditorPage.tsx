@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { AgGridReact } from 'ag-grid-react'
 import type { ColDef, GridApi } from 'ag-grid-community'
 import api from '../lib/api'
+import { formatPrice } from '../lib/number-format'
 
 /**
  * PriceBook editor (00b §4). Draft sürümdeki kalemleri AG-Grid ile inline
@@ -103,7 +104,7 @@ export function PriceBookEditorPage() {
         type: 'numericColumn',
         valueFormatter: (p) =>
           typeof p.value === 'number'
-            ? p.value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+            ? formatPrice(p.value)
             : '',
         valueParser: (p) => Number(String(p.newValue).replace(/\./g, '').replace(',', '.')),
       },

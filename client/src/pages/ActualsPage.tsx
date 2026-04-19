@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
 import { PageIntro } from '../components/shared/PageIntro'
+import {
+  formatAmount,
+  formatCompactAmount,
+  formatPercent,
+} from '../lib/number-format'
 
 interface BudgetYearRow {
   id: number
@@ -76,18 +81,6 @@ async function getExpenses(yearId: number, versionId: number): Promise<ExpenseEn
     `/expenses/${yearId}/entries?versionId=${versionId}`,
   )
   return data
-}
-
-function formatAmount(value: number): string {
-  return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-function formatCompact(value: number): string {
-  if (Math.abs(value) >= 1_000_000) {
-    const millions = value / 1_000_000
-    return `${millions.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`
-  }
-  return formatAmount(value)
 }
 
 type ActualsView = 'overview' | 'comparison'
@@ -235,11 +228,11 @@ export function ActualsPage() {
       </div>
 
       <div className="grid grid-cols-12 gap-4 mb-6">
-        <KpiCard title="Gerçekleşen Toplam" value={formatCompact(actualTotal)} subtitle="TRY" />
-        <KpiCard title="Bütçe Toplam" value={formatCompact(budgetTotal)} subtitle="TRY" />
+        <KpiCard title="Gerçekleşen Toplam" value={formatCompactAmount(actualTotal)} subtitle="TRY" />
+        <KpiCard title="Bütçe Toplam" value={formatCompactAmount(budgetTotal)} subtitle="TRY" />
         <KpiCard
           title="Bütçe Kullanımı"
-          value={`%${formatAmount(usedPct)}`}
+          value={formatPercent(usedPct)}
           subtitle={usedPct > 100 ? 'Bütçe aşıldı' : 'Bütçe içinde'}
           chip={usedPct > 100 ? 'chip-error' : usedPct > 85 ? 'chip-warning' : 'chip-success'}
         />
@@ -258,7 +251,7 @@ export function ActualsPage() {
                 {CLASSIFICATION_LABEL[cls] ?? cls}
               </span>
               <p className="text-2xl font-black tracking-display num mt-3">
-                {formatCompact(total)}
+                {formatCompactAmount(total)}
               </p>
               <p className="text-xs text-on-surface-variant mt-1">Sınıflandırma toplamı</p>
             </div>

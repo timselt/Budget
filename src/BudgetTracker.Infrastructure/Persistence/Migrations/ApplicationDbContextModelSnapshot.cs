@@ -1810,6 +1810,684 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                     b.ToTable("product_categories", (string)null);
                 });
 
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.AccountingInstruction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CaseId")
+                        .HasColumnType("integer")
+                        .HasColumnName("case_id");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("customer_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<DateTimeOffset?>("ExportedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("exported_at");
+
+                    b.Property<string>("ExportedFormat")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("exported_format");
+
+                    b.Property<string>("ExternalRef")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("external_ref");
+
+                    b.Property<string>("Flow")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("flow");
+
+                    b.Property<string>("LinesSummary")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("lines_summary");
+
+                    b.Property<string>("PeriodCode")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character(7)")
+                        .HasColumnName("period_code")
+                        .IsFixedLength();
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_amount");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_accounting_instructions");
+
+                    b.HasIndex("CaseId")
+                        .HasDatabaseName("ix_accounting_instructions_case_id");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_accounting_instructions_customer_id");
+
+                    b.HasIndex("CompanyId", "Status")
+                        .HasDatabaseName("ix_accounting_instructions_company_id_status");
+
+                    b.HasIndex("CompanyId", "PeriodCode", "Flow")
+                        .HasDatabaseName("ix_accounting_instructions_company_id_period_code_flow");
+
+                    b.ToTable("accounting_instructions", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationBatch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("company_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<string>("Flow")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("flow");
+
+                    b.Property<DateTimeOffset>("ImportedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("imported_at");
+
+                    b.Property<int>("ImportedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("imported_by_user_id");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PeriodCode")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character(7)")
+                        .HasColumnName("period_code")
+                        .IsFixedLength();
+
+                    b.Property<int>("RowCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("row_count");
+
+                    b.Property<string>("SourceFileHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .HasColumnName("source_file_hash")
+                        .IsFixedLength();
+
+                    b.Property<string>("SourceFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("source_file_name");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("source_type");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_reconciliation_batches");
+
+                    b.HasIndex("CompanyId", "ImportedAt")
+                        .HasDatabaseName("ix_reconciliation_batches_company_id_imported_at");
+
+                    b.HasIndex("CompanyId", "SourceFileHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_reconciliation_batches_company_id_source_file_hash");
+
+                    b.HasIndex("CompanyId", "Flow", "PeriodCode", "Status")
+                        .HasDatabaseName("ix_reconciliation_batches_company_id_flow_period_code_status");
+
+                    b.ToTable("reconciliation_batches", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationCase", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("company_id");
+
+                    b.Property<int?>("ContractId")
+                        .HasColumnType("integer")
+                        .HasColumnName("contract_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer")
+                        .HasColumnName("customer_id");
+
+                    b.Property<DateTimeOffset?>("CustomerResponseAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("customer_response_at");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<string>("Flow")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("flow");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTimeOffset>("OpenedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("opened_at");
+
+                    b.Property<int>("OwnerUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("PeriodCode")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character(7)")
+                        .HasColumnName("period_code")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset?>("SentToAccountingAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_to_accounting_at");
+
+                    b.Property<DateTimeOffset?>("SentToCustomerAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_to_customer_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("total_amount");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_reconciliation_cases");
+
+                    b.HasIndex("ContractId")
+                        .HasDatabaseName("ix_reconciliation_cases_contract_id");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("ix_reconciliation_cases_customer_id");
+
+                    b.HasIndex("OwnerUserId")
+                        .HasDatabaseName("ix_reconciliation_cases_owner_user_id");
+
+                    b.HasIndex("CompanyId", "Status")
+                        .HasDatabaseName("ix_reconciliation_cases_company_id_status");
+
+                    b.HasIndex("CompanyId", "Flow", "PeriodCode", "CustomerId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_reconciliation_cases_company_id_flow_period_code_customer_id");
+
+                    b.ToTable("reconciliation_cases", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationDecision", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("actor_role");
+
+                    b.Property<int>("ActorUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<string>("DecisionType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("decision_type");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<string>("EvidenceFileRef")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("evidence_file_ref");
+
+                    b.Property<int>("LineId")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("note");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_reconciliation_decisions");
+
+                    b.HasIndex("ActorUserId", "DecidedAt")
+                        .HasDatabaseName("ix_reconciliation_decisions_actor_user_id_decided_at");
+
+                    b.HasIndex("LineId", "DecidedAt")
+                        .HasDatabaseName("ix_reconciliation_decisions_line_id_decided_at");
+
+                    b.ToTable("reconciliation_decisions", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationLine", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<int>("CaseId")
+                        .HasColumnType("integer")
+                        .HasColumnName("case_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<string>("DisputeNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("dispute_note");
+
+                    b.Property<string>("DisputeReasonCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("dispute_reason_code");
+
+                    b.Property<string>("PriceSourceRef")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("price_source_ref");
+
+                    b.Property<string>("ProductCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("product_code");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("product_name");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<int>("SourceRowId")
+                        .HasColumnType("integer")
+                        .HasColumnName("source_row_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("status");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("unit_price");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_reconciliation_lines");
+
+                    b.HasIndex("SourceRowId")
+                        .HasDatabaseName("ix_reconciliation_lines_source_row_id");
+
+                    b.HasIndex("CaseId", "Status")
+                        .HasDatabaseName("ix_reconciliation_lines_case_id_status");
+
+                    b.ToTable("reconciliation_lines", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationSourceRow", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BatchId")
+                        .HasColumnType("integer")
+                        .HasColumnName("batch_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<string>("ExternalCustomerRef")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("external_customer_ref");
+
+                    b.Property<string>("ExternalDocumentRef")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("external_document_ref");
+
+                    b.Property<string>("ParseErrors")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("parse_errors");
+
+                    b.Property<string>("ParseStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("parse_status");
+
+                    b.Property<DateTimeOffset>("ParsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("parsed_at");
+
+                    b.Property<string>("RawPayload")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("raw_payload");
+
+                    b.Property<int>("RowNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("row_number");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_reconciliation_source_rows");
+
+                    b.HasIndex("ExternalCustomerRef")
+                        .HasDatabaseName("ix_reconciliation_source_rows_external_customer_ref");
+
+                    b.HasIndex("BatchId", "ParseStatus")
+                        .HasDatabaseName("ix_reconciliation_source_rows_batch_id_parse_status");
+
+                    b.HasIndex("BatchId", "RowNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_reconciliation_source_rows_batch_id_row_number");
+
+                    b.ToTable("reconciliation_source_rows", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.RiskRuleSet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_to");
+
+                    b.Property<string>("Flow")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("flow");
+
+                    b.Property<int>("LowToMediumDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("low_to_medium_days");
+
+                    b.Property<int>("MediumToHighDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("medium_to_high_days");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_risk_rule_sets");
+
+                    b.HasIndex("Flow", "EffectiveFrom")
+                        .HasDatabaseName("ix_risk_rule_sets_flow_effective_from");
+
+                    b.ToTable("risk_rule_sets", (string)null);
+                });
+
             modelBuilder.Entity("BudgetTracker.Core.Entities.Scenario", b =>
                 {
                     b.Property<int>("Id")
@@ -2945,6 +3623,100 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_product_categories_segments_segment_id");
                 });
 
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.AccountingInstruction", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.Reconciliation.ReconciliationCase", null)
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_accounting_instructions_reconciliation_cases_case_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_accounting_instructions_companies_company_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_accounting_instructions_customers_customer_id");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationBatch", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_reconciliation_batches_companies_company_id");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationCase", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_reconciliation_cases_companies_company_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.Contract", null)
+                        .WithMany()
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_reconciliation_cases_contracts_contract_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_reconciliation_cases_customers_customer_id");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationDecision", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.Reconciliation.ReconciliationLine", null)
+                        .WithMany()
+                        .HasForeignKey("LineId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_reconciliation_decisions_reconciliation_lines_line_id");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationLine", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.Reconciliation.ReconciliationCase", null)
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_reconciliation_lines_reconciliation_cases_case_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.Reconciliation.ReconciliationSourceRow", null)
+                        .WithMany()
+                        .HasForeignKey("SourceRowId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_reconciliation_lines_reconciliation_source_rows_source_row_");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationSourceRow", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.Reconciliation.ReconciliationBatch", null)
+                        .WithMany("SourceRows")
+                        .HasForeignKey("BatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_reconciliation_source_rows_reconciliation_batches_batch_id");
+                });
+
             modelBuilder.Entity("BudgetTracker.Core.Entities.Scenario", b =>
                 {
                     b.HasOne("BudgetTracker.Core.Entities.BudgetVersion", "BudgetVersion")
@@ -3126,6 +3898,11 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("BudgetTracker.Core.Entities.PriceBook", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.Reconciliation.ReconciliationBatch", b =>
+                {
+                    b.Navigation("SourceRows");
                 });
 
             modelBuilder.Entity("BudgetTracker.Infrastructure.Identity.User", b =>

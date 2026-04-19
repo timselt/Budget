@@ -5,10 +5,8 @@ import api from '../lib/api'
 import { useAuthStore } from '../stores/auth'
 import { createRevision } from '../components/budget-planning/api'
 import { RevisionTimeline } from '../components/budget-planning/RevisionTimeline'
-import {
-  VersionCard,
-  sortVersionsForDisplay,
-} from '../components/budget-planning/VersionCard'
+import { VersionCard } from '../components/budget-planning/VersionCard'
+import { sortVersionsForDisplay } from '../components/budget-planning/sortVersionsForDisplay'
 import {
   IN_PROGRESS_STATUSES,
   type BudgetVersionStatus,

@@ -24,6 +24,7 @@ import {
 import { BudgetPeriodsPage } from './BudgetPeriodsPage'
 import { translateApiError } from '../lib/api-error'
 import { HelpHint } from '../components/shared/Tooltip'
+import { showToast } from '../components/shared/toast-bus'
 import {
   bulkUpsertEntries,
   createRevision,
@@ -33,7 +34,6 @@ import {
   getCustomers,
   getEntries,
   getExpenseEntries,
-  getScenarios,
   getTree,
   getVersions,
   getYears,
@@ -70,7 +70,6 @@ export function BudgetEntryPage() {
   const [yearOverride, setYearOverride] = useState<number | null>(null)
   const versionId = useAppContextStore((s) => s.selectedVersionId)
   const setVersion = useAppContextStore((s) => s.setVersion)
-  const [scenarioOverride, setScenarioOverride] = useState<number | null>(null)
   const [currency, setCurrency] = useState<string>('TRY')
   const [selectionOverride, setSelectionOverride] = useState<TreeSelection | null>(null)
   const [values, setValues] = useState<GridValues>({})
@@ -81,7 +80,6 @@ export function BudgetEntryPage() {
 
   // Bağımsız sorgular (türetilmiş değerlere bağlı değil).
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
-  const scenariosQuery = useQuery({ queryKey: ['scenarios'], queryFn: getScenarios })
   const customersQuery = useQuery({ queryKey: ['customers'], queryFn: getCustomers })
   const treeQuery = useQuery({
     queryKey: ['budget-tree', versionId],
@@ -93,17 +91,8 @@ export function BudgetEntryPage() {
     queryFn: () => (versionId ? getEntries(versionId) : Promise.resolve([])),
     enabled: versionId !== null,
   })
-  const expenseEntriesQuery = useQuery({
-    queryKey: ['expense-entries', yearId, versionId],
-    queryFn: () =>
-      yearId && versionId
-        ? getExpenseEntries(yearId, versionId)
-        : Promise.resolve([]),
-    enabled: yearId !== null && versionId !== null,
-  })
 
   const years = useMemo(() => yearsQuery.data ?? [], [yearsQuery.data])
-  const scenarios = useMemo(() => scenariosQuery.data ?? [], [scenariosQuery.data])
   const customers = useMemo(
     () => (customersQuery.data ?? []).filter((c) => c.isActive),
     [customersQuery.data],
@@ -125,13 +114,14 @@ export function BudgetEntryPage() {
   }, [yearOverride, years])
   const setYearId = setYearOverride
 
-  const scenarioId = useMemo<number | null>(() => {
-    if (scenarioOverride !== null && scenarios.some((s) => s.id === scenarioOverride)) {
-      return scenarioOverride
-    }
-    return scenarios[0]?.id ?? null
-  }, [scenarioOverride, scenarios])
-  const setScenarioId = setScenarioOverride
+  const expenseEntriesQuery = useQuery({
+    queryKey: ['expense-entries', yearId, versionId],
+    queryFn: () =>
+      yearId && versionId
+        ? getExpenseEntries(yearId, versionId)
+        : Promise.resolve([]),
+    enabled: yearId !== null && versionId !== null,
+  })
 
   // Mode'a göre default selection:
   //  - A (tree) → ilk segment
@@ -300,7 +290,6 @@ export function BudgetEntryPage() {
     customers,
     entries,
     expenseEntries,
-    scenarioId,
   })
 
   // WorkContextBar smart navigator — checklist priority'sinden tek
@@ -449,12 +438,6 @@ export function BudgetEntryPage() {
         kind: 'opex',
         expenseCategoryId: action.expenseCategoryId,
       })
-    } else if (action.kind === 'highlight-scenario') {
-      const select = document.querySelector('select[data-scenario-select]')
-      if (select instanceof HTMLElement) {
-        select.setAttribute('data-attention', 'scenario')
-        setTimeout(() => select.removeAttribute('data-attention'), 1500)
-      }
     }
   }
 
@@ -495,6 +478,21 @@ export function BudgetEntryPage() {
         )
       : null
 
+  const handleSubmit = () => {
+    if (!isEditable || !allCustomersComplete) return
+    const warningList = checklist.items
+      .filter((i) => i.level === 'warn')
+      .map((i) => `   • ${i.message}`)
+      .join('\n')
+    const msg =
+      checklist.warnCount > 0
+        ? `Bu versiyon onaya gönderilecek.\n\n⚠ Uyarılar (göndermeyi engellemez):\n${warningList}\n\nDevam etmek istiyor musunuz?`
+        : 'Bu versiyon onaya gönderilecek. Emin misiniz?'
+    if (!confirm(msg)) return
+    setSubmitError(null)
+    submitMutation.mutate()
+  }
+
   return (
     <section>
       <div className="flex justify-between items-center mb-6">
@@ -508,74 +506,37 @@ export function BudgetEntryPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button
-            type="button"
-            className="btn-secondary"
-            disabled={!versionId || !isEditable}
-            onClick={() => setModal('excel')}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              upload_file
-            </span>
-            Excel İçe Aktar
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            disabled={
-              !isEditable || saveMutation.isPending || selection?.kind !== 'customer'
-            }
-            onClick={() => {
-              setSaveError(null)
-              saveMutation.mutate()
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              save
-            </span>
-            {saveMutation.isPending ? 'Kaydediliyor…' : 'Taslak Kaydet'}
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={
-              !isEditable ||
-              !allCustomersComplete ||
-              submitMutation.isPending
-            }
-            title={
-              !isEditable
-                ? 'Bu versiyon düzenlenemez'
-                : !allCustomersComplete
-                  ? `${missingCustomerCount} müşteride henüz tutar girilmedi`
-                  : undefined
-            }
-            onClick={() => {
-              if (!isEditable || !allCustomersComplete) return
-              const warningList = checklist.items
-                .filter((i) => i.level === 'warn')
-                .map((i) => `   • ${i.message}`)
-                .join('\n')
-              const msg =
-                checklist.warnCount > 0
-                  ? `Bu versiyon onaya gönderilecek.\n\n⚠ Uyarılar (göndermeyi engellemez):\n${warningList}\n\nDevam etmek istiyor musunuz?`
-                  : 'Bu versiyon onaya gönderilecek. Emin misiniz?'
-              if (!confirm(msg)) return
-              setSubmitError(null)
-              submitMutation.mutate()
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              verified
-            </span>
-            {submitMutation.isPending
-              ? 'Gönderiliyor…'
-              : !isEditable
-                ? 'Onaya Gönder'
-                : allCustomersComplete
-                  ? 'Onaya Gönder'
-                  : `Onaya Gönder (${missingCustomerCount} eksik)`}
-          </button>
+          {isEditable ? (
+            <button
+              type="button"
+              className={mode === 'customer' ? 'btn-primary' : 'btn-secondary'}
+              disabled={!versionId}
+              onClick={() => setModal('excel')}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                upload_file
+              </span>
+              {mode === 'customer' ? 'Excel’den Toplu Aktar' : 'Excel İçe Aktar'}
+            </button>
+          ) : null}
+          {mode === 'customer' ? (
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={
+                !isEditable || saveMutation.isPending || selection?.kind !== 'customer'
+              }
+              onClick={() => {
+                setSaveError(null)
+                saveMutation.mutate()
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                save
+              </span>
+              {saveMutation.isPending ? 'Kaydediliyor…' : 'Değişiklikleri Kaydet'}
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -656,21 +617,6 @@ export function BudgetEntryPage() {
         </select>
         <select
           className="select"
-          data-scenario-select
-          value={scenarioId ?? ''}
-          onChange={(e) =>
-            setScenarioId(e.target.value === '' ? null : Number(e.target.value))
-          }
-        >
-          <option value="">Senaryo —</option>
-          {scenarios.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-        <select
-          className="select"
           value={currency}
           onChange={(e) => setCurrency(e.target.value)}
         >
@@ -681,9 +627,13 @@ export function BudgetEntryPage() {
           ))}
         </select>
         <div className="ml-auto flex items-center gap-2">
-          <span className="chip chip-info">Mavi = giriş</span>
-          <span className="chip chip-neutral">Gri = formül</span>
-          <span className="chip chip-warning">Sarı = müşteri zorunlu</span>
+          <span className="chip chip-neutral inline-flex items-center gap-1">
+            Hücre Rehberi
+            <HelpHint
+              placement="bottom"
+              text="Mavi hücreler doğrudan giriş alanıdır. Gri hücreler formülle hesaplanır. Sarı hücreler müşteri seçmeden doldurulamaz."
+            />
+          </span>
           {currentVersion && !isEditable ? (
             <span className="chip chip-error">Salt-okunur</span>
           ) : null}
@@ -707,7 +657,6 @@ export function BudgetEntryPage() {
           completedCount={completedCustomerCount}
           totalCount={totalCustomerCount}
           currency={currency}
-          scenarioName={scenarios.find((s) => s.id === scenarioId)?.name}
           onCreateRevision={
             hasInProgressDraft
               ? undefined
@@ -755,7 +704,37 @@ export function BudgetEntryPage() {
       </div>
 
       {isEditable && currentVersion && mode !== 'versions' ? (
-        <SubmissionChecklist result={checklist} />
+        <SubmissionChecklist
+          result={checklist}
+          footer={
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={
+                !isEditable ||
+                !allCustomersComplete ||
+                submitMutation.isPending
+              }
+              title={
+                !isEditable
+                  ? 'Bu versiyon düzenlenemez'
+                  : !allCustomersComplete
+                    ? `${missingCustomerCount} müşteride henüz tutar girilmedi`
+                    : undefined
+              }
+              onClick={handleSubmit}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                verified
+              </span>
+              {submitMutation.isPending
+                ? 'Gönderiliyor…'
+                : allCustomersComplete
+                  ? 'Onaya Gönder'
+                  : `Onaya Gönder (${missingCustomerCount} eksik)`}
+            </button>
+          }
+        />
       ) : null}
 
       {mode === 'versions' ? (
@@ -886,7 +865,10 @@ export function BudgetEntryPage() {
         <ExcelImportModal
           versionId={versionId}
           onClose={() => setModal(null)}
-          onSuccess={handleModalSuccess}
+          onSuccess={() => {
+            handleModalSuccess()
+            showToast('✓ Excel içe aktarma tamamlandı.')
+          }}
         />
       ) : null}
     </section>

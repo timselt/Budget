@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../lib/api'
+import { formatPrice } from '../lib/number-format'
 import { PageIntro } from '../components/shared/PageIntro'
 
 /**
@@ -325,7 +326,7 @@ export function ContractsPage() {
                   </td>
                   <td className="text-right num">
                     {c.unitPriceTry != null
-                      ? c.unitPriceTry.toLocaleString('tr-TR', { minimumFractionDigits: 2 })
+                      ? formatPrice(c.unitPriceTry)
                       : '—'}
                   </td>
                   <td className="text-sm">{c.startDate ?? '—'}</td>

@@ -7,12 +7,18 @@ const PRIORITY_BORDER: Record<string, string> = {
   low: 'border-l-4 border-l-on-surface-variant',
 }
 
-export function TaskCenter() {
+interface TaskCenterProps {
+  embedded?: boolean
+}
+
+export function TaskCenter({ embedded = false }: TaskCenterProps) {
   const { tasks, isLoading } = useTaskCenter()
+  const shellClass = embedded ? '' : 'card mb-4'
+  const emptyClass = embedded ? 'text-center py-4' : 'text-center py-6'
 
   if (isLoading) {
     return (
-      <div className="card mb-4">
+      <div className={shellClass}>
         <p className="label-sm">Görev Merkezi</p>
         <p className="text-sm text-on-surface-variant mt-2">Yükleniyor…</p>
       </div>
@@ -20,7 +26,7 @@ export function TaskCenter() {
   }
 
   return (
-    <div className="card mb-4">
+    <div className={shellClass}>
       <div className="flex items-center gap-2 mb-3">
         <span
           className="material-symbols-outlined text-primary"
@@ -35,7 +41,7 @@ export function TaskCenter() {
       </div>
 
       {tasks.length === 0 ? (
-        <div className="text-center py-6">
+        <div className={emptyClass}>
           <p className="text-sm font-semibold text-on-surface">
             ✓ Bugün için bekleyen aksiyonunuz yok.
           </p>

@@ -111,14 +111,14 @@ public sealed class PdfReportService : IPdfReportService
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2)
                                 .Padding(4).Text(monthLabel).FontSize(9);
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2)
-                                .Padding(4).Text(mt.Total.ToString("N2")).FontSize(9)
+                                .Padding(4).Text(mt.Total.ToString("N0")).FontSize(9)
                                 .AlignRight();
                         }
 
                         table.Cell().Background(Colors.Grey.Lighten3).Padding(4)
                             .Text("Toplam").Bold().FontSize(9);
                         table.Cell().Background(Colors.Grey.Lighten3).Padding(4)
-                            .Text(grandTotal.ToString("N2")).Bold().FontSize(9)
+                            .Text(grandTotal.ToString("N0")).Bold().FontSize(9)
                             .AlignRight();
                     });
 
@@ -149,7 +149,7 @@ public sealed class PdfReportService : IPdfReportService
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2)
                                 .Padding(4).Text(ct.CustomerName).FontSize(9);
                             table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2)
-                                .Padding(4).Text(ct.Total.ToString("N2")).FontSize(9)
+                                .Padding(4).Text(ct.Total.ToString("N0")).FontSize(9)
                                 .AlignRight();
                         }
                     });

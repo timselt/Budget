@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { formatAmount } from '../lib/number-format'
 import { PageIntro } from '../components/shared/PageIntro'
 
 interface BudgetYearRow {
@@ -270,10 +271,6 @@ export function SpecialItemsPage() {
       ) : null}
     </section>
   )
-}
-
-function formatAmount(value: number): string {
-  return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function SpecialItemModal({

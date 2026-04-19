@@ -47,6 +47,9 @@
     <!-- Excel export/import -->
     <PackageVersion Include="ClosedXML" Version="0.104.2" />
 
+    <!-- CSV import (Mutabakat parser) -->
+    <PackageVersion Include="CsvHelper" Version="33.0.1" />
+
     <!-- PDF report generation -->
     <PackageVersion Include="QuestPDF" Version="2025.1.2" />
 
@@ -71,5 +74,17 @@
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageVersion Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+
+    <!-- Transitive security pins (Sprint 1 PR #25 — security scan bloğu).
+         Sadece IntegrationTests üzerinden gelen transitive paketler;
+         HIGH / Critical advisory'leri en küçük safe minor bump ile kapatır
+         (major bump Sprint 1 scope dışı bırakıldı).
+         - Azure.Identity 1.11.4 → GHSA-5mfx-4wcx-rv27 (High)
+         - System.Drawing.Common 5.0.3 → GHSA-rxg9-xrhp-64gj (Critical)
+         Kalan Moderate advisory'ler (Azure.Identity GHSA-m5vv-6r4h-3vj9,
+         GHSA-wvxc-855f-jvrv; System.IdentityModel.Tokens.Jwt
+         GHSA-59j7-ghrg-fj52) ayrı Hygiene PR'a bırakıldı. -->
+    <PackageVersion Include="Azure.Identity" Version="1.11.4" />
+    <PackageVersion Include="System.Drawing.Common" Version="5.0.3" />
   </ItemGroup>
 </Project>

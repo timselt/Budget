@@ -1,4 +1,5 @@
 using BudgetTracker.Core.Entities;
+using BudgetTracker.Core.Entities.Reconciliation;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetTracker.Application.Common.Abstractions;
@@ -28,4 +29,13 @@ public interface IApplicationDbContext : IUnitOfWork
     DbSet<Contract> Contracts { get; }
     DbSet<PriceBook> PriceBooks { get; }
     DbSet<PriceBookItem> PriceBookItems { get; }
+
+    // Mutabakat Sprint 1
+    DbSet<ReconciliationBatch> ReconciliationBatches { get; }
+    DbSet<ReconciliationSourceRow> ReconciliationSourceRows { get; }
+    DbSet<ReconciliationCase> ReconciliationCases { get; }
+    DbSet<ReconciliationLine> ReconciliationLines { get; }
+    DbSet<ReconciliationDecision> ReconciliationDecisions { get; }
+    DbSet<AccountingInstruction> AccountingInstructions { get; }
+    DbSet<RiskRuleSet> RiskRuleSets { get; }
 }

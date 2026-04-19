@@ -102,17 +102,6 @@ describe('deriveNextStep', () => {
     expect(step?.action.expenseCategoryId).toBe(42)
   })
 
-  it('scenario warn → highlight-scenario', () => {
-    const checklist: ChecklistResult = {
-      items: [{ id: 'scenario', level: 'warn', message: 'Senaryo yok' }],
-      canSubmit: true,
-      hardFailCount: 0,
-      warnCount: 1,
-    }
-    const step = deriveNextStep(checklist, emptyCtx)
-    expect(step?.action.kind).toBe('highlight-scenario')
-  })
-
   it('hepsi pass + canSubmit → "Onaya hazır." pass message', () => {
     const checklist: ChecklistResult = {
       items: [{ id: 'all-customers', level: 'pass', message: '3/3 müşteri tamam' }],
