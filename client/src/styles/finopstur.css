@@ -608,6 +608,18 @@ details[open] .chev {
   animation: pulse-ring 1.6s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
+/* ---------- Smart Navigator attention pulse (data-attention) ----------
+ * WorkContextBar "Düzelt →" CTA tıklanınca hedef element'e (senaryo dropdown
+ * vb.) data-attention attribute eklenir; 1.5s sonra kaldırılır.
+ */
+[data-attention] {
+  animation: attention-pulse 1.2s ease-out;
+}
+@keyframes attention-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 0 6px rgba(0, 35, 102, 0.25); }
+}
+
 /* ---------- P&L replica blocks ---------- */
 .pnl-band-band-revenue,
 .pnl-band-revenue {

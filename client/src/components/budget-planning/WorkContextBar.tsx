@@ -1,5 +1,6 @@
 import { getStatusChipClass, getStatusLabel } from './types'
 import type { BudgetVersionStatus } from './types'
+import type { NextStep } from './useNextStepNavigator'
 
 interface Version {
   id: number
@@ -18,6 +19,15 @@ interface Props {
   scenarioName?: string
   onCreateRevision?: () => void
   createRevisionPending?: boolean
+  /** Çalışma bandı altında "sıradaki adım" satırı + Düzelt → CTA. */
+  nextStep?: NextStep | null
+  onJumpToNextStep?: () => void
+}
+
+const LEVEL_ICON_COLOR: Record<NextStep['level'], string> = {
+  fail: 'text-error',
+  warn: 'text-warning',
+  pass: 'text-success',
 }
 
 /**
@@ -35,6 +45,8 @@ export function WorkContextBar({
   scenarioName,
   onCreateRevision,
   createRevisionPending,
+  nextStep,
+  onJumpToNextStep,
 }: Props) {
   const status = version.status as BudgetVersionStatus
   const statusLabel = getStatusLabel(version.status)
@@ -78,6 +90,33 @@ export function WorkContextBar({
             Senaryo: {scenarioName ?? '—'}
           </span>
         </div>
+        {nextStep && (
+          <div className="border-t border-outline-variant pt-2 mt-2 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span
+                className={`material-symbols-outlined ${LEVEL_ICON_COLOR[nextStep.level]}`}
+                style={{ fontSize: 18 }}
+                aria-hidden
+              >
+                {nextStep.level === 'pass' ? 'check_circle' : 'flag'}
+              </span>
+              <p className="text-sm text-on-surface truncate">
+                <span className="font-semibold">Sıradaki adım: </span>
+                {nextStep.message}
+              </p>
+            </div>
+            {nextStep.action.kind !== 'none' && onJumpToNextStep && (
+              <button
+                type="button"
+                className="btn-primary whitespace-nowrap"
+                style={{ padding: '.4rem .75rem', fontSize: '.75rem' }}
+                onClick={onJumpToNextStep}
+              >
+                {nextStep.ctaLabel}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     )
   }

@@ -1,3 +1,5 @@
+import { PilotBanner } from '../components/shared/PilotBanner'
+
 interface ConsoRow {
   company: string
   soloRevenue: string
@@ -19,20 +21,10 @@ const ROWS: readonly ConsoRow[] = [
 export function ConsolidationPage() {
   return (
     <section>
-      <div className="card mb-6 flex items-start gap-3 bg-warning/10 border border-warning/30">
-        <span className="material-symbols-outlined text-warning" style={{ fontSize: 20 }}>
-          info
-        </span>
-        <div className="flex-1">
-          <p className="text-sm font-bold text-on-surface">Demo veri</p>
-          <p className="text-xs text-on-surface-variant mt-1">
-            Konsolidasyon motoru backend'de henüz yok. Bu sayfadaki şirket-arası eliminasyon
-            tablosu örnek veridir. Grup-içi müşteri flag'i (CustomersPage'deki "Grup İçi")
-            mevcut; eliminasyon algoritması + multi-company iştirak ilişkisi sprint devamında
-            gelecek.
-          </p>
-        </div>
-      </div>
+      <PilotBanner
+        feature="Konsolidasyon"
+        description="Bu modül pilot aşamasında. Grup şirket konsolidasyonu için inter-company eliminations ve mahsuplaşma kuralları henüz tanımlanmadı; gösterilen veriler örnek (Grup-İçi müşteri flag'i mevcut, eliminasyon algoritması sprint devamında)."
+      />
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">

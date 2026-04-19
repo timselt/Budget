@@ -4,6 +4,47 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### Sprint 1 Deep — Ekran Yeniden Tasarımı (2026-04-19)
+
+7 ekran iyileştirme işi, Sidebar redesign'ın ardından "ekranlar kendini anlatır mı?" sorusunu kapatır. Audit (2026-04-19) Sprint 1 paketinin %70'i zaten kodlanmıştı; bu PR geriye kalan görünürlük + navigasyon eksikliklerini ve C kapsamı derinleştirmesini birleştirir.
+
+#### Eklendi
+
+- **`PilotBanner`** (`client/src/components/shared/PilotBanner.tsx`) — Forecast / P&L Raporu / Konsolidasyon sayfa-üstü kalıcı pilot uyarı bandı; sarı şerit + "Pilot — Demo Veri" chip + feature başlığı + açıklama. Mevcut ad-hoc "Demo veri" kart blokları tek tutarlı bileşenle değiştirildi.
+- **`RoleGuard`** (`client/src/components/auth/RoleGuard.tsx`) — Route-level rol kontrolü; yetkisiz kullanıcı mevcut `/forbidden` landing'ine yönlendirilir. `App.tsx`'te `Forecast`, `P&L Raporu`, `Konsolidasyon` route'ları `['Admin','CFO','FinanceManager']` ile sarıldı.
+- **`VersionCard`** (`client/src/components/budget-planning/VersionCard.tsx`) — `BudgetPeriodsPage` tablosunu değiştiren rich kart; status renk şeridi (Active yeşil, Draft kehribar, Pending mavi, Rejected kırmızı, Archived gri), büyük "Sıradaki adım" prompt'u, primary action tam genişlik buton, Reddet/Arşivle ⋯ menüde. `sortVersionsForDisplay` helper (Aktif üstte, Archived altta, createdAt DESC tiebreak).
+- **`useNextStepNavigator`** (`client/src/components/budget-planning/useNextStepNavigator.ts`) — Checklist priority'sinden tek navigation hedefi türetir (fail > empty-month > claim-missing > opex > scenario > pass). `WorkContextBar` smart navigator satırı + "Düzelt →" CTA → `BudgetEntryPage` `handleJumpToNextStep` callback ile mode/selection değişimi (jump-to-customer / jump-to-opex / highlight-scenario pulse).
+- **TaskCenter sapma + onay özet task türleri** (`client/src/components/dashboard/taskCenterDerivation.ts`) — Aktif versiyonda |variance| ≥ %20 veya criticalCategoryCount > 0 ise high-priority `Sapma Analizine Git` task. 2+ versiyon onayda + Finance/CFO rolü → bireysel approve task'ları suppress, tek `pending-approvals-summary` özet kart `/approvals`'a gönderir. `useTaskCenter` `VarianceSummaryResult`'tan totalVariancePercent (max abs of revenue+claims) ve criticalCount (Critical alert sayısı) türetir.
+- **`SidebarItem.pilot` + `requiresRole`** — `sidebar-config.ts` field'ları; pilot item'da label sağında uppercase "Pilot" etiketi (warning rengi). `Sidebar.tsx` `visibleSections` useMemo ile rol bazlı filtreleme; tüm item'ları gizlenmiş section da düşer.
+- **`getExpenseEntries`** (`client/src/components/budget-planning/api.ts`) — `useSubmissionChecklist`'in OPEX kuralı için yeni `/api/v1/expenses/{yearId}/entries?versionId=X` helper'ı.
+- **CSS pulse animasyonu** (`client/src/styles/finopstur.css`) — `[data-attention]` keyframes box-shadow ring; smart navigator highlight-scenario için.
+
+#### Değişti
+
+- **`DashboardPage`** — `Executive Dashboard` → `Ana Sayfa` (TR rename, 3 yer). Aktif versiyon yokken düz metin yerine kart + "Yeni Versiyon Oluştur" CTA → `/budget/planning?tab=versions`.
+- **`WorkContextBar`** — düzenlenebilir varyantta yeni "Sıradaki adım" satırı (level-bazlı icon + message + Düzelt → CTA). Salt-okunur varyant değişmedi.
+- **`BudgetPeriodsPage`** — `<table>` render kaldırıldı, kart grid (1-2 kolon). `RevisionTimeline` highlight DOM hedefi `version-row-{id}` → `version-card-{id}` güncellendi. `primaryAction`, `REJECTABLE_STATUSES`, `RoleFlags`, `ActionHandlers` helper'ları `VersionCard.tsx`'e taşındı.
+
+#### Düzeltildi
+
+- **`useSubmissionChecklist` OPEX kuralı** — `BudgetEntryPage:266`'da hardcoded `expenseEntries: []` veriliyordu; gerçek `getExpenseEntries(yearId, versionId)` query bağlandı. OPEX gider girilmiş versiyonlarda artık yanlış warn üretmez.
+
+#### Test
+
+- **Vitest** — Yeni 5 test dosyası, toplam 36 yeni assertion: `DashboardPage` (3), `RoleGuard` (4), `VersionCard` (13), `useNextStepNavigator` (8), `taskCenterDerivation` (10). `SidebarSection.test.tsx`'e pilot etiketi senaryo eklendi. Toplam 121 test geçer.
+- **Playwright** — `client/e2e/sprint1-deep.spec.ts` 8 senaryo (Dashboard rename, Versiyonlar kart grid, Sıradaki adım metni, smart navigator conditional, 3 sayfa Pilot Banner, Sidebar Pilot etiketi). Yetkisiz kullanıcı (RoleGuard 403) senaryosu ayrı storageState gerektirdiği için TODO.
+
+#### Tasarım Dokümanları
+
+- `docs/plans/2026-04-19-sprint1-deep-screen-redesign-design.md`
+- `docs/plans/2026-04-19-sprint1-deep-screen-redesign-plan.md`
+
+#### P2'ye Ertelendi
+
+VersionCard mini KPI özet (gelir/hasar son güncellenme), smart navigator undo/back CTA, Pilot Banner dismissible state, ForbiddenPage "Yetki talep et" formu, TaskCenter rejected versiyon detay türü.
+
+---
+
 ### Mutabakat Modülü Önkoşul 00b — Contract + PriceBook (2026-04-19)
 
 ADR-0015 kapsamında Mutabakat modülünün ikinci önkoşulu: sözleşme bazlı versiyonlu fiyat listesi altyapısı. Faz 1 mutabakat import parser'ının eşleme algoritmasına girdi üretir.

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useAuthStore } from '../../stores/auth'
 import { SIDEBAR_SECTIONS } from './sidebar-config'
 import { SidebarSection } from './SidebarSection'
@@ -17,6 +18,20 @@ export function Sidebar() {
   const { user, logout } = useAuthStore()
   const roleLine = user?.roles?.[0] ?? 'CEO • Tur Assist'
   const displayName = user?.displayName ?? 'Timur Turan'
+
+  // Rol filtresi — pilot/role-gated item'ları yetkisiz kullanıcıdan gizler.
+  // Section'ın tüm item'ları gizlendiyse section da kaldırılır (boş header
+  // göstermesin); ama section.to (tek-link mod) varsa korunur.
+  const visibleSections = useMemo(() => {
+    const userRoles = new Set(user?.roles ?? [])
+    return SIDEBAR_SECTIONS.map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) =>
+          !item.requiresRole || item.requiresRole.some((r) => userRoles.has(r)),
+      ),
+    })).filter((section) => section.to || section.items.length > 0)
+  }, [user?.roles])
 
   return (
     <aside className="w-64 fixed left-0 top-0 h-screen bg-secondary text-on-secondary flex flex-col py-6 px-3 z-50">
@@ -39,7 +54,7 @@ export function Sidebar() {
       <SidebarContextBar />
 
       <nav className="flex-1 overflow-y-auto pr-1 space-y-1">
-        {SIDEBAR_SECTIONS.map((section) => (
+        {visibleSections.map((section) => (
           <SidebarSection key={section.id} section={section} />
         ))}
       </nav>

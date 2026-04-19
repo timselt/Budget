@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import './shared/i18n' // initialise i18next once at app entry
 import { AuthGuard } from './components/layout/AuthGuard'
 import { AppLayout } from './components/layout/AppLayout'
+import { RoleGuard } from './components/auth/RoleGuard'
 import { LoginPage } from './pages/LoginPage'
 import { ForbiddenPage } from './shared/ui/ForbiddenPage'
 import { ToastContainer } from './components/shared/Toast'
@@ -63,10 +64,24 @@ export function App() {
           <Route path="budget" element={<Navigate to="/budget/planning" replace />} />
           <Route path="budget/planning" element={<BudgetEntryPage />} />
           <Route path="actuals" element={<ActualsPage />} />
-          <Route path="forecast" element={<ForecastPage />} />
+          <Route
+            path="forecast"
+            element={
+              <RoleGuard allow={['Admin', 'CFO', 'FinanceManager']}>
+                <ForecastPage />
+              </RoleGuard>
+            }
+          />
           <Route path="variance" element={<VariancePage />} />
           <Route path="reports" element={<ReportsPage />} />
-          <Route path="reports/pnl" element={<PnlReportPage />} />
+          <Route
+            path="reports/pnl"
+            element={
+              <RoleGuard allow={['Admin', 'CFO', 'FinanceManager']}>
+                <PnlReportPage />
+              </RoleGuard>
+            }
+          />
           <Route path="customers" element={<CustomersPage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="contracts" element={<ContractsPage />} />
@@ -82,7 +97,14 @@ export function App() {
           <Route path="collections" element={<CollectionsPage />} />
           <Route path="admin" element={<AdminPage />} />
           <Route path="scenarios" element={<ScenariosPage />} />
-          <Route path="consolidation" element={<ConsolidationPage />} />
+          <Route
+            path="consolidation"
+            element={
+              <RoleGuard allow={['Admin', 'CFO', 'FinanceManager']}>
+                <ConsolidationPage />
+              </RoleGuard>
+            }
+          />
           <Route path="approvals" element={<ApprovalsPage />} />
           <Route path="revisions" element={<RevisionsPage />} />
           <Route path="audit" element={<AuditLogPage />} />
