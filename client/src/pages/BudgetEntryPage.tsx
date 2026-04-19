@@ -32,6 +32,8 @@ import {
 import type { CustomerContractRow } from '../components/budget-planning/api'
 import {
   CURRENCIES,
+  getStatusChipClass,
+  getStatusLabel,
   isEditableStatus,
   MONTHS,
 } from '../components/budget-planning/types'
@@ -228,6 +230,20 @@ export function BudgetEntryPage() {
     return { revenueTotal: rev, claimTotal: cla }
   }, [values])
 
+  // Müşteri başına tamamlandı: versiyonda o müşterinin en az 1 BudgetEntry'si
+  // varsa "tamamlandı" sayılır (design doc §4 karar A).
+  const completedCustomerIds = useMemo(() => {
+    const ids = new Set<number>()
+    for (const e of entries) ids.add(e.customerId)
+    return ids
+  }, [entries])
+
+  const totalCustomerCount = customers.length
+  const completedCustomerCount = completedCustomerIds.size
+  const allCustomersComplete =
+    totalCustomerCount > 0 && completedCustomerCount === totalCustomerCount
+  const missingCustomerCount = Math.max(0, totalCustomerCount - completedCustomerCount)
+
   const margin = revenueTotal - claimTotal
   const lossRatio = lossRatioPercent(revenueTotal, claimTotal)
   const marginPct = marginPercent(revenueTotal, claimTotal)
@@ -400,8 +416,20 @@ export function BudgetEntryPage() {
           <button
             type="button"
             className="btn-primary"
-            disabled={!isEditable || submitMutation.isPending}
+            disabled={
+              !isEditable ||
+              !allCustomersComplete ||
+              submitMutation.isPending
+            }
+            title={
+              !isEditable
+                ? 'Bu versiyon düzenlenemez'
+                : !allCustomersComplete
+                  ? `${missingCustomerCount} müşteride henüz tutar girilmedi`
+                  : undefined
+            }
             onClick={() => {
+              if (!isEditable || !allCustomersComplete) return
               if (!confirm('Bu versiyon onaya gönderilecek. Emin misiniz?')) return
               setSubmitError(null)
               submitMutation.mutate()
@@ -410,7 +438,13 @@ export function BudgetEntryPage() {
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
               verified
             </span>
-            {submitMutation.isPending ? 'Gönderiliyor…' : 'Onaya Gönder'}
+            {submitMutation.isPending
+              ? 'Gönderiliyor…'
+              : !isEditable
+                ? 'Onaya Gönder'
+                : allCustomersComplete
+                  ? 'Onaya Gönder'
+                  : `Onaya Gönder (${missingCustomerCount} eksik)`}
           </button>
         </div>
       </div>
@@ -528,11 +562,13 @@ export function BudgetEntryPage() {
           </span>
           <div className="flex-1">
             <p className="text-sm font-semibold text-on-surface">
-              Bu versiyon salt-okunur (<strong>{currentVersion.status}</strong>)
+              {currentVersion.name} —{' '}
+              <strong>{getStatusLabel(currentVersion.status)}</strong>{' '}
+              <span className="text-on-surface-variant">(salt-okunur)</span>
             </p>
             <p className="text-xs text-on-surface-variant mt-0.5">
-              Tutar girişi için DRAFT statüsünde bir versiyon gerekli. Yeni bir
-              taslak oluşturarak planlamaya devam edebilirsin.
+              Revize etmek için yeni bir revizyon taslağı açabilirsin. Aktif
+              versiyondaki tüm girişler yeni taslağa kopyalanır.
             </p>
           </div>
           <button
@@ -545,12 +581,50 @@ export function BudgetEntryPage() {
             }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              add
+              edit_note
             </span>
             {createDraftMutation.isPending
               ? 'Oluşturuluyor…'
-              : 'Yeni DRAFT Oluştur'}
+              : 'Revizyon Taslağı Oluştur'}
           </button>
+        </div>
+      ) : null}
+      {yearId && currentVersion && isEditable ? (
+        <div className="card mb-4">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-sm font-semibold text-on-surface">
+              {currentVersion.name}
+            </span>
+            <span className={`chip ${getStatusChipClass(currentVersion.status)}`}>
+              {getStatusLabel(currentVersion.status)}
+            </span>
+            {allCustomersComplete ? (
+              <span className="chip chip-success">Hepsi Tamam ✓</span>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex-1 max-w-md">
+              <div className="h-2 bg-surface-container-low rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{
+                    width:
+                      totalCustomerCount > 0
+                        ? `${(completedCustomerCount / totalCustomerCount) * 100}%`
+                        : '0%',
+                  }}
+                />
+              </div>
+            </div>
+            <span className="text-xs text-on-surface-variant num whitespace-nowrap">
+              {completedCustomerCount}/{totalCustomerCount} müşteri tamamlandı
+            </span>
+            {!allCustomersComplete && missingCustomerCount > 0 ? (
+              <span className="text-xs text-on-surface-variant">
+                · {missingCustomerCount} müşteride henüz tutar girilmedi
+              </span>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
