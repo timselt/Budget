@@ -1,5 +1,6 @@
 import '../lib/chart-config'
 import { ForecastChart } from '../components/forecast/ForecastChart'
+import { PilotBanner } from '../components/shared/PilotBanner'
 
 interface Scenario {
   ribbon: 'success' | 'tertiary' | 'warning'
@@ -50,19 +51,10 @@ const SENSITIVITIES: readonly Sensitivity[] = [
 export function ForecastPage() {
   return (
     <section>
-      <div className="card mb-6 flex items-start gap-3 bg-warning/10 border border-warning/30">
-        <span className="material-symbols-outlined text-warning" style={{ fontSize: 20 }}>
-          info
-        </span>
-        <div className="flex-1">
-          <p className="text-sm font-bold text-on-surface">Demo veri</p>
-          <p className="text-xs text-on-surface-variant mt-1">
-            Bu sayfadaki senaryolar ve duyarlılıklar henüz örnek verilerdir. Forecast motoru
-            backend endpoint'i sonraki sprint'te eklenecek (planlı rolling forecast +
-            senaryo simülasyonu).
-          </p>
-        </div>
-      </div>
+      <PilotBanner
+        feature="Tahmin"
+        description="Bu modül pilot aşamasında. Tahmin algoritması ve senaryo enjeksiyonu üzerinde çalışılıyor; gösterilen veriler örnek (rolling forecast + senaryo simülasyonu sonraki sprint'te)."
+      />
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
