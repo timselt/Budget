@@ -5,6 +5,7 @@ import api from '../lib/api'
 import { useActiveVersion } from '../lib/useActiveVersion'
 import { FinOpsTrendChart, FinOpsSegmentDonut } from '../components/dashboard/FinOpsTrendChart'
 import { TaskCenter } from '../components/dashboard/TaskCenter'
+import { HelpHint } from '../components/shared/Tooltip'
 import {
   EbitdaBridgeChart,
   LossRatioChart,
@@ -146,7 +147,10 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-6 lg:col-span-2 card">
-          <span className="label-sm">Teknik Marj</span>
+          <span className="label-sm">
+            Teknik Marj
+            <HelpHint text="Teknik Marj = Prim Geliri − Hasar Maliyeti. Reasürans öncesi sigortacılık karlılığı." />
+          </span>
           <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">
             {kpis ? fmtM(kpis.technicalMargin) : '—'}
           </p>
@@ -156,7 +160,10 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-6 lg:col-span-2 card">
-          <span className="label-sm">EBITDA</span>
+          <span className="label-sm">
+            EBITDA
+            <HelpHint text="EBITDA = Faiz, Vergi, Amortisman ve İtfa öncesi kar. Operasyonel performans göstergesi." />
+          </span>
           <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">
             {kpis ? fmtM(kpis.ebitda) : '—'}
           </p>
@@ -166,7 +173,10 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-6 lg:col-span-2 card">
-          <span className="label-sm">Loss Ratio</span>
+          <span className="label-sm">
+            Loss Ratio
+            <HelpHint text="Loss Ratio = Hasar / Prim. ≤55% iyi, 55-70% normal, >70% riskli." />
+          </span>
           <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">
             {kpis ? fmtPct(kpis.lossRatio * 100) : '—'}
           </p>
@@ -174,7 +184,10 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-6 lg:col-span-2 card">
-          <span className="label-sm">Combined Ratio</span>
+          <span className="label-sm">
+            Combined Ratio
+            <HelpHint text="Combined Ratio = (Hasar + Gider) / Prim. <100% sigortacılık karlı, ≥100% zararlı." />
+          </span>
           <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">
             {kpis ? fmtPct(kpis.combinedRatio * 100) : '—'}
           </p>

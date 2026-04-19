@@ -21,6 +21,7 @@ import { SubmissionChecklist } from '../components/budget-planning/SubmissionChe
 import { useSubmissionChecklist } from '../components/budget-planning/useSubmissionChecklist'
 import { BudgetPeriodsPage } from './BudgetPeriodsPage'
 import { translateApiError } from '../lib/api-error'
+import { HelpHint } from '../components/shared/Tooltip'
 import {
   bulkUpsertEntries,
   createRevision,
@@ -631,18 +632,30 @@ export function BudgetEntryPage() {
       ) : null}
 
       <div className="grid grid-cols-12 gap-4 mb-4">
-        <KpiCard title="Plan Gelir" value={formatCompact(revenueTotal)} chipClass="chip-error" />
-        <KpiCard title="Plan Hasar" value={formatCompact(claimTotal)} chipClass="chip-warning" />
+        <KpiCard
+          title="Plan Gelir"
+          value={formatCompact(revenueTotal)}
+          chipClass="chip-error"
+          helpText="Bu versiyondaki tüm müşterilerin yıllık prim/komisyon planı toplamı."
+        />
+        <KpiCard
+          title="Plan Hasar"
+          value={formatCompact(claimTotal)}
+          chipClass="chip-warning"
+          helpText="Bu versiyondaki tüm müşterilerin yıllık beklenen hasar toplamı."
+        />
         <KpiCard
           title="Teknik Marj"
           value={formatCompact(margin)}
           chipClass="chip-info"
           note={`%${formatAmount(marginPct)} marj`}
+          helpText="Plan Gelir − Plan Hasar. Reasürans öncesi sigortacılık karlılığı."
         />
         <KpiCard
           title="Loss Ratio"
           value={`%${formatAmount(lossRatio)}`}
           chipClass="chip-neutral"
+          helpText="Hasar / Prim oranı. ≤55% iyi, 55-70% normal, >70% riskli."
         />
       </div>
 
@@ -790,16 +803,21 @@ function KpiCard({
   value,
   chipClass,
   note,
+  helpText,
 }: {
   title: string
   value: string
   chipClass: string
   note?: string
+  helpText?: string
 }) {
   return (
     <div className="col-span-12 md:col-span-3 card">
       <div className="flex items-center gap-2">
-        <span className="label-sm">{title}</span>
+        <span className="label-sm">
+          {title}
+          {helpText && <HelpHint text={helpText} />}
+        </span>
         <span className={`chip ${chipClass}`} />
       </div>
       <p className="text-2xl font-black tracking-display num mt-2">{value}</p>
