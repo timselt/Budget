@@ -4,6 +4,48 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### Sprint 2+3 Ekran Yeniden Tasarımı — Veri Girişi, Onay, Tanımlar, Raporlar (2026-04-19)
+
+11 ekran iyileştirmesi — Sprint 1 deep'in (Dashboard / Versiyonlar / WorkContextBar / Demo ayrıştırma) doğal devamı. Audit (2026-04-19) Sprint 2 (veri girişi + onay) ve Sprint 3 (tanımlar + raporlar + ileri ekranlar) paketleri birleştirildi. Cross-cutting `PageIntro` ve `EmptyState` component'leri ile 11 ekrana standart "bu ekran ne için kullanılır?" + boş durum pattern'ı uygulandı; üstüne Onaylar/Senaryolar/Sapma/Tahsilat/Gerçekleşen/Sözleşmeler ekranlarına kapsamlı refactor.
+
+#### Eklendi
+
+- **`PageIntro`** (`client/src/components/shared/PageIntro.tsx`) — Standart ekran başlığı: title + 1 cümle amaç + sağ-aksiyon. Mevcut ad-hoc `<div className="flex justify-between..."` pattern'ının yerini alır. 11+ ekrana uygulandı.
+- **`EmptyState`** (`client/src/components/shared/EmptyState.tsx`) — Standart "henüz X yok" kartı: icon + title + description + CTA. Liste ekranlarında ham tablo yerine eğitici boş durum.
+- **`ApprovalCard`** (`client/src/components/approvals/ApprovalCard.tsx`) — Onaylar ekranı için karar kartı (VersionCard ile aynı görsel dil, çoklu aksiyon desteği). Status renk şeridi + 'Sıradaki adım' prompt + rol-aware aksiyon dizisi.
+- **Senaryo preset'leri** (`ScenariosPage.tsx`) — Hızlı Başlangıç kart seçici: İyimser (+10/-5/-3), Baz (0/0/0), Kötümser (-10/+15/+5), Özel (manuel). Manuel değişim preset'i 'Özel'e düşürür. Mini canlı 'Tahmini Net Etki (Δpp)' kartı (gelir Δ − hasar Δ − gider Δ) renk threshold'lu.
+- **'En Kritik 3 Sapma' özet kartı** (`VariancePage.tsx`) — Üstte gelir/hasar sapması absolute değeri en yüksek 3 müşteri (%10+ filtreli), her biri tipine göre aksiyon önerisi (revenue-up/down + claims-up/down).
+- **'Bu hafta riskli tahsilatlar' kartı** (`CollectionsPage.tsx`) — Dashboard sekmesinde highCount > 0 koşulunda görünür; yüksek riskli müşteri sayısı + toplam tutar + segment kırılımı/Dönem yönlendirmesi.
+- **Gerçekleşen 2 sekme** (`ActualsPage.tsx`) — `Özet` (sadece gerçek değerler) / `Bütçe Karşılaştırma` (bütçe + kullanım % + Variance linki). Tablo başlığı sekmeye göre değişir.
+- **Sözleşmeler basit/gelişmiş accordion** (`ContractsPage.tsx`) — 10 EnumField → 3 temel (her zaman) + 7 gelişmiş (`Gelişmiş seçenekleri göster (7 alan)` toggle ile açılır). Default kapalı; backend defaults'ları çoğu sözleşme için yeterli.
+- **Raporlar 2 bölüm** (`ReportsPage.tsx`) — `Kullanıma Hazır` (Excel + PDF aktif indirilebilir) / `Yakında` (PPTX, BDDK/SPK, vb. sprint devamı). Her bölümde mini açıklama.
+
+#### Değişti
+
+- **11 ekran PageIntro entegrasyonu** — Segmentler, Gider Kategorileri, Özel Kalemler, Senaryolar, Gerçekleşen, Müşteriler, Ürünler, Gider Girişi, Onaylar, Tahsilat, Sözleşmeler, Raporlar, Sapma Analizi, İşlem Geçmişi, Sistem Yönetimi.
+- **Sayfa içi başlık dilinde TR rename** — `Audit Log` → `İşlem Geçmişi`, `Yönetim` → `Sistem Yönetimi`, `Müşteri Yönetimi` → `Müşteriler`, `Ürün Yönetimi` → `Ürünler`, `Müşteri Kategorileri (Segment)` → `Segmentler`, `Onay Akışı` → `Onaylar` (Sprint 1 sidebar redesign'da menü isimleri değişmişti; bu commit'lerde sayfa başlıkları hizaya çekildi).
+- **`ApprovalsPage`** — Tablo render `VersionSection` → `ApprovalCard` grid (1-2 kolon). Empty state `EmptyState` ile standardize, tab başına ayrı icon (pending_actions / verified / inventory_2).
+- **`SegmentsPage` ve `ExpenseCategoriesPage` empty state'leri** — Düz metin yerine `EmptyState` component'i (icon + açıklama + CTA).
+
+#### Tasarım Hedefleri (Audit Sprint 2/3)
+
+- "Bu ekran ne işe yarar?" sorusu her sayfada 1 cümle ile yanıtlanır
+- Liste ekranları "ham tablo" yerine "görev ve aksiyon" odaklı
+- Sapma Analizi/Tahsilat/Onaylar tablo yerine karar/aksiyon dilinde
+- Senaryolar başlangıç dostu (preset + canlı etki)
+- Sözleşmeler uzman dışı kullanıcıyı korkutmuyor (basit mod)
+- Raporlar hazır vs gelecek karışmıyor
+
+#### P2'ye Ertelendi
+
+- VersionCard mini KPI özet
+- ApprovalCard'a yorum/not kutusu
+- Senaryolar preset'lerine custom save (kullanıcı kendi preset'ini kaydetsin)
+- Tahsilat görev kartında müşteri liste detayı
+- Gerçekleşen Bütçe Karşılaştırma'da chart preview
+
+---
+
 ### Mutabakat Modülü Önkoşul 00b — Contract + PriceBook (2026-04-19)
 
 ADR-0015 kapsamında Mutabakat modülünün ikinci önkoşulu: sözleşme bazlı versiyonlu fiyat listesi altyapısı. Faz 1 mutabakat import parser'ının eşleme algoritmasına girdi üretir.
@@ -18,6 +60,8 @@ ADR-0015 kapsamında Mutabakat modülünün ikinci önkoşulu: sözleşme bazlı
 - **4 React UI ekranı:** `ContractsPage` genişletildi (flow/status filter + Fiyat Listeleri link'i); `ContractPriceBooksPage` (sürüm listesi + yeni Draft modal); `PriceBookEditorPage` (AG-Grid inline edit + CSV import + approve); `PriceLookupPage` (mutabakat arama aracı). Sidebar'a "Mutabakat" section'ı eklendi (Fiyat Arama link'iyle).
 - **3 audit event:** `PRICEBOOK_VERSION_CREATED`, `PRICEBOOK_APPROVED`, `PRICEBOOK_ITEMS_CHANGED` — entity key PriceBook id, JSON payload sürüm metadata'sı.
 - **Test coverage:** 63 unit test yeni (Contract lifecycle, PriceBook state machine, ContractFlowMapper theory, CsvParser happy+sad path); 4 integration test yeni (Testcontainers Postgres 16 ile migration + EXCLUDE constraint overlapping/non-overlapping/archived senaryoları).
+
+---
 
 ### Sidebar Bilgi Mimarisi Yeniden Tasarımı (2026-04-19)
 
