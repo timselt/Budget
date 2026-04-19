@@ -89,6 +89,51 @@ body {
   padding: 1.25rem .75rem .5rem;
 }
 
+/* ---------- Sidebar accordion (SidebarSection.tsx) ---------- */
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: 100%;
+  padding: .5rem .75rem;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(255, 255, 255, 0.55);
+  border-radius: .5rem;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: color .15s, background-color .15s;
+}
+.sidebar-section-header .material-symbols-outlined {
+  color: rgba(255, 255, 255, 0.55);
+  transition: color .15s, transform .15s;
+}
+.sidebar-section-header:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+.sidebar-section-header:hover .material-symbols-outlined {
+  color: #ffffff;
+}
+.sidebar-section-items {
+  display: flex;
+  flex-direction: column;
+  gap: .125rem;
+  padding: .25rem 0 .5rem .5rem;
+}
+.nav-item-child {
+  font-size: .8125rem;
+  padding-top: .45rem;
+  padding-bottom: .45rem;
+}
+
 /* ---------- Cards ---------- */
 .card {
   background: var(--color-surface-container-lowest);
