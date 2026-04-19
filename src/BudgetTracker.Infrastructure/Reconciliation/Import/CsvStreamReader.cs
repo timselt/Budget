@@ -162,10 +162,12 @@ public sealed class CsvStreamReader : IImportStreamReader
 
     private static List<string> ReadCurrentRow(CsvReader csv)
     {
-        var list = new List<string>();
-        for (var i = 0; csv.TryGetField<string>(i, out var value); i++)
+        var count = csv.Parser.Count;
+        var list = new List<string>(count);
+        for (var i = 0; i < count; i++)
         {
-            list.Add(value ?? string.Empty);
+            var value = csv.GetField(i) ?? string.Empty;
+            list.Add(value);
         }
         return list;
     }
