@@ -263,7 +263,7 @@ export function ActualsPage() {
                       {m}
                     </th>
                   ))}
-                  <th className="text-right bg-[#191c1f] text-white">Gerçek</th>
+                  <th className="text-right bg-[#1e293b] text-white">Gerçek</th>
                   <th className="text-right">Bütçe</th>
                   <th className="text-right">Kullanım</th>
                 </tr>

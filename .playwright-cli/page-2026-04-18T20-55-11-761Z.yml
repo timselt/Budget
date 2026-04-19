@@ -1,0 +1,18 @@
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e8]: insights
+      - heading "FinOpsTur" [level=1] [ref=e9]
+    - paragraph [ref=e10]: Bütçe & Performans Platformu
+    - generic [ref=e11]:
+      - generic [ref=e12]:
+        - generic [ref=e13]: E-posta
+        - textbox "E-posta" [ref=e14]:
+          - /placeholder: admin@tag.local
+          - text: admin@tag.local
+      - generic [ref=e15]:
+        - generic [ref=e16]: Şifre
+        - textbox "Şifre" [ref=e17]: Devpass!2026
+      - paragraph [ref=e19]: Geçersiz e-posta veya şifre
+      - button "Giriş Yap" [ref=e18] [cursor=pointer]
+  - region "Notifications alt+T"

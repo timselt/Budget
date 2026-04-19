@@ -3,8 +3,8 @@ import type { BudgetTree, TreeSelection } from './types'
 import { formatCompact } from './utils'
 
 const SEGMENT_COLOR: Record<string, string> = {
-  SIGORTA: 'bg-[#b50303]',
-  OTOMOTIV: 'bg-[#005b9f]',
+  SIGORTA: 'bg-[#DA291C]',
+  OTOMOTIV: 'bg-[#002366]',
   FILO: 'bg-[#006d3e]',
   ALTERNATIF: 'bg-[#8a5300]',
   SGK_TESVIK: 'bg-[#6f42c1]',

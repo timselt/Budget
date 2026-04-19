@@ -41,6 +41,19 @@ pnpm dev
 # → http://localhost:3000
 ```
 
+### Tek komutlu dev akışı
+
+```bash
+# API + SPA + migration + docker stack
+bash scripts/dev-up.sh
+
+# Süreçleri kapat
+bash scripts/dev-down.sh
+
+# Docker stack'i de kapat
+bash scripts/dev-down.sh --with-docker
+```
+
 ### Dev login
 
 `Development` environment'ı `IdentitySeeder` ile 5 test kullanıcısı seed eder (hepsinin şifresi `Devpass!2026`):

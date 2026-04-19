@@ -200,11 +200,10 @@ public sealed class MigrationTests : IAsyncLifetime
 
     private static Task ApproveAndActivateAsync(BudgetVersion version)
     {
+        // ADR-0015 sonrası 2 aşamalı onay: Submit → ApproveByFinance → ApproveByCfoAndActivate
         version.Submit(actorUserId: 1);
-        version.ApproveByDepartment(actorUserId: 1);
         version.ApproveByFinance(actorUserId: 1);
-        version.ApproveByCfo(actorUserId: 1);
-        version.Activate(actorUserId: 1);
+        version.ApproveByCfoAndActivate(actorUserId: 1, currentActive: null);
         return Task.CompletedTask;
     }
 }

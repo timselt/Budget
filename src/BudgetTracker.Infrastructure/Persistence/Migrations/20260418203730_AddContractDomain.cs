@@ -134,12 +134,13 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                 principalColumn: "id",
                 onDelete: ReferentialAction.Restrict);
 
-            // Seed: 2025-2030 bütçe yılları. Idempotent — tekrar çalıştırılsa
-            // ON CONFLICT DO NOTHING ile çakışma atlanır.
+            // Seed: 2025-2026 bütçe yılları. Idempotent — tekrar çalıştırılsa
+            // ON CONFLICT DO NOTHING ile çakışma atlanır. İleri yıllar UI'dan
+            // "Yeni Yıl" aksiyonuyla eklenir.
             migrationBuilder.Sql("""
                 INSERT INTO budget_years (company_id, year, is_locked, created_at)
                 SELECT c.id, y.year, FALSE, NOW()
-                FROM companies c, (VALUES (2025),(2026),(2027),(2028),(2029),(2030)) AS y(year)
+                FROM companies c, (VALUES (2025),(2026)) AS y(year)
                 WHERE c.code = 'TAG'
                 ON CONFLICT DO NOTHING;
                 """);

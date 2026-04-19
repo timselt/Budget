@@ -64,7 +64,7 @@ public sealed class BudgetVersionsController : ControllerBase
             .OrderByDescending(v => v.CreatedAt)
             .Select(v => new BudgetVersionDto(
                 v.Id, v.BudgetYearId, v.Name,
-                v.Status.ToString().ToUpperInvariant(),
+                v.Status.ToString(),
                 v.IsActive, v.RejectionReason, v.CreatedAt))
             .ToListAsync(cancellationToken);
         return Ok(versions);
@@ -77,7 +77,7 @@ public sealed class BudgetVersionsController : ControllerBase
             .Where(v => v.Id == versionId)
             .Select(v => new BudgetVersionDto(
                 v.Id, v.BudgetYearId, v.Name,
-                v.Status.ToString().ToUpperInvariant(),
+                v.Status.ToString(),
                 v.IsActive, v.RejectionReason, v.CreatedAt))
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -98,13 +98,10 @@ public sealed class BudgetVersionsController : ControllerBase
         _db.BudgetVersions.Add(version);
         await _db.SaveChangesAsync(cancellationToken);
 
-        return Created($"api/v1/budget/versions/{version.Id}",
-            new BudgetVersionDto(
-                version.Id, version.BudgetYearId, version.Name,
-                version.Status.ToString().ToUpperInvariant(),
-                version.IsActive, version.RejectionReason, version.CreatedAt));
+        return Created($"api/v1/budget/versions/{version.Id}", ToDto(version));
     }
 
+    /// <summary>Draft | Rejected → PendingFinance.</summary>
     [HttpPost("versions/{versionId:int}/submit")]
     [Authorize(Policy = "RequireFinanceRole")]
     public async Task<IActionResult> Submit(int versionId, CancellationToken cancellationToken)
@@ -112,59 +109,51 @@ public sealed class BudgetVersionsController : ControllerBase
         var version = await FindVersionAsync(versionId, cancellationToken);
         if (version is null) return NotFound();
 
-        version.Submit(GetUserId());
+        try { version.Submit(GetUserId()); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+
         await _db.SaveChangesAsync(cancellationToken);
         return Ok(ToDto(version));
     }
 
-    [HttpPost("versions/{versionId:int}/approve/dept")]
-    [Authorize(Policy = "DepartmentHead")]
-    public async Task<IActionResult> ApproveDept(int versionId, CancellationToken cancellationToken)
-    {
-        var version = await FindVersionAsync(versionId, cancellationToken);
-        if (version is null) return NotFound();
-
-        version.ApproveByDepartment(GetUserId());
-        await _db.SaveChangesAsync(cancellationToken);
-        return Ok(ToDto(version));
-    }
-
-    [HttpPost("versions/{versionId:int}/approve/finance")]
+    /// <summary>PendingFinance → PendingCfo.</summary>
+    [HttpPost("versions/{versionId:int}/approve-finance")]
     [Authorize(Policy = "FinanceManager")]
     public async Task<IActionResult> ApproveFinance(int versionId, CancellationToken cancellationToken)
     {
         var version = await FindVersionAsync(versionId, cancellationToken);
         if (version is null) return NotFound();
 
-        version.ApproveByFinance(GetUserId());
+        try { version.ApproveByFinance(GetUserId()); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+
         await _db.SaveChangesAsync(cancellationToken);
         return Ok(ToDto(version));
     }
 
-    [HttpPost("versions/{versionId:int}/approve/cfo")]
+    /// <summary>PendingCfo → Active (atomic). Aynı yıldaki mevcut Active varsa Archived'a çekilir.</summary>
+    [HttpPost("versions/{versionId:int}/approve-cfo-activate")]
     [Authorize(Policy = "Cfo")]
-    public async Task<IActionResult> ApproveCfo(int versionId, CancellationToken cancellationToken)
+    public async Task<IActionResult> ApproveCfoAndActivate(int versionId, CancellationToken cancellationToken)
     {
         var version = await FindVersionAsync(versionId, cancellationToken);
         if (version is null) return NotFound();
 
-        version.ApproveByCfo(GetUserId());
+        var currentActive = await _db.BudgetVersions
+            .FirstOrDefaultAsync(
+                v => v.BudgetYearId == version.BudgetYearId
+                     && v.Status == BudgetVersionStatus.Active
+                     && v.Id != version.Id,
+                cancellationToken);
+
+        try { version.ApproveByCfoAndActivate(GetUserId(), currentActive); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+
         await _db.SaveChangesAsync(cancellationToken);
         return Ok(ToDto(version));
     }
 
-    [HttpPost("versions/{versionId:int}/activate")]
-    [Authorize(Policy = "Cfo")]
-    public async Task<IActionResult> Activate(int versionId, CancellationToken cancellationToken)
-    {
-        var version = await FindVersionAsync(versionId, cancellationToken);
-        if (version is null) return NotFound();
-
-        version.Activate(GetUserId());
-        await _db.SaveChangesAsync(cancellationToken);
-        return Ok(ToDto(version));
-    }
-
+    /// <summary>PendingFinance | PendingCfo → Rejected.</summary>
     [HttpPost("versions/{versionId:int}/reject")]
     [Authorize(Policy = "RequireFinanceRole")]
     public async Task<IActionResult> Reject(
@@ -173,11 +162,15 @@ public sealed class BudgetVersionsController : ControllerBase
         var version = await FindVersionAsync(versionId, cancellationToken);
         if (version is null) return NotFound();
 
-        version.Reject(GetUserId(), request.Reason);
+        try { version.Reject(GetUserId(), request.Reason); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
+
         await _db.SaveChangesAsync(cancellationToken);
         return Ok(ToDto(version));
     }
 
+    /// <summary>Active → Archived.</summary>
     [HttpPost("versions/{versionId:int}/archive")]
     [Authorize(Policy = "RequireFinanceRole")]
     public async Task<IActionResult> Archive(int versionId, CancellationToken cancellationToken)
@@ -185,9 +178,87 @@ public sealed class BudgetVersionsController : ControllerBase
         var version = await FindVersionAsync(versionId, cancellationToken);
         if (version is null) return NotFound();
 
-        version.Archive(GetUserId());
+        try { version.Archive(GetUserId()); }
+        catch (InvalidOperationException ex) { return BadRequest(new { error = ex.Message }); }
+
         await _db.SaveChangesAsync(cancellationToken);
         return Ok(ToDto(version));
+    }
+
+    /// <summary>
+    /// Active versiyondan revizyon taslağı açar: yeni Draft + eski versiyonun
+    /// tüm budget_entries'leri yeni taslağa kopyalanır.
+    /// </summary>
+    [HttpPost("versions/{versionId:int}/create-revision")]
+    [Authorize(Policy = "RequireFinanceRole")]
+    public async Task<IActionResult> CreateRevision(int versionId, CancellationToken cancellationToken)
+    {
+        var source = await FindVersionAsync(versionId, cancellationToken);
+        if (source is null) return NotFound();
+
+        if (source.Status != BudgetVersionStatus.Active)
+            return BadRequest(new { error = "Only Active versions can be revised" });
+
+        // Yıl başına tek çalışılan taslak invariant'ını pre-check.
+        var inProgressExists = await _db.BudgetVersions.AnyAsync(
+            v => v.BudgetYearId == source.BudgetYearId
+                 && (v.Status == BudgetVersionStatus.Draft
+                     || v.Status == BudgetVersionStatus.PendingFinance
+                     || v.Status == BudgetVersionStatus.PendingCfo
+                     || v.Status == BudgetVersionStatus.Rejected),
+            cancellationToken);
+        if (inProgressExists)
+            return Conflict(new { error = "Bu yılda zaten çalışılan bir taslak var" });
+
+        var siblingCount = await _db.BudgetVersions
+            .CountAsync(v => v.BudgetYearId == source.BudgetYearId, cancellationToken);
+        var year = await _db.BudgetYears
+            .Where(y => y.Id == source.BudgetYearId)
+            .Select(y => y.Year)
+            .FirstAsync(cancellationToken);
+        var newName = $"{year} V{siblingCount + 1} Taslak";
+
+        var newVersion = BudgetVersion.CreateDraft(
+            GetCompanyId(),
+            source.BudgetYearId,
+            newName,
+            GetUserId());
+
+        _db.BudgetVersions.Add(newVersion);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        // Aktif versiyonun budget_entries'ini yeni taslağa kopyala.
+        var sourceEntries = await _db.BudgetEntries
+            .Where(e => e.VersionId == source.Id)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var now = DateTimeOffset.UtcNow;
+        var actorId = GetUserId();
+        foreach (var e in sourceEntries)
+        {
+            var clone = BudgetEntry.Create(
+                companyId: e.CompanyId,
+                versionId: newVersion.Id,
+                customerId: e.CustomerId,
+                month: e.Month,
+                entryType: e.EntryType,
+                amountOriginal: e.AmountOriginal,
+                currencyCode: e.CurrencyCode,
+                amountTryFixed: e.AmountTryFixed,
+                amountTrySpot: e.AmountTrySpot,
+                createdByUserId: actorId,
+                createdAt: now,
+                notes: e.Notes,
+                productId: e.ProductId,
+                quantity: e.Quantity,
+                contractId: e.ContractId);
+            _db.BudgetEntries.Add(clone);
+        }
+        if (sourceEntries.Count > 0)
+            await _db.SaveChangesAsync(cancellationToken);
+
+        return Created($"api/v1/budget/versions/{newVersion.Id}", ToDto(newVersion));
     }
 
     private async Task<BudgetVersion?> FindVersionAsync(int versionId, CancellationToken cancellationToken) =>
@@ -195,7 +266,7 @@ public sealed class BudgetVersionsController : ControllerBase
 
     private static BudgetVersionDto ToDto(BudgetVersion v) =>
         new(v.Id, v.BudgetYearId, v.Name,
-            v.Status.ToString().ToUpperInvariant(),
+            v.Status.ToString(),
             v.IsActive, v.RejectionReason, v.CreatedAt);
 
     private int GetUserId() => this.GetRequiredUserId();

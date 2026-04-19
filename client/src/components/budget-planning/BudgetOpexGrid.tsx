@@ -40,7 +40,7 @@ export function BudgetOpexGrid({ opex }: Props) {
                   {m}
                 </th>
               ))}
-              <th className="text-right bg-[#191c1f] text-white">Toplam</th>
+              <th className="text-right bg-[#1e293b] text-white">Toplam</th>
             </tr>
           </thead>
           <tbody>

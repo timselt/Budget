@@ -28,11 +28,11 @@ ChartJS.register(
 // Brand: Tur Assist — Architectural Precision (docs/brand-system.md)
 ChartJS.defaults.font.family = 'Manrope'
 ChartJS.defaults.font.size = 11
-ChartJS.defaults.color = '#5c403b'
+ChartJS.defaults.color = '#4d4d4f'
 
 export const GRID = {
-  color: '#e6e8ea',
-  borderColor: '#e6e8ea',
+  color: '#e2e8f0',
+  borderColor: '#e2e8f0',
   tickColor: 'transparent',
 } as const
 
@@ -45,23 +45,23 @@ export const GRID = {
  * `secondary` / `secondaryContainer` directly.
  */
 export const FINOPS_COLORS = {
-  primary: '#b50303',
-  primaryContainer: '#da291c',
-  secondary: '#435b9f',
-  secondaryContainer: '#9cb4fe',
+  primary: '#da291c',
+  primaryContainer: '#b01818',
+  secondary: '#002366',
+  secondaryContainer: '#00174a',
   navyAnchor: '#002366',
   navyDeep: '#00174a',
-  outline: '#916f6a',
-  outlineVariant: '#e6bdb7',
+  outline: '#4d4d4f',
+  outlineVariant: '#cbd5e1',
   success: '#14532d',
   successContainer: '#dcfce7',
   warning: '#854d0e',
   warningContainer: '#fef3c7',
   error: '#93000a',
   errorContainer: '#ffdad6',
-  neutral: '#5c403b',
+  neutral: '#4d4d4f',
   /** @deprecated use secondary */
-  tertiary: '#435b9f',
+  tertiary: '#002366',
   /** @deprecated use secondaryContainer */
-  tertiaryContainer: '#9cb4fe',
+  tertiaryContainer: '#00174a',
 } as const

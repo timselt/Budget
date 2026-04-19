@@ -95,7 +95,7 @@ export function BudgetCustomerGrid({
                   {m}
                 </th>
               ))}
-              <th className="text-right bg-[#191c1f] text-white">TOPLAM</th>
+              <th className="text-right bg-[#1e293b] text-white">TOPLAM</th>
             </tr>
           </thead>
           <tbody>
@@ -307,7 +307,7 @@ function TotalRow({
   total: number
 }) {
   return (
-    <tr className="row-total">
+    <tr className="budget-total-row">
       <td>{label}</td>
       {monthly.map((v, i) => (
         <td key={i} className="text-right num">

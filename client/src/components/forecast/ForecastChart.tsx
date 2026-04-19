@@ -13,7 +13,7 @@ export function ForecastChart() {
           {
             label: 'Plan',
             data: [158, 168, 181, 187, 192, 198, 205, 208, 212, 220, 226, 232],
-            borderColor: '#5c403b',
+            borderColor: '#4d4d4f',
             borderDash: [5, 5],
             borderWidth: 2,
             pointRadius: 0,

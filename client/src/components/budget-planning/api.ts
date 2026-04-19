@@ -89,6 +89,21 @@ export async function submitVersion(versionId: number): Promise<void> {
   await api.post(`/budget/versions/${versionId}/submit`)
 }
 
+export interface CreateVersionPayload {
+  name: string
+}
+
+export async function createVersion(
+  yearId: number,
+  payload: CreateVersionPayload,
+): Promise<BudgetVersionRow> {
+  const { data } = await api.post<BudgetVersionRow>(
+    `/budget/years/${yearId}/versions`,
+    payload,
+  )
+  return data
+}
+
 export interface CopyFromYearPayload {
   sourceBudgetYearId: number
   customerId?: number | null

@@ -1,0 +1,292 @@
+- generic [ref=e2]:
+  - generic [ref=e19]:
+    - complementary [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e24]: insights
+          - heading "FinOpsTur" [level=1] [ref=e25]
+        - paragraph [ref=e26]: 2026 Butce & Performans
+      - navigation [ref=e27]:
+        - link "dashboard Dashboard" [ref=e28] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e29]: dashboard
+          - text: Dashboard
+        - link "calendar_month Bütçe Versiyonları" [ref=e30] [cursor=pointer]:
+          - /url: /budget/periods
+          - generic [ref=e31]: calendar_month
+          - text: Bütçe Versiyonları
+        - link "edit_note Bütçe Planlama" [ref=e32] [cursor=pointer]:
+          - /url: /budget/planning
+          - generic [ref=e33]: edit_note
+          - text: Bütçe Planlama
+        - link "receipt_long Gerçekleşen" [ref=e34] [cursor=pointer]:
+          - /url: /actuals
+          - generic [ref=e35]: receipt_long
+          - text: Gerçekleşen
+        - link "payments Gider Girişi" [ref=e36] [cursor=pointer]:
+          - /url: /expenses
+          - generic [ref=e37]: payments
+          - text: Gider Girişi
+        - link "bookmark_star Özel Kalemler" [ref=e38] [cursor=pointer]:
+          - /url: /special-items
+          - generic [ref=e39]: bookmark_star
+          - text: Özel Kalemler
+        - link "trending_up Forecast" [ref=e40] [cursor=pointer]:
+          - /url: /forecast
+          - generic [ref=e41]: trending_up
+          - text: Forecast
+        - link "insights Senaryolar" [ref=e42] [cursor=pointer]:
+          - /url: /scenarios
+          - generic [ref=e43]: insights
+          - text: Senaryolar
+        - link "compare_arrows Sapma Analizi" [ref=e44] [cursor=pointer]:
+          - /url: /variance
+          - generic [ref=e45]: compare_arrows
+          - text: Sapma Analizi
+        - link "assessment Raporlar" [ref=e46] [cursor=pointer]:
+          - /url: /reports
+          - generic [ref=e47]: assessment
+          - text: Raporlar
+        - link "monitoring P&L Raporu" [ref=e48] [cursor=pointer]:
+          - /url: /reports/pnl
+          - generic [ref=e49]: monitoring
+          - text: P&L Raporu
+        - generic [ref=e50]: Yönetim
+        - link "account_tree Master Data" [ref=e51] [cursor=pointer]:
+          - /url: /master-data
+          - generic [ref=e52]: account_tree
+          - text: Master Data
+        - link "category Kategori Yönetimi" [ref=e53] [cursor=pointer]:
+          - /url: /segments
+          - generic [ref=e54]: category
+          - text: Kategori Yönetimi
+        - link "groups Müşteri Yönetimi" [ref=e55] [cursor=pointer]:
+          - /url: /customers
+          - generic [ref=e56]: groups
+          - text: Müşteri Yönetimi
+        - link "inventory_2 Ürün Yönetimi" [ref=e57] [cursor=pointer]:
+          - /url: /products
+          - generic [ref=e58]: inventory_2
+          - text: Ürün Yönetimi
+        - link "assignment Sözleşmeler" [ref=e59] [cursor=pointer]:
+          - /url: /contracts
+          - generic [ref=e60]: assignment
+          - text: Sözleşmeler
+        - link "receipt Gider Kategorileri" [ref=e61] [cursor=pointer]:
+          - /url: /expense-categories
+          - generic [ref=e62]: receipt
+          - text: Gider Kategorileri
+        - link "account_balance_wallet Tahsilat" [ref=e63] [cursor=pointer]:
+          - /url: /collections
+          - generic [ref=e64]: account_balance_wallet
+          - text: Tahsilat
+        - link "hub Konsolidasyon" [ref=e65] [cursor=pointer]:
+          - /url: /consolidation
+          - generic [ref=e66]: hub
+          - text: Konsolidasyon
+        - link "verified Onay Akışı" [ref=e67] [cursor=pointer]:
+          - /url: /approvals
+          - generic [ref=e68]: verified
+          - text: Onay Akışı
+        - link "history Audit Log" [ref=e69] [cursor=pointer]:
+          - /url: /audit
+          - generic [ref=e70]: history
+          - text: Audit Log
+        - link "admin_panel_settings Yönetim" [ref=e71] [cursor=pointer]:
+          - /url: /admin
+          - generic [ref=e72]: admin_panel_settings
+          - text: Yönetim
+      - generic [ref=e73]:
+        - button "download Rapor İndir" [ref=e74] [cursor=pointer]:
+          - generic [ref=e75]: download
+          - text: Rapor İndir
+        - generic [ref=e76]:
+          - generic [ref=e77]: TA
+          - generic [ref=e78]:
+            - paragraph [ref=e79]: TAG Admin
+            - paragraph [ref=e80]: CEO • Tur Assist
+          - button "logout" [ref=e81]:
+            - generic [ref=e82]: logout
+    - generic [ref=e83]:
+      - banner [ref=e84]:
+        - generic [ref=e85]:
+          - generic [ref=e86]: search
+          - textbox "Hesap, kalem, şirket ara…" [ref=e87]
+        - generic [ref=e88]:
+          - combobox [ref=e89] [cursor=pointer]:
+            - option "Tur Assist A.Ş." [selected]
+            - option "Tur Assist A.Ş."
+            - option "OtoKonfor"
+            - option "TUR Medical"
+            - option "KonutKonfor"
+            - option "SigortaAcentesi.com"
+            - option "RS Otomotiv"
+            - option "Konsolide (Grup)"
+          - combobox [ref=e90] [cursor=pointer]:
+            - option "FY 2026" [selected]
+            - option "FY 2025"
+            - option "FY 2024"
+          - combobox [ref=e91] [cursor=pointer]:
+            - 'option "Senaryo: Base" [selected]'
+            - 'option "Senaryo: Optimistic"'
+            - 'option "Senaryo: Conservative"'
+          - button "notifications" [ref=e92]:
+            - generic [ref=e93]: notifications
+          - button "help_outline" [ref=e95]:
+            - generic [ref=e96]: help_outline
+      - main [ref=e97]:
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - heading "Executive Dashboard" [level=2] [ref=e102]
+            - generic [ref=e103]:
+              - button "tune Filtre" [ref=e104] [cursor=pointer]:
+                - generic [ref=e105]: tune
+                - text: Filtre
+              - button "file_download Dışa Aktar" [ref=e106] [cursor=pointer]:
+                - generic [ref=e107]: file_download
+                - text: Dışa Aktar
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - generic [ref=e110]: Toplam Gelir — FY26 Plan
+              - generic [ref=e111]:
+                - generic [ref=e112]: 2.245,2M
+                - generic [ref=e113]: TL
+              - generic [ref=e114]:
+                - generic [ref=e115]:
+                  - generic [ref=e116]: trending_up
+                  - text: +18,4% vs FY25
+                - generic [ref=e117]: 12 aylık
+            - generic [ref=e118]:
+              - text: Teknik Marj
+              - paragraph [ref=e119]: 920,6M
+              - paragraph [ref=e120]: "%41,0 marj"
+              - paragraph [ref=e123]: "Hedef: 1.125M TL"
+            - generic [ref=e124]:
+              - text: EBITDA
+              - paragraph [ref=e125]: 360,4M
+              - paragraph [ref=e126]: "%16,1 EBITDA margin"
+              - paragraph [ref=e129]: "Hedef: 395M TL"
+            - generic [ref=e130]:
+              - text: Loss Ratio
+              - paragraph [ref=e131]: "%59,0"
+              - paragraph [ref=e132]: Hasar/Prim
+              - paragraph [ref=e135]: "Benchmark: %55"
+            - generic [ref=e136]:
+              - text: Toplam Dosya
+              - paragraph [ref=e137]: 1,24M
+              - paragraph [ref=e138]: +%12,6
+              - paragraph [ref=e141]: Araç + Sağlık + Konut
+          - generic [ref=e142]:
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - generic [ref=e145]:
+                  - heading "Gelir / Hasar / Teknik Marj — Aylık Trend" [level=3] [ref=e146]
+                  - paragraph [ref=e147]: FY26 Plan, MTL
+                - generic [ref=e148]:
+                  - generic [ref=e149]: Gelir
+                  - generic [ref=e150]: Hasar
+                  - generic [ref=e151]: Teknik Marj
+              - img [ref=e153]
+            - generic [ref=e154]:
+              - heading "Gelir Segmentasyonu" [level=3] [ref=e155]
+              - img [ref=e157]
+              - generic [ref=e158]:
+                - generic [ref=e160]:
+                  - generic [ref=e161]: Sigorta Şirketleri
+                  - generic [ref=e162]: 62%
+                - generic [ref=e166]:
+                  - generic [ref=e167]: Banka / Kart Programı
+                  - generic [ref=e168]: 18%
+                - generic [ref=e172]:
+                  - generic [ref=e173]: B2B2C Programlar
+                  - generic [ref=e174]: 14%
+                - generic [ref=e178]:
+                  - generic [ref=e179]: B2C Direkt + Ad-Hoc
+                  - generic [ref=e180]: 6%
+          - generic [ref=e183]:
+            - generic [ref=e184]:
+              - generic [ref=e185]:
+                - heading "EBITDA Köprüsü" [level=3] [ref=e186]
+                - generic [ref=e187]: FY25→FY26
+              - img [ref=e189]
+            - generic [ref=e190]:
+              - generic [ref=e191]:
+                - heading "Loss Ratio (aylık)" [level=3] [ref=e192]
+                - generic [ref=e193]: "%59 ort."
+              - img [ref=e195]
+            - generic [ref=e196]:
+              - generic [ref=e197]:
+                - heading "Gider Kırılımı" [level=3] [ref=e198]
+                - generic [ref=e199]: FY26
+              - img [ref=e201]
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - generic [ref=e204]:
+                - heading "Service Line Performansı" [level=3] [ref=e205]
+                - paragraph [ref=e206]: FY26 Plan, cirodan % pay
+              - generic [ref=e207]:
+                - generic [ref=e208]:
+                  - generic [ref=e209]:
+                    - generic [ref=e211]: directions_car
+                    - generic [ref=e212]:
+                      - paragraph [ref=e213]: Oto Asistans
+                      - paragraph [ref=e214]: Yol yardım, çekici, ikame araç
+                  - generic [ref=e215]:
+                    - paragraph [ref=e216]: 1.190,2M
+                    - paragraph [ref=e217]: "%53 of total"
+                - generic [ref=e218]:
+                  - generic [ref=e219]:
+                    - generic [ref=e221]: medical_services
+                    - generic [ref=e222]:
+                      - paragraph [ref=e223]: Sağlık Asistans
+                      - paragraph [ref=e224]: Tamamlayıcı sağlık, TUR Medical
+                  - generic [ref=e225]:
+                    - paragraph [ref=e226]: 485,4M
+                    - paragraph [ref=e227]: "%22 of total"
+                - generic [ref=e228]:
+                  - generic [ref=e229]:
+                    - generic [ref=e231]: home_work
+                    - generic [ref=e232]:
+                      - paragraph [ref=e233]: Konut Asistans
+                      - paragraph [ref=e234]: KonutKonfor, acil bakım
+                  - generic [ref=e235]:
+                    - paragraph [ref=e236]: 346,1M
+                    - paragraph [ref=e237]: "%15 of total"
+                - generic [ref=e238]:
+                  - generic [ref=e239]:
+                    - generic [ref=e241]: verified_user
+                    - generic [ref=e242]:
+                      - paragraph [ref=e243]: Warranty & SGK Teşvik
+                      - paragraph [ref=e244]: OEM warranty, teşvik gelirleri
+                  - generic [ref=e245]:
+                    - paragraph [ref=e246]: 223,5M
+                    - paragraph [ref=e247]: "%10 of total"
+            - generic [ref=e248]:
+              - generic [ref=e249]:
+                - heading "Kritik Uyarılar" [level=3] [ref=e250]
+                - generic [ref=e251]: 4 aktif
+              - generic [ref=e252]:
+                - generic [ref=e253]:
+                  - generic [ref=e254]:
+                    - paragraph [ref=e255]: Oto hasar dosya maliyeti Q1'de +%9
+                    - generic [ref=e256]: YÜKSEK
+                  - paragraph [ref=e257]: Tedarikçi fiyat artışı ve ikame araç süresi uzadı
+                  - button "arrow_outward Aksiyon Planı" [ref=e258] [cursor=pointer]:
+                    - generic [ref=e259]: arrow_outward
+                    - text: Aksiyon Planı
+                - generic [ref=e260]:
+                  - generic [ref=e261]:
+                    - paragraph [ref=e262]: Sağlık Asistans gelirleri %6 planın altında
+                    - generic [ref=e263]: ORTA
+                  - paragraph [ref=e264]: 2 kritik sigortacı yeniden fiyatlama talep ediyor
+                - generic [ref=e265]:
+                  - generic [ref=e266]:
+                    - paragraph [ref=e267]: Konut Asistans dosya sayısı +%21
+                    - generic [ref=e268]: BİLGİ
+                  - paragraph [ref=e269]: Pozitif sapma — KonutKonfor kampanyası
+                - generic [ref=e270]:
+                  - generic [ref=e271]:
+                    - paragraph [ref=e272]: EBITDA Q1 cumulative planın %3 üstünde
+                    - generic [ref=e273]: OLUMLU
+                  - paragraph [ref=e274]: Personel giderleri ve teknoloji amortismanı tasarrufu
+  - region "Notifications alt+T"

@@ -3,36 +3,37 @@
 
 @theme {
   /* =========================================================
-     Tur Assist — Architectural Precision (brand-system.md)
-     Asset: assets/198b2a38bf384c4b931d15183a332aba (Stitch v3)
+     Tur Assist — Kurumsal Kimlik v2 (2026-04-19)
+     Kurumsal Kırmızı #DA291C • Koyu Lacivert #002366 •
+     Kurumsal Gri #4D4D4F • Arka Plan #F8FAFC • Metin #1E293B
      ========================================================= */
 
-  /* Primary — red gradient action */
-  --color-primary: #b50303;
-  --color-primary-container: #da291c;
+  /* Primary — Kurumsal Kırmızı (ana aksiyon, logo, kritik) */
+  --color-primary: #da291c;
+  --color-primary-container: #b01818;
   --color-primary-fixed: #ffdad4;
   --color-on-primary: #ffffff;
 
-  /* Secondary — navy monolith sidebar */
-  --color-secondary: #f2f4f8;
-  --color-secondary-container: #e6e8ed;
-  --color-on-secondary: #191c1f;
-  --color-on-secondary-container: #191c1f;
-  --color-on-secondary-fixed: #191c1f;
+  /* Secondary — Koyu Lacivert (sol navigasyon menüsü) */
+  --color-secondary: #002366;
+  --color-secondary-container: #00174a;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #ffffff;
+  --color-on-secondary-fixed: #ffffff;
 
-  /* Surface — tonal layering for No-Line Rule */
-  --color-surface: #f7f9fb;
-  --color-surface-bright: #f7f9fb;
+  /* Surface — #F8FAFC zemin, tonal katmanlar */
+  --color-surface: #f8fafc;
+  --color-surface-bright: #ffffff;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f2f4f6;
-  --color-surface-container: #eceef0;
-  --color-surface-container-high: #e6e8ea;
-  --color-surface-container-highest: #e0e2e4;
+  --color-surface-container-low: #f1f5f9;
+  --color-surface-container: #e2e8f0;
+  --color-surface-container-high: #cbd5e1;
+  --color-surface-container-highest: #94a3b8;
 
-  /* Text */
-  --color-on-surface: #191c1e;
-  --color-on-background: #191c1e;
-  --color-on-surface-variant: #5c403b;
+  /* Text — #1E293B ana, #4D4D4F yardımcı */
+  --color-on-surface: #1e293b;
+  --color-on-background: #1e293b;
+  --color-on-surface-variant: #4d4d4f;
 
   /* Status */
   --color-error: #93000a;
@@ -44,11 +45,11 @@
   --color-warning: #854d0e;
   --color-warning-container: #fef3c7;
 
-  /* Outline (ghost only — see No-Line Rule) */
-  --color-outline: #916f6a;
-  --color-outline-variant: #e6bdb7;
-  --color-inverse-surface: #2d3134;
-  --color-inverse-on-surface: #eff1f5;
+  /* Outline — Kurumsal Gri */
+  --color-outline: #4d4d4f;
+  --color-outline-variant: #cbd5e1;
+  --color-inverse-surface: #1e293b;
+  --color-inverse-on-surface: #f8fafc;
 
   /* Tertiary alias — DEPRECATED. Brand has no tertiary token; this maps to
      success (emerald) for backwards compatibility while sayfa-spesifik
@@ -72,8 +73,8 @@
   --radius-full: 9999px;
 
   /* Ambient navy-tonal shadow (floating elements only — never neutral grey) */
-  --shadow-ambient: 0 20px 40px rgba(0, 35, 102, 0.06);
+  --shadow-ambient: 0 20px 40px rgba(0, 35, 102, 0.08);
 
-  /* Primary CTA glow */
+  /* Primary CTA glow — Kurumsal Kırmızı */
   --shadow-primary-glow: 0 4px 12px -2px rgba(218, 41, 28, 0.35);
 }

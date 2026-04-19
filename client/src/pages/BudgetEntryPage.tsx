@@ -18,6 +18,7 @@ import {
 import { ExcelImportModal } from '../components/budget-planning/ExcelImportModal'
 import {
   bulkUpsertEntries,
+  createVersion,
   deleteEntry,
   getCustomerContracts,
   getCustomers,
@@ -60,6 +61,7 @@ export function BudgetEntryPage() {
   const [values, setValues] = useState<GridValues>({})
   const [saveError, setSaveError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [createDraftError, setCreateDraftError] = useState<string | null>(null)
   const [modal, setModal] = useState<Modal>(null)
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
@@ -127,13 +129,32 @@ export function BudgetEntryPage() {
     return m
   }, [contracts])
 
+  // Varsayılan yıl: bugünün yılı (fallback: kilitli olmayan ilk yıl, o da
+  // yoksa listedeki ilk yıl). Kullanıcı her gelişte güncel FY'ye düşer.
   useEffect(() => {
-    if (yearId === null && years.length > 0) setYearId(years[0].id)
+    if (yearId !== null || years.length === 0) return
+    const now = new Date().getFullYear()
+    const current = years.find((y) => y.year === now)
+    const firstOpen = years.find((y) => !y.isLocked)
+    setYearId((current ?? firstOpen ?? years[0]).id)
   }, [years, yearId])
 
+  // Varsayılan versiyon: düzenlenebilir (DRAFT/REJECTED) varsa onu, yoksa
+  // aktif olanı, o da yoksa listedeki ilkini seç. Kullanıcının girişe hazır
+  // bir versiyona düşmesi için.
   useEffect(() => {
-    if (versionId === null && versions.length > 0) setVersionId(versions[0].id)
-    if (versions.length === 0) setVersionId(null)
+    if (versions.length === 0) {
+      setVersionId(null)
+      return
+    }
+    if (versionId !== null && versions.some((v) => v.id === versionId)) return
+    const editable = versions.find((v) => isEditableStatus(v.status))
+    if (editable) {
+      setVersionId(editable.id)
+      return
+    }
+    const active = versions.find((v) => v.isActive)
+    setVersionId((active ?? versions[0]).id)
   }, [versions, versionId])
 
   useEffect(() => {
@@ -279,6 +300,27 @@ export function BudgetEntryPage() {
     },
     onError: (e: unknown) => {
       setSubmitError(e instanceof Error ? e.message : 'Onaya gönderme başarısız')
+    },
+  })
+
+  const createDraftMutation = useMutation({
+    mutationFn: async () => {
+      if (!yearId) throw new Error('Yıl seçilmedi')
+      const yearLabel = years.find((y) => y.id === yearId)?.year ?? yearId
+      const nextIndex = versions.length + 1
+      const name = `${yearLabel} V${nextIndex} Draft`
+      return createVersion(yearId, { name })
+    },
+    onSuccess: (created) => {
+      setCreateDraftError(null)
+      setVersionId(created.id)
+      setSelection(null)
+      queryClient.invalidateQueries({ queryKey: ['budget-versions', yearId] })
+    },
+    onError: (e: unknown) => {
+      setCreateDraftError(
+        e instanceof Error ? e.message : 'Yeni taslak oluşturulamadı',
+      )
     },
   })
 
@@ -472,6 +514,44 @@ export function BudgetEntryPage() {
       ) : null}
       {submitError ? (
         <div className="card mb-4 text-sm text-error">{submitError}</div>
+      ) : null}
+      {createDraftError ? (
+        <div className="card mb-4 text-sm text-error">{createDraftError}</div>
+      ) : null}
+      {yearId && currentVersion && !isEditable ? (
+        <div className="card mb-4 flex items-center gap-4 border-l-4 border-primary">
+          <span
+            className="material-symbols-outlined text-primary"
+            style={{ fontSize: 24 }}
+          >
+            lock
+          </span>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-on-surface">
+              Bu versiyon salt-okunur (<strong>{currentVersion.status}</strong>)
+            </p>
+            <p className="text-xs text-on-surface-variant mt-0.5">
+              Tutar girişi için DRAFT statüsünde bir versiyon gerekli. Yeni bir
+              taslak oluşturarak planlamaya devam edebilirsin.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={createDraftMutation.isPending}
+            onClick={() => {
+              setCreateDraftError(null)
+              createDraftMutation.mutate()
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              add
+            </span>
+            {createDraftMutation.isPending
+              ? 'Oluşturuluyor…'
+              : 'Yeni DRAFT Oluştur'}
+          </button>
+        </div>
       ) : null}
 
       <div className="grid grid-cols-12 gap-4 mb-4">

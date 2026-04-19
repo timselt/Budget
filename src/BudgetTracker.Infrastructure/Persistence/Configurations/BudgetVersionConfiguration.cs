@@ -28,7 +28,6 @@ public sealed class BudgetVersionConfiguration : IEntityTypeConfiguration<Budget
         b.Property(x => x.RejectionReason).HasMaxLength(1024);
 
         b.Property(x => x.SubmittedAt);
-        b.Property(x => x.DeptApprovedAt);
         b.Property(x => x.FinanceApprovedAt);
         b.Property(x => x.CfoApprovedAt);
         b.Property(x => x.ActivatedAt);
