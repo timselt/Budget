@@ -216,6 +216,60 @@ function formatPct(value: number): string {
   return `${sign}${value.toFixed(1)}%`
 }
 
+interface ScenarioPreset {
+  id: 'optimistic' | 'base' | 'pessimistic' | 'custom'
+  label: string
+  emoji: string
+  description: string
+  revenue: number
+  claims: number
+  expense: number
+  defaultName: string
+}
+
+const SCENARIO_PRESETS: ReadonlyArray<ScenarioPreset> = [
+  {
+    id: 'optimistic',
+    label: 'İyimser',
+    emoji: '🟢',
+    description: 'Pazar büyümesi + hasar kontrolü + maliyet disiplini',
+    revenue: 10,
+    claims: -5,
+    expense: -3,
+    defaultName: 'İyimser Senaryo',
+  },
+  {
+    id: 'base',
+    label: 'Baz (Plan)',
+    emoji: '🟡',
+    description: 'Mevcut plan varsayımları — değişiklik yok',
+    revenue: 0,
+    claims: 0,
+    expense: 0,
+    defaultName: 'Baz Senaryo',
+  },
+  {
+    id: 'pessimistic',
+    label: 'Kötümser',
+    emoji: '🔴',
+    description: 'Resesyon + hasar artışı + maliyet baskısı',
+    revenue: -10,
+    claims: 15,
+    expense: 5,
+    defaultName: 'Kötümser Senaryo',
+  },
+  {
+    id: 'custom',
+    label: 'Özel',
+    emoji: '⚙️',
+    description: 'Kendi varsayımlarınızı manuel girin',
+    revenue: 0,
+    claims: 0,
+    expense: 0,
+    defaultName: '',
+  },
+]
+
 function ScenarioModal({
   versionId,
   onClose,
@@ -225,11 +279,25 @@ function ScenarioModal({
   onClose: () => void
   onSaved: () => void
 }) {
-  const [name, setName] = useState('')
+  const [presetId, setPresetId] = useState<ScenarioPreset['id']>('base')
+  const [name, setName] = useState('Baz Senaryo')
   const [revenue, setRevenue] = useState(0)
   const [claims, setClaims] = useState(0)
   const [expense, setExpense] = useState(0)
   const [error, setError] = useState<string | null>(null)
+
+  const selectPreset = (preset: ScenarioPreset) => {
+    setPresetId(preset.id)
+    setName(preset.defaultName)
+    setRevenue(preset.revenue)
+    setClaims(preset.claims)
+    setExpense(preset.expense)
+  }
+
+  // Mini etki özeti — kullanıcı varsayımları değiştirdikçe canlı hesap.
+  // Net etki tahmini = gelir - hasar - gider (basitleştirilmiş net marj
+  // delta, pp cinsinden). Gerçek backend sonucu /scenarios/{id}/pnl'den.
+  const netImpactPp = revenue - claims - expense
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -283,6 +351,35 @@ function ScenarioModal({
             mutation.mutate()
           }}
         >
+          <div className="col-span-3">
+            <span className="label-sm block mb-2">Hızlı Başlangıç</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {SCENARIO_PRESETS.map((preset) => {
+                const selected = presetId === preset.id
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => selectPreset(preset)}
+                    className={`text-left p-2 rounded-lg border transition-colors ${
+                      selected
+                        ? 'border-primary bg-primary/5'
+                        : 'border-outline-variant hover:bg-surface-container-low'
+                    }`}
+                  >
+                    <div className="text-sm font-semibold flex items-center gap-1">
+                      <span aria-hidden>{preset.emoji}</span>
+                      {preset.label}
+                    </div>
+                    <p className="text-[0.65rem] text-on-surface-variant mt-1">
+                      {preset.description}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           <label className="block col-span-3">
             <span className="label-sm block mb-1.5">Senaryo Adı</span>
             <input
@@ -301,7 +398,10 @@ function ScenarioModal({
               step="0.1"
               className="input w-full"
               value={revenue}
-              onChange={(e) => setRevenue(Number(e.target.value))}
+              onChange={(e) => {
+                setRevenue(Number(e.target.value))
+                setPresetId('custom')
+              }}
             />
           </label>
           <label className="block">
@@ -311,7 +411,10 @@ function ScenarioModal({
               step="0.1"
               className="input w-full"
               value={claims}
-              onChange={(e) => setClaims(Number(e.target.value))}
+              onChange={(e) => {
+                setClaims(Number(e.target.value))
+                setPresetId('custom')
+              }}
             />
           </label>
           <label className="block">
@@ -321,13 +424,35 @@ function ScenarioModal({
               step="0.1"
               className="input w-full"
               value={expense}
-              onChange={(e) => setExpense(Number(e.target.value))}
+              onChange={(e) => {
+                setExpense(Number(e.target.value))
+                setPresetId('custom')
+              }}
             />
           </label>
-          <p className="col-span-3 text-xs text-on-surface-variant">
-            Gelir +10% = %10 artış, −5% = %5 düşüş. Formül versiyon bazlı; sonuç P&L etkisini
-            gösterir (/scenarios/&#123;id&#125;/pnl).
-          </p>
+
+          {/* Mini etki özeti — kullanıcı değişimi anlık görür. */}
+          <div
+            className={`col-span-3 rounded-lg p-3 border-l-4 ${
+              netImpactPp > 5
+                ? 'bg-success/5 border-l-success'
+                : netImpactPp < -5
+                  ? 'bg-error/5 border-l-error'
+                  : 'bg-surface-container-low border-l-on-surface-variant'
+            }`}
+          >
+            <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+              Tahmini Net Etki (Marj Δpp)
+            </p>
+            <p className="text-2xl font-black num mt-1">
+              {netImpactPp > 0 ? '+' : ''}
+              {netImpactPp.toFixed(1)} pp
+            </p>
+            <p className="text-xs text-on-surface-variant mt-1">
+              Gelir Δ − Hasar Δ − Gider Δ. Backend gerçek P&L hesabını
+              /scenarios/&#123;id&#125;/pnl'den döner.
+            </p>
+          </div>
 
           {error ? <p className="col-span-3 text-sm text-error">{error}</p> : null}
 
