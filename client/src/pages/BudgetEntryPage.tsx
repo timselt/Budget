@@ -695,12 +695,16 @@ export function BudgetEntryPage() {
               disabled={customers.length === 0}
             >
               <option value="">—</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.code} — {c.name}
-                  {c.segmentName ? ` (${c.segmentName})` : ''}
-                </option>
-              ))}
+              {customers.map((c) => {
+                const done = completedCustomerIds.has(c.id)
+                return (
+                  <option key={c.id} value={c.id}>
+                    {done ? '🟢 ' : '⚪ '}
+                    {c.code} — {c.name}
+                    {c.segmentName ? ` (${c.segmentName})` : ''}
+                  </option>
+                )
+              })}
             </select>
             <div className="ml-auto flex gap-2">
               <button
