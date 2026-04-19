@@ -94,23 +94,31 @@ Sidebar'da logo altında, tüm section'ların üstünde sabit bir satır:
 2026 / V5 Taslak                  [durum rozeti: Taslak]
 ```
 
-**Veri kaynağı:** Yeni Zustand store — `useActiveBudgetContext`:
+**Veri kaynağı:** Mevcut `useAppContextStore` (`client/src/stores/appContext.ts`) genişletilir. Yeni store açılmaz; çakışma önleme için tek bir global context.
+
+Yeni eklenecek alanlar:
 
 ```ts
-interface ActiveBudgetContext {
-  year: number | null
-  versionId: string | null
-  versionLabel: string | null   // "V5 Taslak"
-  status: BudgetVersionStatus | null
+interface AppContextState {
+  // ... mevcut alanlar
+  selectedVersionId: number | null
+  selectedVersionLabel: string | null        // "V5 Taslak"
+  selectedVersionStatus: string | null       // "Draft" | "Active" | ...
+  setVersion: (v: { id: number; label: string; status: string } | null) => void
 }
 ```
 
-**Entegrasyon (P1 kapsamı):**
-- `BudgetEntryPage` — mevcut versiyon dropdown store'a bağlanır (select → store.set)
-- `ActualsPage`, `ApprovalsPage`, `VariancePage`, `ForecastPage` — store'dan okur, seçiciye kendi local state'i yerine store'u besler
-- İlk açılışta store boşsa → bağlam satırı gösterilmez; sayfalar kendi varsayılanlarını kurar ve store'a yazar
+**Başlangıç değeri (hydration):**
+- App mount sırasında `useActiveVersion` hook'u (zaten mevcut: `client/src/lib/useActiveVersion.ts`) ile server-side auto-select yapılır
+- Store boşsa hook sonucu store'a yazılır
+- Kullanıcı elle seçim yapınca store güncellenir
 
-**Kritik tuzak:** Çakışma riski var — mevcut sayfaların her biri kendi versiyon state'ini yönetiyor. Bu yüzden sidebar refactor + store ekleme ile **sayfaların store'a bağlanması ayrı commit'lerde** yapılacak (bkz. Bölüm 10).
+**Entegrasyon (P1 kapsamı):**
+- `BudgetEntryPage` — mevcut local `useState<versionId>` kaldırılır, store'a bağlanır
+- `ActualsPage` — yıl seçimi zaten `selectedYear` üzerinden; dokunulmaz
+- `ApprovalsPage`, `VariancePage`, `ForecastPage`, `PnlReportPage` — zaten `useActiveVersion` kullanıyor; bu sayfalar dokunulmaz, hook arka planda store'u hydrate eder
+
+**Kritik tuzak:** `useActiveVersion` sunucudan otomatik seçer, kullanıcı seçimi değil. İki mekanizmanın tek store'da birleşmesi gerekir. BudgetEntryPage refactor'u ayrı commit olur ki regresyon izole kalsın.
 
 ## 7. Yeni Dosyalar / Değişiklikler
 
@@ -121,7 +129,6 @@ interface ActiveBudgetContext {
 | `client/src/components/layout/sidebar-config.ts` | `SidebarSection[]` veri tanımı (immutable) |
 | `client/src/components/layout/SidebarSection.tsx` | Accordion section bileşeni (başlık + collapse + localStorage) |
 | `client/src/components/layout/SidebarContextBar.tsx` | Aktif yıl/versiyon/durum gösterimi |
-| `client/src/stores/active-budget-context.ts` | Zustand store |
 | `client/src/pages/RevisionsPage.tsx` | Coming-soon placeholder |
 
 ### Değişen Dosyalar
@@ -130,8 +137,8 @@ interface ActiveBudgetContext {
 |-------|-----------|
 | `client/src/components/layout/Sidebar.tsx` | Düz array → section bazlı render; `Rapor İndir` butonu kaldırılır |
 | `client/src/App.tsx` | Yeni route: `/revisions` → `RevisionsPage` |
-| `client/src/pages/BudgetEntryPage.tsx` | Versiyon dropdown store'a bağlanır (ayrı commit) |
-| `client/src/pages/ActualsPage.tsx` | Yıl seçimi store'a bağlanır (ayrı commit) |
+| `client/src/stores/appContext.ts` | `selectedVersionId/Label/Status` + `setVersion` eklenir |
+| `client/src/pages/BudgetEntryPage.tsx` | Local versiyon state → store (ayrı commit) |
 
 ## 8. Veri Modeli
 
