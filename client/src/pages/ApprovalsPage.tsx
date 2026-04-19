@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { translateApiError } from '../lib/api-error'
 import { useAuthStore } from '../stores/auth'
 import {
   STATUS_CHIP_CLASS,
@@ -143,14 +144,7 @@ export function ApprovalsPage() {
       invalidateAll()
     },
     onError: (e: unknown) => {
-      const msg = e instanceof Error ? e.message : 'İşlem başarısız'
-      if (msg.includes('403')) {
-        setActionError('Bu işlem için yetkiniz yok.')
-      } else if (msg.includes('401')) {
-        setActionError('Oturum süresi dolmuş olabilir. Lütfen yeniden giriş yapın.')
-      } else {
-        setActionError(msg)
-      }
+      setActionError(translateApiError(e))
     },
   })
 
@@ -215,6 +209,10 @@ export function ApprovalsPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Onay Akışı
           </h2>
+          <p className="page-context-hint">
+            Bekleyen onayları yönetin. <strong>CFO onayı</strong> versiyonu
+            yayına alır ve eski aktifi otomatik arşivler.
+          </p>
         </div>
       </div>
 
@@ -272,7 +270,7 @@ export function ApprovalsPage() {
 
       <VersionSection
         title={`Bekleyen Onaylar (${pending.length})`}
-        emptyText="Bekleyen onay yok — tüm versiyonlar ya yürürlükte ya arşivli."
+        emptyText="Şu an onayınızı bekleyen versiyon yok. Bütçe Planlama'dan yeni bir taslak başlatabilirsiniz."
         versions={pending}
         canPerform={canPerform}
         onAction={(versionId, action, reason) =>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { translateApiError } from '../lib/api-error'
 import { isEditableStatus, getStatusLabel } from '../components/budget-planning/types'
 
 interface BudgetYearRow {
@@ -145,6 +146,10 @@ export function ExpenseEntriesPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Gider Girişi
           </h2>
+          <p className="page-context-hint">
+            OPEX kategorileri için aylık bütçe gider planı.
+            Tutarlar yıllık toplam KPI'lara dahil olur.
+          </p>
         </div>
         <button
           type="button"
@@ -369,7 +374,7 @@ function ExpenseEntryModal({
       })
     },
     onSuccess: () => onSaved(),
-    onError: (e: unknown) => setError(e instanceof Error ? e.message : 'Kayıt başarısız'),
+    onError: (e: unknown) => setError(translateApiError(e, { resource: 'expense' })),
   })
 
   return (

@@ -164,6 +164,10 @@ export function ActualsPage() {
       <div className="flex justify-between items-end mb-8">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Gerçekleşen</h2>
+          <p className="page-context-hint">
+            Aylık fiili (gerçekleşen) tutarları girin. Bütçe planıyla
+            karşılaştırma <strong>Sapma Analizi</strong> ekranında görünür.
+          </p>
         </div>
       </div>
 

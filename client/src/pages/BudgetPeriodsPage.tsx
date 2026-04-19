@@ -117,12 +117,21 @@ export function BudgetPeriodsPage({ embedded = false }: BudgetPeriodsPageProps =
         className={`flex justify-between items-end ${embedded ? 'mb-4' : 'mb-8'}`}
       >
         {embedded ? (
-          <div />
+          <div className="flex-1">
+            <p className="page-context-hint">
+              Yıl ve sürümleri yönetin. Aynı yıl içinde max 1 yürürlükte +
+              1 çalışılan taslak olabilir.
+            </p>
+          </div>
         ) : (
           <div>
             <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
               Bütçe Dönemleri & Versiyonları
             </h2>
+            <p className="page-context-hint">
+              Yıl ve sürümleri yönetin. Aynı yıl içinde max 1 yürürlükte +
+              1 çalışılan taslak olabilir.
+            </p>
           </div>
         )}
         <div className="flex gap-3">
@@ -217,9 +226,26 @@ export function BudgetPeriodsPage({ embedded = false }: BudgetPeriodsPageProps =
           ) : versionsQuery.isLoading ? (
             <p className="px-4 pb-4 text-sm text-on-surface-variant">Yükleniyor...</p>
           ) : versions.length === 0 ? (
-            <p className="px-4 pb-4 text-sm text-on-surface-variant">
-              Bu yıla henüz versiyon eklenmemiş. "Yeni Versiyon" ile taslak oluşturun.
-            </p>
+            <div className="p-8 text-center">
+              <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>
+                calendar_month
+              </span>
+              <p className="text-base font-semibold text-on-surface mt-3">
+                {selectedYear?.year ?? 'Bu yıl'} için ilk taslağı oluşturun
+              </p>
+              <p className="text-sm text-on-surface-variant mt-1 max-w-md mx-auto">
+                Tutarlar bu taslak üzerinde girilir; tamamlanınca onaya gönderilir.
+                CFO onayıyla yürürlüğe girer.
+              </p>
+              <button
+                type="button"
+                className="btn-primary mt-4 inline-flex"
+                onClick={() => selectedYearId && setModal({ kind: 'version', yearId: selectedYearId })}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+                Yeni Taslak
+              </button>
+            </div>
           ) : (
             <table className="tbl">
               <thead>

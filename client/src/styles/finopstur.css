@@ -33,6 +33,20 @@ body {
   color: #4d4d4f;
 }
 
+/* Sayfa H2 başlığının altına ekran-bağlamı veren 1 cümle. */
+.page-context-hint {
+  font-size: .8125rem;
+  color: var(--color-on-surface-variant);
+  font-style: italic;
+  margin-top: .25rem;
+  max-width: 64rem;
+}
+.page-context-hint strong {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--color-on-surface);
+}
+
 /* ---------- Sidebar — Koyu Lacivert Monolith ----------
    Navy (#002366) zemin, beyaz metin. Aktif öğe: kırmızı (#DA291C)
    sağ şerit + beyaz bg "cut-out" efekti (sayfa yüzeyine çakışır).

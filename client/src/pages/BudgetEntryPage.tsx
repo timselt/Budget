@@ -17,6 +17,7 @@ import {
 } from '../components/budget-planning/QuickActionModals'
 import { ExcelImportModal } from '../components/budget-planning/ExcelImportModal'
 import { BudgetPeriodsPage } from './BudgetPeriodsPage'
+import { translateApiError } from '../lib/api-error'
 import {
   bulkUpsertEntries,
   createRevision,
@@ -298,7 +299,10 @@ export function BudgetEntryPage() {
       queryClient.invalidateQueries({ queryKey: ['customer-summary', versionId] })
     },
     onError: (e: unknown) => {
-      setSaveError(e instanceof Error ? e.message : 'Kayıt başarısız')
+      setSaveError(translateApiError(e, {
+        resource: 'budget',
+        statusLabel: getStatusLabel(currentVersion?.status),
+      }))
     },
   })
 
@@ -323,7 +327,10 @@ export function BudgetEntryPage() {
       queryClient.invalidateQueries({ queryKey: ['budget-versions', yearId] })
     },
     onError: (e: unknown) => {
-      setSubmitError(e instanceof Error ? e.message : 'Onaya gönderme başarısız')
+      setSubmitError(translateApiError(e, {
+        resource: 'budget',
+        statusLabel: getStatusLabel(currentVersion?.status),
+      }))
     },
   })
 
@@ -354,9 +361,7 @@ export function BudgetEntryPage() {
       queryClient.invalidateQueries({ queryKey: ['budget-tree', created.id] })
     },
     onError: (e: unknown) => {
-      setCreateDraftError(
-        e instanceof Error ? e.message : 'Yeni taslak oluşturulamadı',
-      )
+      setCreateDraftError(translateApiError(e))
     },
   })
 
@@ -404,6 +409,10 @@ export function BudgetEntryPage() {
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
             Bütçe Planlama
           </h2>
+          <p className="page-context-hint">
+            Aktif veya taslak bütçeyi müşteri × ay × ürün matrisinde girin.
+            Sadece <strong>Taslak</strong> ve <strong>Reddedildi</strong> sürümler düzenlenebilir.
+          </p>
         </div>
         <div className="flex gap-3">
           <button
