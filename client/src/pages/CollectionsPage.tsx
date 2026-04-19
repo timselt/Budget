@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { PageIntro } from '../components/shared/PageIntro'
 
 type Tab = 'dashboard' | 'periods' | 'import'
 
@@ -134,11 +135,38 @@ export function CollectionsPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-6">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Tahsilat</h2>
+      <PageIntro
+        title="Tahsilat"
+        purpose="Müşteri alacak takibi — dönem bazlı veri import, vade analizi ve risk segmentasyonu. Vadesi geçmiş ve yüksek riskli müşteriler operasyonel takip gerektirir."
+      />
+
+      {tab === 'dashboard' && dashboard && dashboard.riskDistribution.highCount > 0 && (
+        <div className="card mb-4 border-l-4 border-l-error">
+          <div className="flex items-center gap-2 mb-2">
+            <span
+              className="material-symbols-outlined text-error"
+              style={{ fontSize: 20 }}
+            >
+              priority_high
+            </span>
+            <h3 className="text-base font-bold text-on-surface">
+              Bu hafta riskli tahsilatlar
+            </h3>
+          </div>
+          <p className="text-sm text-on-surface">
+            <strong className="text-error">{dashboard.riskDistribution.highCount}</strong>{' '}
+            müşteride yüksek risk —{' '}
+            <strong>
+              {(dashboard.riskDistribution.highAmount / 1_000_000).toLocaleString('tr-TR', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+              })}M TL
+            </strong>{' '}
+            tahsilat takibi gerekiyor. Detay için aşağıdaki segment kırılımını
+            inceleyin veya <strong>Dönem Görünümü</strong> sekmesine geçin.
+          </p>
         </div>
-      </div>
+      )}
 
       <div className="flex gap-1 mb-4 bg-surface-container-low rounded-lg p-1 w-fit">
         {TABS.map((t) => (
