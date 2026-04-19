@@ -130,4 +130,50 @@ public sealed class ReconciliationLine : BaseEntity
         DisputeNote = note;
         UpdatedAt = resolvedAt;
     }
+
+    /// <summary>
+    /// Sprint 2 Task 7 — agent inline edit: quantity ve/veya unit_price değiştirir.
+    /// Sadece PendingReview veya PricingMismatch line'larda izin verilir (Ready
+    /// sonrası Case müşteriye gönderilmek üzere; değişiklik dispute loop'una
+    /// girer, Sprint 3 konusu).
+    /// </summary>
+    public void UpdateQuantityAndPrice(
+        decimal? newQuantity,
+        decimal? newUnitPrice,
+        DateTimeOffset updatedAt)
+    {
+        if (Status is not (ReconciliationLineStatus.PendingReview or ReconciliationLineStatus.PricingMismatch))
+        {
+            throw new InvalidOperationException(
+                $"line inline edit allowed only in PendingReview/PricingMismatch (current: {Status}).");
+        }
+        if (newQuantity.HasValue && newQuantity.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(newQuantity), "quantity must be > 0");
+        }
+        if (newUnitPrice.HasValue && newUnitPrice.Value < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(newUnitPrice), "unit_price must be >= 0");
+        }
+
+        if (newQuantity.HasValue) Quantity = newQuantity.Value;
+        if (newUnitPrice.HasValue) UnitPrice = newUnitPrice.Value;
+        Amount = decimal.Round(Quantity * UnitPrice, 2, MidpointRounding.ToEven);
+        UpdatedAt = updatedAt;
+    }
+
+    /// <summary>
+    /// Sprint 2 Task 7 — PricingMismatch line'ı Ready'e geçir (agent manuel onay).
+    /// </summary>
+    public void MarkReady(DateTimeOffset updatedAt)
+    {
+        if (Status != ReconciliationLineStatus.PricingMismatch)
+        {
+            throw new InvalidOperationException(
+                $"only PricingMismatch line can be marked Ready (current: {Status}).");
+        }
+        Status = ReconciliationLineStatus.Ready;
+        DisputeReasonCode = null;
+        UpdatedAt = updatedAt;
+    }
 }

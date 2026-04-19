@@ -66,4 +66,26 @@ public sealed class ReconciliationCase : TenantEntity
         c.CompanyId = companyId;
         return c;
     }
+
+    /// <summary>
+    /// Sprint 2 Task 7 — Case sahipliği atama/değiştirme. Tam state machine
+    /// (Task 12'de Draft → UnderControl geçişi) burada değil; sadece owner güncellenir.
+    /// </summary>
+    public void AssignOwner(int newOwnerUserId, DateTimeOffset updatedAt)
+    {
+        if (newOwnerUserId <= 0) throw new ArgumentOutOfRangeException(nameof(newOwnerUserId));
+        OwnerUserId = newOwnerUserId;
+        UpdatedAt = updatedAt;
+        UpdatedByUserId = newOwnerUserId;
+    }
+
+    /// <summary>
+    /// Sprint 2 Task 7 — Case TotalAmount'u Line toplamından recompute eder.
+    /// Line update/add/remove sonrası servis çağırır.
+    /// </summary>
+    public void RecomputeTotalAmount(decimal newTotal, DateTimeOffset updatedAt)
+    {
+        TotalAmount = decimal.Round(newTotal, 2, MidpointRounding.ToEven);
+        UpdatedAt = updatedAt;
+    }
 }
