@@ -20,11 +20,23 @@ interface VersionRow {
   createdAt: string
 }
 
+/**
+ * Backend VarianceSummaryResult'tan türetilmiş özet — useTaskCenter
+ * adapter'ında compute edilir (frontend, tek aktif versiyon için).
+ * `totalVariancePercent` = max(|revenue variance|, |claims variance|);
+ * `criticalCategoryCount` = MonthlyVariances içinde Critical alert sayısı.
+ */
+export interface VarianceSummary {
+  totalVariancePercent: number
+  criticalCategoryCount: number
+}
+
 export interface DeriveContext {
   versions: VersionRow[]
   entriesPerVersion: Record<number, { customerId: number }[]>
   customerIds: number[]
   roles: string[]
+  varianceByVersion?: Record<number, VarianceSummary>
 }
 
 const PRIORITY_ORDER: Record<Task['priority'], number> = { high: 0, medium: 1, low: 2 }
@@ -126,6 +138,56 @@ export function deriveTasks(ctx: DeriveContext): Task[] {
         ctaHref: href,
         priority: 'low',
         icon: 'restart_alt',
+      })
+    }
+  }
+
+  // YENİ — Onay özet: 2+ versiyon onayda ise bireysel approve task'larını
+  // tek özet kart'a daralt (dashboard sade kalır, kullanıcı /approvals'a gider).
+  const pendingForUser = versions.filter(
+    (v) =>
+      (v.status === 'PendingFinance' && isFinance) ||
+      (v.status === 'PendingCfo' && isCfo),
+  )
+  if (pendingForUser.length >= 2) {
+    const filtered = tasks.filter(
+      (t) =>
+        !t.id.startsWith('approve-finance-') &&
+        !t.id.startsWith('approve-cfo-'),
+    )
+    filtered.push({
+      id: 'pending-approvals-summary',
+      title: `${pendingForUser.length} versiyon onayınızı bekliyor`,
+      subtitle: 'Onaylar ekranında karar verin',
+      ctaLabel: 'Onaylar Ekranı',
+      ctaHref: '/approvals',
+      priority: 'high',
+      icon: 'rule',
+    })
+    tasks.length = 0
+    tasks.push(...filtered)
+  }
+
+  // YENİ — Sapma uyarısı: aktif versiyon + |variance| >= %20 veya
+  // criticalCategoryCount > 0 ise high-priority task. Tüm rollere görünür.
+  const activeVersion = versions.find((v) => v.status === 'Active')
+  if (activeVersion && ctx.varianceByVersion?.[activeVersion.id]) {
+    const variance = ctx.varianceByVersion[activeVersion.id]
+    if (
+      Math.abs(variance.totalVariancePercent) >= 20 ||
+      variance.criticalCategoryCount > 0
+    ) {
+      tasks.push({
+        id: `variance-${activeVersion.id}`,
+        title: `${activeVersion.name} — %${Math.abs(variance.totalVariancePercent).toFixed(0)} sapma`,
+        subtitle:
+          variance.criticalCategoryCount > 0
+            ? `${variance.criticalCategoryCount} kategoride kritik fark`
+            : 'Plan vs gerçek arasında belirgin fark',
+        ctaLabel: 'Sapma Analizine Git',
+        ctaHref: '/variance',
+        priority: 'high',
+        icon: 'warning',
       })
     }
   }

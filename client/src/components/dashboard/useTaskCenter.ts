@@ -3,9 +3,54 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../../lib/api'
 import { useAuthStore } from '../../stores/auth'
 import type { BudgetVersionStatus } from '../budget-planning/types'
-import { deriveTasks, IN_PROGRESS_STATES, type Task } from './taskCenterDerivation'
+import {
+  deriveTasks,
+  IN_PROGRESS_STATES,
+  type Task,
+  type VarianceSummary,
+} from './taskCenterDerivation'
 
 export type { Task }
+
+/**
+ * Backend VarianceSummaryResult shape (api/v1/variance/{versionId}/summary).
+ * Sadece TaskCenter sapma türetmesi için minimal alan kümesi — service
+ * interface'i `IVarianceService.GetVarianceSummaryAsync` içinde tanımlı.
+ */
+interface MonthlyVariance {
+  revenueVariancePercent: number
+  claimsVariancePercent: number
+  revenueAlert: 'Medium' | 'High' | 'Critical' | null
+  claimsAlert: 'Medium' | 'High' | 'Critical' | null
+}
+interface VarianceSummaryResult {
+  monthlyVariances: MonthlyVariance[]
+  totalBudgetRevenue: number
+  totalActualRevenue: number
+  totalBudgetClaims: number
+  totalActualClaims: number
+}
+
+function summarizeVariance(raw: VarianceSummaryResult): VarianceSummary {
+  const revPct =
+    raw.totalBudgetRevenue !== 0
+      ? ((raw.totalActualRevenue - raw.totalBudgetRevenue) /
+          raw.totalBudgetRevenue) *
+        100
+      : 0
+  const claimPct =
+    raw.totalBudgetClaims !== 0
+      ? ((raw.totalActualClaims - raw.totalBudgetClaims) /
+          raw.totalBudgetClaims) *
+        100
+      : 0
+  const totalVariancePercent =
+    Math.abs(revPct) >= Math.abs(claimPct) ? revPct : claimPct
+  const criticalCategoryCount = raw.monthlyVariances.filter(
+    (m) => m.revenueAlert === 'Critical' || m.claimsAlert === 'Critical',
+  ).length
+  return { totalVariancePercent, criticalCategoryCount }
+}
 
 interface VersionRow {
   id: number
@@ -51,11 +96,29 @@ export function useTaskCenter(): { tasks: Task[]; isLoading: boolean } {
   })
 
   const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data])
+  const activeVersion = useMemo(
+    () => versions.find((v) => v.status === 'Active') ?? null,
+    [versions],
+  )
   const draftLikeIds = versions
     .filter((v) =>
       IN_PROGRESS_STATES.includes(v.status as BudgetVersionStatus),
     )
     .map((v) => v.id)
+
+  // Aktif versiyon varsa sapma özetini çek; sapma uyarısı task'ı için kullanılır.
+  const varianceQuery = useQuery({
+    queryKey: ['variance-summary', activeVersion?.id],
+    queryFn: async () => {
+      if (!activeVersion) return null
+      const { data } = await api.get<VarianceSummaryResult>(
+        `/variance/${activeVersion.id}/summary`,
+      )
+      return data
+    },
+    enabled: !!activeVersion,
+    staleTime: 60_000,
+  })
 
   const entriesQueries = useQuery({
     queryKey: ['budget-entries-multi', draftLikeIds.join(',')],
@@ -80,6 +143,11 @@ export function useTaskCenter(): { tasks: Task[]; isLoading: boolean } {
     .filter((c) => c.isActive)
     .map((c) => c.id)
 
+  const varianceByVersion = useMemo(() => {
+    if (!activeVersion || !varianceQuery.data) return {}
+    return { [activeVersion.id]: summarizeVariance(varianceQuery.data) }
+  }, [activeVersion, varianceQuery.data])
+
   const tasks = useMemo(
     () =>
       deriveTasks({
@@ -87,8 +155,9 @@ export function useTaskCenter(): { tasks: Task[]; isLoading: boolean } {
         entriesPerVersion: entriesQueries.data ?? {},
         customerIds,
         roles,
+        varianceByVersion,
       }),
-    [versions, entriesQueries.data, customerIds, roles],
+    [versions, entriesQueries.data, customerIds, roles, varianceByVersion],
   )
 
   return {
