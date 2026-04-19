@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
 import { useActiveVersion } from '../lib/useActiveVersion'
 import { FinOpsTrendChart, FinOpsSegmentDonut } from '../components/dashboard/FinOpsTrendChart'
+import { TaskCenter } from '../components/dashboard/TaskCenter'
 import {
   EbitdaBridgeChart,
   LossRatioChart,
@@ -111,7 +112,7 @@ export function DashboardPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex justify-between items-end mb-6">
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
             Executive Dashboard
@@ -123,6 +124,8 @@ export function DashboardPage() {
           ) : null}
         </div>
       </div>
+
+      <TaskCenter />
 
       {kpisQuery.isError ? (
         <div className="card mb-6 text-sm text-error">KPI hesaplanırken hata oluştu.</div>
@@ -261,13 +264,14 @@ export function DashboardPage() {
 }
 
 function TopCustomerRow({ label, share }: { label: string; share: number }) {
-  const width = Math.min(100, Math.max(0, share))
+  const safeShare = share ?? 0
+  const width = Math.min(100, Math.max(0, safeShare))
   return (
     <div>
       <div className="flex justify-between items-end mb-1.5">
         <span className="text-sm font-bold text-on-surface truncate max-w-[70%]">{label}</span>
         <span className="text-sm font-extrabold num">
-          {share.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+          {safeShare.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
         </span>
       </div>
       <div className="progress-track">
