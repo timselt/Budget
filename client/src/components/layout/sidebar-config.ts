@@ -30,7 +30,7 @@ export interface SidebarSection {
 export const SIDEBAR_SECTIONS: readonly SidebarSection[] = [
   {
     id: 'home',
-    label: 'Ana Sayfa',
+    label: 'Yönetici Paneli',
     icon: 'dashboard',
     to: '/',
     end: true,
@@ -43,12 +43,6 @@ export const SIDEBAR_SECTIONS: readonly SidebarSection[] = [
     icon: 'edit_note',
     defaultOpen: true,
     items: [
-      {
-        label: 'Versiyonlar',
-        to: '/budget/planning?tab=versions',
-        icon: 'history_edu',
-        matchTabParam: 'versions',
-      },
       { label: 'Bütçe Planlama', to: '/budget/planning', icon: 'edit_note' },
       { label: 'Gider Girişi', to: '/expenses', icon: 'payments' },
       { label: 'Özel Kalemler', to: '/special-items', icon: 'bookmark_star' },
@@ -133,6 +127,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSection[] = [
     icon: 'fact_check',
     defaultOpen: false,
     items: [
+      { label: 'Batch Listesi', to: '/mutabakat/batches', icon: 'cloud_upload' },
       { label: 'Fiyat Arama', to: '/pricing/lookup', icon: 'search' },
     ],
   },

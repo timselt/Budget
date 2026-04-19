@@ -8,6 +8,7 @@ using BudgetTracker.Infrastructure.Authentication;
 using BudgetTracker.Infrastructure.BackgroundJobs;
 using BudgetTracker.Infrastructure.Identity;
 using BudgetTracker.Infrastructure.Persistence;
+using FluentValidation;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -39,6 +40,11 @@ try
         .Enrich.FromLogContext());
 
     builder.Services.AddApplication();
+
+    // Api assembly'deki FluentValidation validator'larını da register et
+    // (örn. ReconciliationBatchesController içindeki CreateBatchFormRequestValidator —
+    // IFormFile reference'ı yüzünden Api katmanında tutuluyor).
+    builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly, ServiceLifetime.Scoped);
 
     // One-shot seed runs (`--seed-bootstrap-admin`) exit before the OpenIddict
     // HTTP server is started, so skip prod-cert loading. This lets operators

@@ -30,17 +30,16 @@ interface Input {
   customers: Customer[]
   entries: Entry[]
   expenseEntries: ExpenseEntry[]
-  scenarioId: number | null
 }
 
 /**
  * Onaya hazırlık kontrolü — pure derivation:
  *   - 1 sert kural (fail): tüm aktif müşterilerin en az 1 entry'si var mı?
- *   - 4 yumuşak uyarı (warn): boş ay, OPEX yok, hasar planı yok, senaryo yok
+ *   - 3 yumuşak uyarı (warn): boş ay, OPEX yok, hasar planı yok
  * canSubmit = hardFailCount === 0 && totalCount > 0
  */
 export function computeChecklist(input: Input): ChecklistResult {
-  const { customers, entries, expenseEntries, scenarioId } = input
+  const { customers, entries, expenseEntries } = input
   const activeCustomers = customers.filter((c) => c.isActive)
   const totalCount = activeCustomers.length
 
@@ -115,15 +114,6 @@ export function computeChecklist(input: Input): ChecklistResult {
     }
   }
 
-  // 5. Senaryo seçilmedi mi?
-  if (scenarioId == null) {
-    items.push({
-      id: 'scenario',
-      level: 'warn',
-      message: 'Senaryo seçilmedi',
-    })
-  }
-
   const hardFailCount = items.filter((i) => i.level === 'fail').length
   const warnCount = items.filter((i) => i.level === 'warn').length
 
@@ -136,9 +126,9 @@ export function computeChecklist(input: Input): ChecklistResult {
 }
 
 export function useSubmissionChecklist(input: Input): ChecklistResult {
-  const { customers, entries, expenseEntries, scenarioId } = input
+  const { customers, entries, expenseEntries } = input
   return useMemo(
-    () => computeChecklist({ customers, entries, expenseEntries, scenarioId }),
-    [customers, entries, expenseEntries, scenarioId],
+    () => computeChecklist({ customers, entries, expenseEntries }),
+    [customers, entries, expenseEntries],
   )
 }

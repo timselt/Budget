@@ -103,7 +103,7 @@ public sealed class ExcelExportService : IExcelExportService
         if (lastDataRow >= 2)
         {
             var dataRange = ws.Range(2, 3, lastDataRow, 15);
-            dataRange.Style.NumberFormat.Format = "#,##0.00";
+            dataRange.Style.NumberFormat.Format = "#,##0";
         }
 
         ws.Columns().AdjustToContents();

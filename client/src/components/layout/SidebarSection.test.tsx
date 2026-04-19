@@ -64,7 +64,7 @@ describe('SidebarSection', () => {
   it('renders as direct link when items is empty', () => {
     const linkSection: SidebarSectionType = {
       id: 'home',
-      label: 'Ana Sayfa',
+      label: 'Yönetici Paneli',
       icon: 'dashboard',
       defaultOpen: false,
       to: '/',
@@ -72,6 +72,6 @@ describe('SidebarSection', () => {
       items: [],
     }
     renderSection(linkSection)
-    expect(screen.getByText('Ana Sayfa').closest('a')).toHaveAttribute('href', '/')
+    expect(screen.getByText('Yönetici Paneli').closest('a')).toHaveAttribute('href', '/')
   })
 })

@@ -3,8 +3,16 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
+import {
+  formatAmount,
+  formatCompactAmount,
+  formatPercent,
+} from '../lib/number-format'
 import { useActiveVersion } from '../lib/useActiveVersion'
-import { FinOpsTrendChart, FinOpsSegmentDonut } from '../components/dashboard/FinOpsTrendChart'
+import {
+  FinOpsTrendChart,
+  SegmentDistributionDonut,
+} from '../components/dashboard/FinOpsTrendChart'
 import { TaskCenter } from '../components/dashboard/TaskCenter'
 import { HelpHint } from '../components/shared/Tooltip'
 import {
@@ -39,22 +47,51 @@ interface ConcentrationRow {
   customerId: number
   customerName: string
   revenue: number
-  sharePercent: number
+  share: number
 }
 
 interface ConcentrationResult {
   topCustomers: ConcentrationRow[]
-  herfindahlIndex: number
-  topNSharePercent: number
+  hhi: number
+  topNShare: number
 }
 
-function fmtM(value: number): string {
-  const m = value / 1_000_000
-  return `${m.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`
+interface MonthlyVariance {
+  month: number
+  budgetRevenue: number
+  actualRevenue: number
+  budgetClaims: number
+  actualClaims: number
 }
 
-function fmtPct(value: number, digits = 1): string {
-  return `%${value.toLocaleString('tr-TR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
+interface VarianceSummaryResult {
+  monthlyVariances: MonthlyVariance[]
+}
+
+interface OpexBreakdownItem {
+  categoryId: number
+  categoryCode: string
+  categoryName: string
+  totalAmount: number
+}
+
+interface SegmentDistributionItem {
+  segmentId: number
+  segmentName: string
+  revenue: number
+  share: number
+}
+
+interface TopCustomerDetail {
+  customerId: number
+  customerName: string
+  segmentName: string
+  revenue: number
+  share: number
+}
+
+function toMillions(value: number): number {
+  return value / 1_000_000
 }
 
 export function DashboardPage() {
@@ -62,37 +99,140 @@ export function DashboardPage() {
 
   const kpisQuery = useQuery({
     queryKey: ['dashboard-kpis', versionId],
-    queryFn: async () => {
-      const { data } = await api.get<KpiResult>(`/dashboard/${versionId}/kpis`)
-      return data
-    },
+    queryFn: async () => (await api.get<KpiResult>(`/dashboard/${versionId}/kpis`)).data,
     enabled: versionId !== null,
   })
 
   const concentrationQuery = useQuery({
     queryKey: ['dashboard-concentration', versionId],
-    queryFn: async () => {
-      const { data } = await api.get<ConcentrationResult>(
-        `/dashboard/${versionId}/top-customers?topN=5`,
-      )
-      return data
-    },
+    queryFn: async () =>
+      (await api.get<ConcentrationResult>(`/dashboard/${versionId}/top-customers?topN=5`)).data,
+    enabled: versionId !== null,
+  })
+
+  const varianceSummaryQuery = useQuery({
+    queryKey: ['variance-summary', versionId],
+    queryFn: async () =>
+      (await api.get<VarianceSummaryResult>(`/variance/${versionId}/summary`)).data,
+    enabled: versionId !== null,
+  })
+
+  const opexBreakdownQuery = useQuery({
+    queryKey: ['dashboard-opex-breakdown', versionId],
+    queryFn: async () =>
+      (await api.get<OpexBreakdownItem[]>(`/dashboard/${versionId}/opex-breakdown`)).data,
+    enabled: versionId !== null,
+  })
+
+  const segmentDistributionQuery = useQuery({
+    queryKey: ['dashboard-segment-distribution', versionId],
+    queryFn: async () =>
+      (await api.get<SegmentDistributionItem[]>(`/dashboard/${versionId}/segment-distribution`)).data,
+    enabled: versionId !== null,
+  })
+
+  const topCustomersDetailedQuery = useQuery({
+    queryKey: ['dashboard-top-customers-detailed', versionId],
+    queryFn: async () =>
+      (await api.get<TopCustomerDetail[]>(
+        `/dashboard/${versionId}/top-customers-detailed?topN=10`,
+      )).data,
     enabled: versionId !== null,
   })
 
   const kpis = kpisQuery.data ?? null
   const concentration = concentrationQuery.data ?? null
   const topCustomers = useMemo(() => concentration?.topCustomers ?? [], [concentration])
+  const monthlyVariances = useMemo(
+    () => varianceSummaryQuery.data?.monthlyVariances ?? [],
+    [varianceSummaryQuery.data],
+  )
+  const opexBreakdown = useMemo(
+    () => opexBreakdownQuery.data ?? [],
+    [opexBreakdownQuery.data],
+  )
+  const segmentDistribution = useMemo(
+    () => segmentDistributionQuery.data ?? [],
+    [segmentDistributionQuery.data],
+  )
+  const topCustomersDetailed = useMemo(
+    () => topCustomersDetailedQuery.data ?? [],
+    [topCustomersDetailedQuery.data],
+  )
 
   const marginPercent = kpis && kpis.totalRevenue > 0
     ? (kpis.technicalMargin / kpis.totalRevenue) * 100
     : 0
 
+  const trendRevenueSeries = useMemo(
+    () => monthlyVariances.map((m) => toMillions(m.budgetRevenue)),
+    [monthlyVariances],
+  )
+  const trendClaimsSeries = useMemo(
+    () => monthlyVariances.map((m) => toMillions(m.budgetClaims)),
+    [monthlyVariances],
+  )
+  const trendTechnicalMarginSeries = useMemo(
+    () => monthlyVariances.map((m) => toMillions(m.budgetRevenue - m.budgetClaims)),
+    [monthlyVariances],
+  )
+  const actualLossRatioSeries = useMemo(
+    () => monthlyVariances.map((m) => (m.actualRevenue > 0 ? (m.actualClaims / m.actualRevenue) * 100 : 0)),
+    [monthlyVariances],
+  )
+  const budgetLossRatioSeries = useMemo(
+    () => monthlyVariances.map((m) => (m.budgetRevenue > 0 ? (m.budgetClaims / m.budgetRevenue) * 100 : 0)),
+    [monthlyVariances],
+  )
+  const opexLabels = useMemo(
+    () => opexBreakdown.map((item) => item.categoryName),
+    [opexBreakdown],
+  )
+  const opexValues = useMemo(
+    () => opexBreakdown.map((item) => toMillions(item.totalAmount)),
+    [opexBreakdown],
+  )
+  const segmentLabels = useMemo(
+    () => segmentDistribution.map((item) => item.segmentName),
+    [segmentDistribution],
+  )
+  const segmentValues = useMemo(
+    () => segmentDistribution.map((item) => Number((item.share * 100).toFixed(2))),
+    [segmentDistribution],
+  )
+  const ebitdaBridge = useMemo(() => {
+    if (!kpis) return null
+    return {
+      labels: [
+        'Gelir',
+        'Hasar',
+        'Genel Gid.',
+        'Teknik Gid.',
+        'Fin. Gelir',
+        'Fin. Gider',
+        'T Katılım',
+        'Amortisman',
+        'EBITDA',
+      ],
+      values: [
+        toMillions(kpis.totalRevenue),
+        toMillions(-kpis.totalClaims),
+        toMillions(-kpis.generalExpenses),
+        toMillions(-kpis.technicalExpenses),
+        toMillions(kpis.financialIncome),
+        toMillions(-kpis.financialExpenses),
+        toMillions(kpis.tKatilim),
+        toMillions(kpis.depreciation),
+        toMillions(kpis.ebitda),
+      ],
+    }
+  }, [kpis])
+
   if (versionLoading) {
     return (
       <section>
         <h2 className="text-3xl font-extrabold tracking-display text-[#002366] mb-6">
-          Ana Sayfa
+          Yönetici Paneli
         </h2>
         <div className="card p-6 text-sm text-on-surface-variant">Yükleniyor…</div>
       </section>
@@ -103,13 +243,10 @@ export function DashboardPage() {
     return (
       <section>
         <h2 className="text-3xl font-extrabold tracking-display text-[#002366] mb-6">
-          Ana Sayfa
+          Yönetici Paneli
         </h2>
         <div className="card p-8 text-center">
-          <span
-            className="material-symbols-outlined text-on-surface-variant"
-            style={{ fontSize: 48 }}
-          >
+          <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 48 }}>
             calendar_add_on
           </span>
           <p className="text-base font-semibold text-on-surface mt-3">
@@ -119,10 +256,7 @@ export function DashboardPage() {
             Çalışmaya başlamak için bir bütçe yılı + versiyon oluşturun.
             Tüm dashboard, sapma ve raporlar bu versiyon üzerinden hesaplanır.
           </p>
-          <Link
-            to="/budget/planning?tab=versions"
-            className="btn-primary mt-4 inline-flex"
-          >
+          <Link to="/budget/planning?tab=versions" className="btn-primary mt-4 inline-flex">
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
               add
             </span>
@@ -135,109 +269,130 @@ export function DashboardPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-6">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
-            Ana Sayfa
-          </h2>
-          {versionName && year ? (
-            <p className="text-sm text-on-surface-variant mt-1">
-              FY{year} · {versionName}
+      <div className="card mb-6">
+        <div className="grid grid-cols-12 gap-6 items-start">
+          <div className="col-span-12 xl:col-span-4">
+            <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
+              Yönetici Paneli
+            </h2>
+            <p className="text-sm text-on-surface-variant mt-2">
+              Bugün yapmanız gereken işlemler, aktif bütçe özeti ve yönetim metrikleri
             </p>
-          ) : null}
+            {versionName && year ? (
+              <p className="text-sm text-on-surface-variant mt-3">
+                FY{year} · {versionName}
+              </p>
+            ) : null}
+          </div>
+          <div className="col-span-12 xl:col-span-8">
+            <TaskCenter embedded />
+          </div>
         </div>
       </div>
-
-      <TaskCenter />
 
       {kpisQuery.isError ? (
         <div className="card mb-6 text-sm text-error">KPI hesaplanırken hata oluştu.</div>
       ) : null}
 
       <div className="grid grid-cols-12 gap-6 mb-6">
-        <div className="col-span-12 lg:col-span-4 card-tonal">
-          <span className="label-sm block mb-4">Toplam Gelir — FY{year} Plan</span>
+        <div className="col-span-12 lg:col-span-3 card-tonal">
+          <span className="label-sm block mb-4">Yıllık Gelir</span>
           <div className="flex items-baseline gap-2">
-            <span className="text-[3.5rem] font-extrabold tracking-display leading-none text-[#002366] num">
-              {kpis ? fmtM(kpis.totalRevenue) : '—'}
+            <span className="text-[3.2rem] font-extrabold tracking-display leading-none text-[#002366] num">
+              {kpis ? formatCompactAmount(kpis.totalRevenue) : '—'}
             </span>
             <span className="text-sm font-bold text-on-surface-variant">TL</span>
           </div>
-          <div className="mt-6 flex items-center justify-between">
-            <span className="text-[0.65rem] text-on-surface-variant font-semibold">12 aylık</span>
+          <div className="mt-6">
+            <span className="text-[0.7rem] text-on-surface-variant font-semibold">
+              12 aylık toplulaştırılmış bütçe
+            </span>
           </div>
         </div>
 
-        <div className="col-span-6 lg:col-span-2 card">
+        <div className="col-span-12 lg:col-span-3 card-tonal">
+          <span className="label-sm block mb-4">Yıllık Hasar</span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-[3.2rem] font-extrabold tracking-display leading-none text-[#002366] num">
+              {kpis ? formatCompactAmount(kpis.totalClaims) : '—'}
+            </span>
+            <span className="text-sm font-bold text-on-surface-variant">TL</span>
+          </div>
+          <div className="mt-6">
+            <span className="chip chip-warning">
+              LR {kpis ? formatPercent(kpis.lossRatio * 100) : '—'}
+            </span>
+          </div>
+        </div>
+
+        <div className="col-span-12 lg:col-span-3 card-tonal">
           <span className="label-sm">
             Teknik Marj
             <HelpHint text="Teknik Marj = Prim Geliri − Hasar Maliyeti. Reasürans öncesi sigortacılık karlılığı." />
           </span>
-          <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">
-            {kpis ? fmtM(kpis.technicalMargin) : '—'}
+          <p className="text-[3.2rem] font-extrabold tracking-display num mt-4 text-[#002366]">
+            {kpis ? formatCompactAmount(kpis.technicalMargin) : '—'}
           </p>
-          <p className="text-xs text-on-surface-variant mt-1">
-            {kpis ? `${fmtPct(marginPercent)} marj` : '—'}
+          <p className="text-sm text-success font-bold mt-4">
+            {kpis ? `${formatPercent(marginPercent)} marj` : '—'}
           </p>
         </div>
 
-        <div className="col-span-6 lg:col-span-2 card">
+        <div className="col-span-12 lg:col-span-3 card-tonal">
           <span className="label-sm">
             EBITDA
             <HelpHint text="EBITDA = Faiz, Vergi, Amortisman ve İtfa öncesi kar. Operasyonel performans göstergesi." />
           </span>
-          <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">
-            {kpis ? fmtM(kpis.ebitda) : '—'}
+          <p className="text-[3.2rem] font-extrabold tracking-display num mt-4 text-[#002366]">
+            {kpis ? formatCompactAmount(kpis.ebitda) : '—'}
           </p>
-          <p className="text-xs text-success font-bold mt-1">
-            {kpis ? `${fmtPct(kpis.ebitdaMargin * 100)} EBITDA margin` : '—'}
+          <p className="text-sm text-primary font-bold mt-4">
+            {kpis ? `${formatPercent(kpis.ebitdaMargin * 100)} marj` : '—'}
           </p>
-        </div>
-
-        <div className="col-span-6 lg:col-span-2 card">
-          <span className="label-sm">
-            Loss Ratio
-            <HelpHint text="Loss Ratio = Hasar / Prim. ≤55% iyi, 55-70% normal, >70% riskli." />
-          </span>
-          <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">
-            {kpis ? fmtPct(kpis.lossRatio * 100) : '—'}
-          </p>
-          <p className="text-xs text-on-surface-variant mt-1">Hasar/Prim</p>
-        </div>
-
-        <div className="col-span-6 lg:col-span-2 card">
-          <span className="label-sm">
-            Combined Ratio
-            <HelpHint text="Combined Ratio = (Hasar + Gider) / Prim. <100% sigortacılık karlı, ≥100% zararlı." />
-          </span>
-          <p className="text-2xl font-extrabold tracking-display num mt-2 text-[#002366]">
-            {kpis ? fmtPct(kpis.combinedRatio * 100) : '—'}
-          </p>
-          <p className="text-xs text-on-surface-variant mt-1">Hasar + Gider / Prim</p>
         </div>
       </div>
 
-      {/* Grafikler — yerel sample data (ayrı iyileştirme konusu) */}
+      <div className="grid grid-cols-12 gap-4 mb-6">
+        <MiniKpiCard title="Net Kar/Zarar" value={kpis ? formatCompactAmount(kpis.netProfit) : '—'} />
+        <MiniKpiCard title="Teknik Kar" value={kpis ? formatCompactAmount(kpis.technicalProfit) : '—'} />
+        <MiniKpiCard title="Gider Rasyosu" value={kpis ? formatPercent(kpis.expenseRatio * 100) : '—'} />
+        <MiniKpiCard title="Combined Ratio" value={kpis ? formatPercent(kpis.combinedRatio * 100) : '—'} />
+        <MiniKpiCard title="Muallak Oranı" value={kpis ? formatPercent(kpis.muallakRatio * 100) : '—'} />
+        <MiniKpiCard title="Finansal Gelir" value={kpis ? formatCompactAmount(kpis.financialIncome) : '—'} />
+      </div>
+
       <div className="grid grid-cols-12 gap-6 mb-6">
-        <div className="col-span-12 lg:col-span-8 card">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="text-lg font-bold tracking-tight text-[#002366]">
-                Gelir / Hasar / Teknik Marj — Aylık Trend
-              </h3>
-              <p className="text-xs text-on-surface-variant mt-1">
-                Grafik: örnek zaman serisi (aylık agregasyon endpoint'i sprint devamında gelecek)
-              </p>
-            </div>
-          </div>
+        <div className="col-span-12 lg:col-span-4 card">
+          <h3 className="text-base font-bold tracking-tight text-[#002366] mb-3">EBITDA Köprüsü</h3>
           <div style={{ height: 220 }}>
-            <FinOpsTrendChart />
+            {ebitdaBridge ? (
+              <EbitdaBridgeChart labels={ebitdaBridge.labels} values={ebitdaBridge.values} />
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-on-surface-variant">
+                Veri yok.
+              </div>
+            )}
           </div>
         </div>
+
         <div className="col-span-12 lg:col-span-4 card">
-          <h3 className="text-lg font-bold tracking-tight text-[#002366] mb-4">
-            Top 5 Müşteri (Konsantrasyon)
-          </h3>
+          <h3 className="text-base font-bold tracking-tight text-[#002366] mb-3">Loss Ratio (Aylık)</h3>
+          <div style={{ height: 220 }}>
+            {varianceSummaryQuery.isLoading ? (
+              <div className="h-full flex items-center justify-center text-sm text-on-surface-variant">
+                Grafik yükleniyor…
+              </div>
+            ) : (
+              <LossRatioChart
+                actualSeries={actualLossRatioSeries}
+                benchmarkSeries={budgetLossRatioSeries}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="col-span-12 lg:col-span-4 card">
+          <h3 className="text-base font-bold tracking-tight text-[#002366] mb-3">Konsantrasyon Özeti</h3>
           {topCustomers.length === 0 ? (
             <p className="text-xs text-on-surface-variant">Henüz veri yok.</p>
           ) : (
@@ -246,55 +401,121 @@ export function DashboardPage() {
                 <TopCustomerRow
                   key={c.customerId}
                   label={c.customerName}
-                  share={c.sharePercent}
+                  share={c.share * 100}
                 />
               ))}
             </div>
           )}
           {concentration ? (
             <p className="text-[0.65rem] text-on-surface-variant mt-4">
-              HHI: {(concentration.herfindahlIndex ?? 0).toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
+              HHI: {concentration.hhi.toLocaleString('tr-TR', { maximumFractionDigits: 0 })}
               {' · '}
-              Top-{topCustomers.length} pay: {fmtPct(concentration.topNSharePercent ?? 0)}
+              Top-{topCustomers.length} pay: {formatPercent(concentration.topNShare * 100)}
             </p>
           ) : null}
         </div>
       </div>
 
-      {/* Grafik alt satırı — mevcut chart bileşenleri (sample series) */}
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-12 lg:col-span-4 card">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-bold tracking-tight text-[#002366]">EBITDA Köprüsü</h3>
-            <span className="chip chip-info">Demo</span>
+      <div className="grid grid-cols-12 gap-6 mb-6">
+        <div className="col-span-12 lg:col-span-8 card">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold tracking-tight text-[#002366]">
+              Aylık Trend
+            </h3>
           </div>
-          <div style={{ height: 220 }}>
-            <EbitdaBridgeChart />
+          <div style={{ height: 320 }}>
+            {varianceSummaryQuery.isLoading ? (
+              <div className="h-full flex items-center justify-center text-sm text-on-surface-variant">
+                Grafik yükleniyor…
+              </div>
+            ) : (
+              <FinOpsTrendChart
+                revenueSeries={trendRevenueSeries}
+                claimsSeries={trendClaimsSeries}
+                technicalMarginSeries={trendTechnicalMarginSeries}
+              />
+            )}
           </div>
         </div>
+
         <div className="col-span-12 lg:col-span-4 card">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-bold tracking-tight text-[#002366]">Loss Ratio (aylık)</h3>
-            <span className="chip chip-warning">Demo</span>
-          </div>
-          <div style={{ height: 220 }}>
-            <LossRatioChart />
+          <h3 className="text-lg font-bold tracking-tight text-[#002366] mb-4">
+            Segment Dağılımı
+          </h3>
+          {segmentDistribution.length === 0 ? (
+            <p className="text-xs text-on-surface-variant">Henüz veri yok.</p>
+          ) : (
+            <div style={{ height: 320 }}>
+              <SegmentDistributionDonut labels={segmentLabels} values={segmentValues} />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-12 gap-6 mb-6">
+        <div className="col-span-12 lg:col-span-7 card overflow-hidden">
+          <h3 className="text-lg font-bold tracking-tight text-[#002366] mb-4">
+            Top 10 Müşteri (Yıllık Gelir)
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-surface-container-low text-on-surface-variant">
+                <tr>
+                  <th className="text-left px-4 py-3">#</th>
+                  <th className="text-left px-4 py-3">Müşteri</th>
+                  <th className="text-left px-4 py-3">Segment</th>
+                  <th className="text-right px-4 py-3">Bütçe (M)</th>
+                  <th className="text-right px-4 py-3">Pay</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topCustomersDetailed.map((customer, index) => (
+                  <tr key={customer.customerId} className="border-b border-outline-variant/40">
+                    <td className="px-4 py-3">{index + 1}</td>
+                    <td className="px-4 py-3 font-semibold text-on-surface">{customer.customerName}</td>
+                    <td className="px-4 py-3">
+                      <span className="chip chip-neutral">{customer.segmentName}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right num">
+                      {formatAmount(toMillions(customer.revenue))}
+                    </td>
+                    <td className="px-4 py-3 text-right num">{formatPercent(customer.share * 100)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-        <div className="col-span-12 lg:col-span-4 card">
+
+        <div className="col-span-12 lg:col-span-5 card">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-bold tracking-tight text-[#002366]">Gider Kırılımı</h3>
-            <span className="chip chip-neutral">Demo</span>
+            <h3 className="text-base font-bold tracking-tight text-[#002366]">Gider Kırılımı (Yıllık)</h3>
           </div>
-          <div style={{ height: 220 }}>
-            <OpexBreakdownChart />
-          </div>
-          <div style={{ height: 180, display: 'none' }}>
-            <FinOpsSegmentDonut />
+          <div style={{ height: 420 }}>
+            {opexBreakdownQuery.isLoading ? (
+              <div className="h-full flex items-center justify-center text-sm text-on-surface-variant">
+                Grafik yükleniyor…
+              </div>
+            ) : (
+              <OpexBreakdownChart labels={opexLabels} values={opexValues} />
+            )}
           </div>
         </div>
       </div>
+
+      <div className="grid grid-cols-12 gap-6" />
     </section>
+  )
+}
+
+function MiniKpiCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="col-span-12 sm:col-span-6 lg:col-span-2 card text-center">
+      <p className="label-sm uppercase">{title}</p>
+      <p className="text-2xl font-extrabold tracking-display num mt-4 text-[#002366]">
+        {value}
+      </p>
+    </div>
   )
 }
 
@@ -306,7 +527,7 @@ function TopCustomerRow({ label, share }: { label: string; share: number }) {
       <div className="flex justify-between items-end mb-1.5">
         <span className="text-sm font-bold text-on-surface truncate max-w-[70%]">{label}</span>
         <span className="text-sm font-extrabold num">
-          {safeShare.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+          {formatPercent(safeShare)}
         </span>
       </div>
       <div className="progress-track">

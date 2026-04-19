@@ -1,4 +1,8 @@
 import type { RowValues } from './types'
+import {
+  formatAmount as formatAmountValue,
+  formatCompactAmount,
+} from '../../lib/number-format'
 
 export function emptyRow(): RowValues {
   const r: RowValues = {}
@@ -13,16 +17,11 @@ export function toNumber(input: string): number {
 }
 
 export function formatAmount(value: number): string {
-  return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return formatAmountValue(value)
 }
 
 export function formatCompact(value: number): string {
-  const millions = value / 1_000_000
-  if (Math.abs(millions) >= 1) {
-    return `${millions.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`
-  }
-  const thousands = value / 1_000
-  return `${thousands.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}K`
+  return formatCompactAmount(value)
 }
 
 export function sum(values: readonly number[]): number {

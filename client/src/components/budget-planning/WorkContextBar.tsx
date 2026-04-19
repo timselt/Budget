@@ -16,7 +16,6 @@ interface Props {
   completedCount: number
   totalCount: number
   currency: string
-  scenarioName?: string
   onCreateRevision?: () => void
   createRevisionPending?: boolean
   /** Çalışma bandı altında "sıradaki adım" satırı + Düzelt → CTA. */
@@ -42,7 +41,6 @@ export function WorkContextBar({
   completedCount,
   totalCount,
   currency,
-  scenarioName,
   onCreateRevision,
   createRevisionPending,
   nextStep,
@@ -85,10 +83,6 @@ export function WorkContextBar({
           </span>
           <span className="text-xs text-on-surface-variant">·</span>
           <span className="text-xs text-on-surface-variant">{currency}</span>
-          <span className="text-xs text-on-surface-variant">·</span>
-          <span className="text-xs text-on-surface-variant">
-            Senaryo: {scenarioName ?? '—'}
-          </span>
         </div>
         {nextStep && (
           <div className="border-t border-outline-variant pt-2 mt-2 flex items-center justify-between gap-3 flex-wrap">

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { translateApiError } from '../lib/api-error'
+import { formatAmount } from '../lib/number-format'
 import { isEditableStatus, getStatusLabel } from '../components/budget-planning/types'
 import { Stepper } from '../components/budget-planning/Stepper'
 import { showToast } from '../components/shared/toast-bus'
@@ -322,10 +323,6 @@ export function ExpenseEntriesPage() {
       ) : null}
     </section>
   )
-}
-
-function formatAmount(value: number): string {
-  return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function ExpenseEntryModal({

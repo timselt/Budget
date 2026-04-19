@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { ChecklistResult } from './useSubmissionChecklist'
 
 const LEVEL_ICON: Record<string, string> = {
@@ -12,7 +12,13 @@ const LEVEL_COLOR: Record<string, string> = {
   fail: 'text-error',
 }
 
-export function SubmissionChecklist({ result }: { result: ChecklistResult }) {
+export function SubmissionChecklist({
+  result,
+  footer,
+}: {
+  result: ChecklistResult
+  footer?: ReactNode
+}) {
   // Açık varsayılan: warn veya fail varsa açık başla
   const [open, setOpen] = useState(
     result.warnCount > 0 || result.hardFailCount > 0,
@@ -80,6 +86,11 @@ export function SubmissionChecklist({ result }: { result: ChecklistResult }) {
           ))}
         </ul>
       )}
+      {footer ? (
+        <div className="mt-4 pt-4 border-t border-outline-variant/60 flex items-center justify-end gap-2">
+          {footer}
+        </div>
+      ) : null}
     </div>
   )
 }

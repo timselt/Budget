@@ -1,9 +1,24 @@
-import { Line, Doughnut } from 'react-chartjs-2'
+import { Doughnut, Line } from 'react-chartjs-2'
 import { GRID } from '../../lib/chart-config'
 
 const MONTHS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
 
-export function FinOpsTrendChart() {
+interface FinOpsTrendChartProps {
+  revenueSeries: number[]
+  claimsSeries: number[]
+  technicalMarginSeries: number[]
+}
+
+interface SegmentDistributionDonutProps {
+  labels: string[]
+  values: number[]
+}
+
+export function FinOpsTrendChart({
+  revenueSeries,
+  claimsSeries,
+  technicalMarginSeries,
+}: FinOpsTrendChartProps) {
   return (
     <Line
       height={110}
@@ -12,7 +27,7 @@ export function FinOpsTrendChart() {
         datasets: [
           {
             label: 'Gelir',
-            data: [158, 168, 181, 187, 192, 198, 205, 208, 212, 220, 226, 232],
+            data: revenueSeries,
             borderColor: '#da291c',
             backgroundColor: 'rgba(218,41,28,0.08)',
             borderWidth: 2.5,
@@ -23,9 +38,9 @@ export function FinOpsTrendChart() {
           },
           {
             label: 'Hasar',
-            data: [92, 97, 106, 112, 114, 118, 122, 124, 126, 131, 134, 138],
-            borderColor: '#854d0e',
-            backgroundColor: 'rgba(133,77,14,0.06)',
+            data: claimsSeries,
+            borderColor: '#a16207',
+            backgroundColor: 'rgba(161,98,7,0.06)',
             borderWidth: 2.5,
             tension: 0.35,
             fill: true,
@@ -34,9 +49,9 @@ export function FinOpsTrendChart() {
           },
           {
             label: 'Teknik Marj',
-            data: [66, 71, 75, 75, 78, 80, 83, 84, 86, 89, 92, 94],
-            borderColor: '#002366',
-            backgroundColor: 'rgba(0,35,102,0.06)',
+            data: technicalMarginSeries,
+            borderColor: '#15803d',
+            backgroundColor: 'rgba(21,128,61,0.06)',
             borderWidth: 2.5,
             tension: 0.35,
             fill: true,
@@ -57,16 +72,19 @@ export function FinOpsTrendChart() {
   )
 }
 
-export function FinOpsSegmentDonut() {
+export function SegmentDistributionDonut({
+  labels,
+  values,
+}: SegmentDistributionDonutProps) {
   return (
     <Doughnut
       height={180}
       data={{
-        labels: ['Sigorta Şirketleri', 'Banka/Kart', 'B2B2C', 'B2C + Ad-Hoc'],
+        labels,
         datasets: [
           {
-            data: [62, 18, 14, 6],
-            backgroundColor: ['#da291c', '#002366', '#4d4d4f', '#cbd5e1'],
+            data: values,
+            backgroundColor: ['#da291c', '#005bac', '#a16207', '#15803d', '#6b46c1', '#64748b'],
             borderWidth: 0,
             spacing: 2,
           },
@@ -75,7 +93,7 @@ export function FinOpsSegmentDonut() {
       options={{
         maintainAspectRatio: false,
         cutout: '72%',
-        plugins: { legend: { display: false } },
+        plugins: { legend: { display: true, position: 'bottom' } },
       }}
     />
   )

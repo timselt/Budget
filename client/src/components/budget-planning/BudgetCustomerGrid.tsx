@@ -1,5 +1,6 @@
 import { MONTHS } from './types'
 import { formatAmount, toNumber } from './utils'
+import { formatPercent } from '../../lib/number-format'
 import { cellKey } from './budget-grid-types'
 import type { CellId, ContractRow, EntryKind, GridValues } from './budget-grid-types'
 
@@ -298,7 +299,7 @@ function LossRatioChip({ value }: { value: number }) {
         : 'chip-error'
   return (
     <span className={`chip ${chipClass} text-xs`}>
-      %{value.toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+      {formatPercent(value)}
     </span>
   )
 }

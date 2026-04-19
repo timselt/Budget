@@ -27,9 +27,9 @@ function renderPage() {
 }
 
 describe('DashboardPage', () => {
-  it('başlık Ana Sayfa olarak görünür (Executive Dashboard değil)', () => {
+  it('başlık Yönetici Paneli olarak görünür (Executive Dashboard değil)', () => {
     renderPage()
-    expect(screen.getByText('Ana Sayfa')).toBeInTheDocument()
+    expect(screen.getByText('Yönetici Paneli')).toBeInTheDocument()
     expect(screen.queryByText(/Executive Dashboard/i)).not.toBeInTheDocument()
   })
 

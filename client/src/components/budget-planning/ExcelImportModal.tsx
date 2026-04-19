@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import api from '../../lib/api'
+import { showToast } from '../shared/toast-bus'
 
 interface Props {
   versionId: number
@@ -8,22 +9,40 @@ interface Props {
   onSuccess: () => void
 }
 
-interface PreviewRow {
-  customerCode?: string
-  customerName?: string
-  month: number
-  entryType: string
-  amountOriginal: number
-  currencyCode: string
-  errors?: string[]
+interface PreviewResult {
+  totalRows: number
+  validRows: number
+  errorRows: number
+  errors: Array<{
+    rowNumber: number
+    code: string
+    message: string
+  }>
+  warnings: string[]
 }
 
-interface PreviewResult {
-  rows: PreviewRow[]
-  totalRowCount: number
-  validRowCount: number
-  errorRowCount: number
+interface CommitResult {
+  importedCount: number
+  skippedCount: number
+  warnings: string[]
 }
+
+const TEMPLATE_HEADERS = [
+  'Müşteri',
+  'Not',
+  'Ocak',
+  'Şubat',
+  'Mart',
+  'Nisan',
+  'Mayıs',
+  'Haziran',
+  'Temmuz',
+  'Ağustos',
+  'Eylül',
+  'Ekim',
+  'Kasım',
+  'Aralık',
+] as const
 
 /**
  * Excel İçe Aktar akışı — /reports/budget/import/preview → /commit iki
@@ -36,13 +55,60 @@ export function ExcelImportModal({ versionId, onClose, onSuccess }: Props) {
   const [preview, setPreview] = useState<PreviewResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  const downloadTemplate = () => {
+    const sampleRow = [
+      'Örnek Müşteri',
+      '',
+      '1000',
+      '1000',
+      '1000',
+      '1000',
+      '1000',
+      '1000',
+      '1000',
+      '1000',
+      '1000',
+      '1000',
+      '1000',
+      '1000',
+    ]
+    const csv = [TEMPLATE_HEADERS.join(';'), sampleRow.join(';')].join('\n')
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'butce-import-sablonu.csv'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const downloadErrors = () => {
+    if (!preview || preview.errors.length === 0) return
+    const rows = [
+      ['Satır', 'Kod', 'Mesaj'].join(';'),
+      ...preview.errors.map((item) => [item.rowNumber, item.code, item.message].join(';')),
+    ]
+    const blob = new Blob([`\uFEFF${rows.join('\n')}`], {
+      type: 'text/csv;charset=utf-8;',
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'butce-import-hatalari.csv'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   const previewMutation = useMutation({
     mutationFn: async (f: File) => {
       const form = new FormData()
       form.append('file', f)
-      form.append('versionId', String(versionId))
       const { data } = await api.post<PreviewResult>(
-        '/reports/budget/import/preview',
+        `/reports/budget/import/preview?versionId=${versionId}`,
         form,
         { headers: { 'Content-Type': 'multipart/form-data' } },
       )
@@ -58,12 +124,19 @@ export function ExcelImportModal({ versionId, onClose, onSuccess }: Props) {
       if (!file) throw new Error('Dosya seçilmedi')
       const form = new FormData()
       form.append('file', file)
-      form.append('versionId', String(versionId))
-      await api.post('/reports/budget/import/commit', form, {
+      const { data } = await api.post<CommitResult>(
+        `/reports/budget/import/commit?versionId=${versionId}`,
+        form,
+        {
         headers: { 'Content-Type': 'multipart/form-data' },
-      })
+        },
+      )
+      return data
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      showToast(
+        `✓ ${result.importedCount} satır içe aktarıldı${result.skippedCount > 0 ? ` · ${result.skippedCount} satır atlandı` : ''}.`,
+      )
       onSuccess()
       onClose()
     },
@@ -81,15 +154,27 @@ export function ExcelImportModal({ versionId, onClose, onSuccess }: Props) {
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold text-on-surface">Excel İçe Aktar</h3>
-          <button
-            type="button"
-            className="text-on-surface-variant hover:text-on-surface"
-            onClick={onClose}
-            aria-label="Kapat"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button type="button" className="btn-secondary" onClick={downloadTemplate}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                download
+              </span>
+              Şablon İndir
+            </button>
+            <button
+              type="button"
+              className="text-on-surface-variant hover:text-on-surface"
+              onClick={onClose}
+              aria-label="Kapat"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
         </div>
+
+        <p className="text-xs text-on-surface-variant mb-4">
+          İlk sütunda müşteri adı, ikinci sütunda serbest not alanı, sonraki sütunlarda Ocak-Aralık tutarları olmalı.
+        </p>
 
         <input
           ref={inputRef}
@@ -126,6 +211,13 @@ export function ExcelImportModal({ versionId, onClose, onSuccess }: Props) {
               <span className="flex-1 text-sm">{file.name}</span>
               <button
                 type="button"
+                className="btn-secondary"
+                onClick={() => inputRef.current?.click()}
+              >
+                Farklı Dosya Seç
+              </button>
+              <button
+                type="button"
                 className="text-on-surface-variant hover:text-error"
                 onClick={() => {
                   setFile(null)
@@ -143,20 +235,54 @@ export function ExcelImportModal({ versionId, onClose, onSuccess }: Props) {
 
             {preview ? (
               <div className="text-sm space-y-2">
-                <p>
-                  <strong>{preview.totalRowCount}</strong> satır okundu ·{' '}
-                  <span className="text-success">
-                    <strong>{preview.validRowCount}</strong> geçerli
-                  </span>{' '}
-                  ·{' '}
-                  <span className="text-error">
-                    <strong>{preview.errorRowCount}</strong> hatalı
-                  </span>
-                </p>
-                {preview.errorRowCount > 0 ? (
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded border border-outline-variant/60 bg-surface-container-low px-3 py-2">
+                    <div className="text-[11px] text-on-surface-variant uppercase tracking-wide">Toplam</div>
+                    <div className="text-lg font-bold num">{preview.totalRows}</div>
+                  </div>
+                  <div className="rounded border border-success/20 bg-success-container/30 px-3 py-2">
+                    <div className="text-[11px] text-success uppercase tracking-wide">Geçerli</div>
+                    <div className="text-lg font-bold num text-success">{preview.validRows}</div>
+                  </div>
+                  <div className="rounded border border-error/20 bg-error-container/30 px-3 py-2">
+                    <div className="text-[11px] text-error uppercase tracking-wide">Hatalı</div>
+                    <div className="text-lg font-bold num text-error">{preview.errorRows}</div>
+                  </div>
+                </div>
+                {preview.errorRows > 0 ? (
                   <p className="text-xs text-on-surface-variant">
                     Hatalı satırlar commit'te atlanır. Tüm satırlar için Excel'i düzeltin.
                   </p>
+                ) : null}
+                {preview.errors.length > 0 ? (
+                  <div className="rounded border border-error/20 bg-error-container/30 p-3">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <p className="text-xs font-semibold text-error">İlk hatalar</p>
+                      <button type="button" className="btn-secondary" onClick={downloadErrors}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                          download
+                        </span>
+                        Hataları İndir
+                      </button>
+                    </div>
+                    <ul className="space-y-1 text-xs text-on-surface">
+                      {preview.errors.slice(0, 5).map((item) => (
+                        <li key={`${item.rowNumber}-${item.code}`}>
+                          Satır {item.rowNumber}: {item.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                {preview.warnings.length > 0 ? (
+                  <div className="rounded border border-warning/20 bg-warning-container/30 p-3">
+                    <p className="text-xs font-semibold text-warning mb-2">Uyarılar</p>
+                    <ul className="space-y-1 text-xs text-on-surface">
+                      {preview.warnings.slice(0, 5).map((item, index) => (
+                        <li key={`${index}-${item}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
                 ) : null}
               </div>
             ) : null}
@@ -172,7 +298,7 @@ export function ExcelImportModal({ versionId, onClose, onSuccess }: Props) {
           <button
             type="button"
             className="btn-primary"
-            disabled={!preview || preview.validRowCount === 0 || commitMutation.isPending}
+            disabled={!preview || preview.validRows === 0 || commitMutation.isPending}
             onClick={() => commitMutation.mutate()}
           >
             {commitMutation.isPending ? 'Aktarılıyor…' : 'İçe Aktar'}
