@@ -61,5 +61,35 @@ public sealed class CustomersController : ControllerBase
         return NoContent();
     }
 
+    // Mutabakat önkoşul #1 (00a §2.5) — dış müşteri kodu arama.
+    // Bilinmeyen kod için 200 + null yerine 404 döner (spec §4).
+    [HttpGet("lookup")]
+    public async Task<IActionResult> Lookup(
+        [FromQuery(Name = "externalRef")] string externalRef,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(externalRef))
+        {
+            return BadRequest(new { error = "externalRef zorunlu." });
+        }
+
+        var match = await _service.LookupByExternalRefAsync(externalRef, cancellationToken);
+        if (match is null) return NotFound();
+        return Ok(match);
+    }
+
+    // Mutabakat önkoşul #1 (00a §2.5) — Logo/Mikro/Manuel kod bağlama.
+    [HttpPost("{id:int}/link-external")]
+    [Authorize(Policy = "RequireFinanceRole")]
+    public async Task<IActionResult> LinkExternal(
+        int id,
+        [FromBody] LinkExternalCustomerRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        var result = await _service.LinkExternalAsync(id, request, userId, cancellationToken);
+        return Ok(result);
+    }
+
     private int GetUserId() => this.GetRequiredUserId();
 }

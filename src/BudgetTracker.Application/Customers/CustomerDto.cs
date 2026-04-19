@@ -15,4 +15,7 @@ public sealed record CustomerDto(
     bool IsGroupInternal,
     string? AccountManager,
     string? DefaultCurrencyCode,
-    bool IsActive);
+    bool IsActive,
+    string? ExternalCustomerRef = null,
+    string? ExternalSourceSystem = null,
+    DateTimeOffset? ExternalRefVerifiedAt = null);

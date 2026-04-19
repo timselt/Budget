@@ -36,6 +36,15 @@ public sealed class Customer : TenantEntity
     /// </summary>
     public int ShortId { get; private set; }
 
+    // Mutabakat modülü önkoşul #1 (00a) — dış sistem (Logo/Mikro/manuel)
+    // müşteri kodu. İç müşteri ile mutabakat akışındaki kaynak satırlarını
+    // (poliçe listesi / TARS / Power BI) ad yerine stabil kodla eşler. Alan
+    // nullable, backfill bittiğinde Faz 1 sonunda NOT NULL yapılır.
+    public string? ExternalCustomerRef { get; private set; }
+    public string? ExternalSourceSystem { get; private set; }
+    public DateTimeOffset? ExternalRefVerifiedAt { get; private set; }
+    public int? ExternalRefVerifiedByUserId { get; private set; }
+
     private Customer() { }
 
     public static Customer Create(
@@ -142,6 +151,41 @@ public sealed class Customer : TenantEntity
         IsActive = isActive;
         if (isOtherFlag.HasValue) IsOtherFlag = isOtherFlag.Value;
         UpdatedAt = updatedAt;
+        UpdatedByUserId = actorUserId;
+    }
+
+    /// <summary>
+    /// Mutabakat önkoşul #1 — dış kaynak müşteri kodunu (Logo/Mikro/Manuel)
+    /// müşteriye bağlar ve doğrulama zamanını kaydeder.
+    /// </summary>
+    public void LinkExternalRef(
+        string externalRef,
+        string sourceSystem,
+        int actorUserId,
+        DateTimeOffset verifiedAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(externalRef);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceSystem);
+
+        var trimmedRef = externalRef.Trim();
+        if (trimmedRef.Length > 32)
+        {
+            throw new ArgumentException("external ref max 32 characters", nameof(externalRef));
+        }
+
+        var normalizedSource = sourceSystem.Trim().ToUpperInvariant();
+        if (normalizedSource is not ("LOGO" or "MIKRO" or "MANUAL"))
+        {
+            throw new ArgumentException(
+                "source system must be one of LOGO, MIKRO, MANUAL",
+                nameof(sourceSystem));
+        }
+
+        ExternalCustomerRef = trimmedRef;
+        ExternalSourceSystem = normalizedSource;
+        ExternalRefVerifiedAt = verifiedAt;
+        ExternalRefVerifiedByUserId = actorUserId;
+        UpdatedAt = verifiedAt;
         UpdatedByUserId = actorUserId;
     }
 
