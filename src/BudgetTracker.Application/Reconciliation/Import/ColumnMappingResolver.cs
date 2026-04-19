@@ -80,8 +80,9 @@ public sealed class ColumnMappingResolver
     /// boşluk/alt çizgi/tire birleşik kaldırma.
     /// Örn. <c>"Müşteri Kodu"</c> → <c>"musterikodu"</c>;
     /// <c>"external_customer_ref"</c> → <c>"externalcustomerref"</c>.
+    /// Public — unit test'lerden alias normalize davranışı doğrulanır.
     /// </summary>
-    internal static string Normalize(string value)
+    public static string Normalize(string value)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
 
