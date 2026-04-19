@@ -58,13 +58,20 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { data } = await axios.get('/connect/userinfo', {
         headers: { Authorization: `Bearer ${token}` },
       })
+      // Backend `/connect/userinfo` plural `roles` döndürüyor (eski tek-rol
+      // tasarımı `data.role`'dan migrate edildi). Her iki field'ı da kabul et.
+      const rawRoles = data.roles ?? data.role
+      const rolesArray = Array.isArray(rawRoles) ? rawRoles : rawRoles ? [rawRoles] : []
       set({
         user: {
           id: data.sub ?? data.id,
           email: data.email ?? '',
           displayName: data.name ?? data.displayName ?? data.email ?? '',
-          roles: Array.isArray(data.role) ? data.role : data.role ? [data.role] : [],
-          activeCompanyId: data.company_id ?? 0,
+          roles: rolesArray,
+          activeCompanyId:
+            data.activeCompanyId !== undefined
+              ? Number(data.activeCompanyId)
+              : data.company_id ?? 0,
         },
       })
     } catch {

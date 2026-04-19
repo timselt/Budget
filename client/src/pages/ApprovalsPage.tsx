@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { useAuthStore } from '../stores/auth'
+import {
+  STATUS_CHIP_CLASS,
+  STATUS_LABELS,
+  type BudgetVersionStatus,
+} from '../components/budget-planning/types'
 
 interface BudgetYearRow {
   id: number
@@ -22,30 +28,59 @@ interface VersionWithYear extends BudgetVersionRow {
   year: number
 }
 
-type WorkflowAction = 'submit' | 'approve/dept' | 'approve/finance' | 'approve/cfo' | 'activate' | 'reject' | 'archive'
+type WorkflowAction =
+  | 'submit'
+  | 'approve-finance'
+  | 'approve-cfo-activate'
+  | 'reject'
+  | 'archive'
 
-const STATUS_META: Record<string, { chip: string; label: string; nextActions: WorkflowAction[] }> = {
-  DRAFT: { chip: 'chip-neutral', label: 'Taslak', nextActions: ['submit'] },
-  SUBMITTED: { chip: 'chip-info', label: 'Gönderildi', nextActions: ['approve/dept', 'reject'] },
-  DEPTAPPROVED: { chip: 'chip-info', label: 'Departman Onaylı', nextActions: ['approve/finance', 'reject'] },
-  FINANCEAPPROVED: { chip: 'chip-info', label: 'Finans Onaylı', nextActions: ['approve/cfo', 'reject'] },
-  CFOAPPROVED: { chip: 'chip-success', label: 'CFO Onaylı', nextActions: ['activate', 'reject'] },
-  ACTIVE: { chip: 'chip-success', label: 'Aktif', nextActions: ['archive'] },
-  REJECTED: { chip: 'chip-error', label: 'Reddedildi', nextActions: ['submit'] },
-  ARCHIVED: { chip: 'chip-neutral', label: 'Arşiv', nextActions: [] },
+const STATUS_META: Record<BudgetVersionStatus, {
+  chip: string
+  label: string
+  nextActions: WorkflowAction[]
+}> = {
+  Draft: {
+    chip: STATUS_CHIP_CLASS.Draft,
+    label: STATUS_LABELS.Draft,
+    nextActions: ['submit'],
+  },
+  PendingFinance: {
+    chip: STATUS_CHIP_CLASS.PendingFinance,
+    label: STATUS_LABELS.PendingFinance,
+    nextActions: ['approve-finance', 'reject'],
+  },
+  PendingCfo: {
+    chip: STATUS_CHIP_CLASS.PendingCfo,
+    label: STATUS_LABELS.PendingCfo,
+    nextActions: ['approve-cfo-activate', 'reject'],
+  },
+  Active: {
+    chip: STATUS_CHIP_CLASS.Active,
+    label: STATUS_LABELS.Active,
+    nextActions: ['archive'],
+  },
+  Rejected: {
+    chip: STATUS_CHIP_CLASS.Rejected,
+    label: STATUS_LABELS.Rejected,
+    nextActions: ['submit'],
+  },
+  Archived: {
+    chip: STATUS_CHIP_CLASS.Archived,
+    label: STATUS_LABELS.Archived,
+    nextActions: [],
+  },
 }
 
 const ACTION_LABELS: Record<WorkflowAction, string> = {
-  submit: 'Gönder',
-  'approve/dept': 'Dept Onayla',
-  'approve/finance': 'Finans Onayla',
-  'approve/cfo': 'CFO Onayla',
-  activate: 'Aktifleştir',
+  submit: 'Onaya Gönder',
+  'approve-finance': 'Finans Onayla',
+  'approve-cfo-activate': 'Onayla ve Yayına Al',
   reject: 'Reddet',
   archive: 'Arşivle',
 }
 
-const TERMINAL_STATUSES = new Set(['ARCHIVED'])
+const TERMINAL_STATUSES: ReadonlySet<BudgetVersionStatus> = new Set(['Archived'])
 
 async function getYears(): Promise<BudgetYearRow[]> {
   const { data } = await api.get<BudgetYearRow[]>('/budget/years')
@@ -59,7 +94,15 @@ async function getVersions(yearId: number): Promise<BudgetVersionRow[]> {
 
 export function ApprovalsPage() {
   const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+  const roles = user?.roles ?? []
+  const isAdmin = roles.includes('Admin')
+  const isFinance = isAdmin || roles.includes('FinanceManager')
+  const isCfo = isAdmin || roles.includes('CFO')
+
   const [actionError, setActionError] = useState<string | null>(null)
+  const [yearFilter, setYearFilter] = useState<number | 'all'>('all')
+  const [onlyMine, setOnlyMine] = useState(false)
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
   const years = yearsQuery.data ?? []
@@ -86,7 +129,11 @@ export function ApprovalsPage() {
   }
 
   const actionMutation = useMutation({
-    mutationFn: async ({ versionId, action, reason }: { versionId: number; action: WorkflowAction; reason?: string }) => {
+    mutationFn: async ({
+      versionId,
+      action,
+      reason,
+    }: { versionId: number; action: WorkflowAction; reason?: string }) => {
       const endpoint = `/budget/versions/${versionId}/${action}`
       const body = action === 'reject' ? { reason: reason ?? 'Belirtilmedi' } : undefined
       await api.post(endpoint, body)
@@ -97,11 +144,8 @@ export function ApprovalsPage() {
     },
     onError: (e: unknown) => {
       const msg = e instanceof Error ? e.message : 'İşlem başarısız'
-      // 403 → kullanıcının rolü yetersiz; daha açıklayıcı mesaj
       if (msg.includes('403')) {
-        setActionError(
-          'Bu işlem için yetkiniz yok. Finans onayı FinanceManager veya Admin rolü gerektirir.',
-        )
+        setActionError('Bu işlem için yetkiniz yok.')
       } else if (msg.includes('401')) {
         setActionError('Oturum süresi dolmuş olabilir. Lütfen yeniden giriş yapın.')
       } else {
@@ -110,13 +154,46 @@ export function ApprovalsPage() {
     },
   })
 
+  const canPerform = (action: WorkflowAction): boolean => {
+    switch (action) {
+      case 'submit':
+        return isFinance || isCfo
+      case 'approve-finance':
+        return isFinance || isCfo
+      case 'reject':
+        return isFinance || isCfo
+      case 'approve-cfo-activate':
+        return isCfo
+      case 'archive':
+        return isFinance || isCfo
+      default:
+        return false
+    }
+  }
+
+  const visibleVersions = useMemo(() => {
+    let list = versions
+    if (yearFilter !== 'all') list = list.filter((v) => v.year === yearFilter)
+    if (onlyMine) {
+      list = list.filter((v) => {
+        const status = v.status as BudgetVersionStatus
+        if (status === 'PendingFinance') return isFinance || isCfo
+        if (status === 'PendingCfo') return isCfo
+        if (status === 'Rejected') return true
+        if (status === 'Active') return isFinance || isCfo
+        return false
+      })
+    }
+    return list
+  }, [versions, yearFilter, onlyMine, isFinance, isCfo])
+
   const { pending, active, terminal } = useMemo(() => {
     const pending: VersionWithYear[] = []
     const active: VersionWithYear[] = []
     const terminal: VersionWithYear[] = []
-    for (const v of versions) {
-      const status = (v.status ?? '').toUpperCase()
-      if (status === 'ACTIVE') active.push(v)
+    for (const v of visibleVersions) {
+      const status = v.status as BudgetVersionStatus
+      if (status === 'Active') active.push(v)
       else if (TERMINAL_STATUSES.has(status)) terminal.push(v)
       else pending.push(v)
     }
@@ -124,13 +201,20 @@ export function ApprovalsPage() {
     active.sort((a, b) => b.year - a.year)
     terminal.sort((a, b) => b.year - a.year)
     return { pending, active, terminal }
-  }, [versions])
+  }, [visibleVersions])
+
+  const availableYears = useMemo(
+    () => [...new Set(versions.map((v) => v.year))].sort((a, b) => b - a),
+    [versions],
+  )
 
   return (
     <section>
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Onay Akışı</h2>
+          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
+            Onay Akışı
+          </h2>
         </div>
       </div>
 
@@ -138,6 +222,35 @@ export function ApprovalsPage() {
         <KpiCard title="Bekleyen" value={pending.length} subtitle="aksiyon gerekir" chip="chip-warning" />
         <KpiCard title="Aktif Versiyonlar" value={active.length} subtitle="yürürlükte" chip="chip-success" />
         <KpiCard title="Arşivli" value={terminal.length} subtitle="geçmiş" chip="chip-neutral" />
+      </div>
+
+      <div className="card mb-4 flex flex-wrap items-center gap-3">
+        <span className="label-sm">Filtre</span>
+        <select
+          className="select"
+          value={yearFilter === 'all' ? '' : yearFilter}
+          onChange={(e) =>
+            setYearFilter(e.target.value === '' ? 'all' : Number(e.target.value))
+          }
+        >
+          <option value="">Tüm yıllar</option>
+          {availableYears.map((y) => (
+            <option key={y} value={y}>FY {y}</option>
+          ))}
+        </select>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={onlyMine}
+            onChange={(e) => setOnlyMine(e.target.checked)}
+          />
+          Sadece benimle ilgili
+        </label>
+        <span className="ml-auto text-xs text-on-surface-variant">
+          {isAdmin
+            ? 'Admin (tüm aksiyonlar)'
+            : `${isFinance ? 'Finans' : ''}${isFinance && isCfo ? ' + ' : ''}${isCfo ? 'CFO' : ''}${!isFinance && !isCfo ? 'Salt-okunur' : ''}`}
+        </span>
       </div>
 
       {actionError ? (
@@ -159,8 +272,9 @@ export function ApprovalsPage() {
 
       <VersionSection
         title={`Bekleyen Onaylar (${pending.length})`}
-        emptyText="Bekleyen onay yok — tüm versiyonlar ya aktif ya arşivli."
+        emptyText="Bekleyen onay yok — tüm versiyonlar ya yürürlükte ya arşivli."
         versions={pending}
+        canPerform={canPerform}
         onAction={(versionId, action, reason) =>
           actionMutation.mutate({ versionId, action, reason })
         }
@@ -168,14 +282,29 @@ export function ApprovalsPage() {
       />
 
       <VersionSection
-        title={`Aktif Versiyonlar (${active.length})`}
-        emptyText="Henüz aktifleştirilmiş versiyon yok."
+        title={`Yürürlükteki Versiyonlar (${active.length})`}
+        emptyText="Henüz yürürlükteki versiyon yok."
         versions={active}
+        canPerform={canPerform}
         onAction={(versionId, action, reason) =>
           actionMutation.mutate({ versionId, action, reason })
         }
         actionPending={actionMutation.isPending}
       />
+
+      <CollapsibleSection title={`Arşiv (${terminal.length})`}>
+        <VersionSection
+          title=""
+          emptyText="Henüz arşivli versiyon yok."
+          versions={terminal}
+          canPerform={canPerform}
+          onAction={(versionId, action, reason) =>
+            actionMutation.mutate({ versionId, action, reason })
+          }
+          actionPending={actionMutation.isPending}
+          hideHeader
+        />
+      </CollapsibleSection>
     </section>
   )
 }
@@ -184,20 +313,26 @@ function VersionSection({
   title,
   emptyText,
   versions,
+  canPerform,
   onAction,
   actionPending,
+  hideHeader = false,
 }: {
   title: string
   emptyText: string
   versions: VersionWithYear[]
+  canPerform: (action: WorkflowAction) => boolean
   onAction: (versionId: number, action: WorkflowAction, reason?: string) => void
   actionPending: boolean
+  hideHeader?: boolean
 }) {
   return (
-    <div className="card p-0 overflow-hidden mb-6">
-      <div className="p-4 border-b border-outline-variant">
-        <h3 className="text-base font-bold text-on-surface">{title}</h3>
-      </div>
+    <div className={`card p-0 overflow-hidden ${hideHeader ? '' : 'mb-6'}`}>
+      {hideHeader ? null : (
+        <div className="p-4 border-b border-outline-variant">
+          <h3 className="text-base font-bold text-on-surface">{title}</h3>
+        </div>
+      )}
       {versions.length === 0 ? (
         <p className="p-6 text-sm text-on-surface-variant">{emptyText}</p>
       ) : (
@@ -214,8 +349,13 @@ function VersionSection({
           </thead>
           <tbody>
             {versions.map((v) => {
-              const statusKey = (v.status ?? '').toUpperCase().replace(/_/g, '')
-              const meta = STATUS_META[statusKey] ?? { chip: 'chip-neutral', label: v.status, nextActions: [] }
+              const status = v.status as BudgetVersionStatus
+              const meta = STATUS_META[status] ?? {
+                chip: 'chip-neutral',
+                label: v.status,
+                nextActions: [] as WorkflowAction[],
+              }
+              const allowedActions = meta.nextActions.filter(canPerform)
               return (
                 <tr key={v.id}>
                   <td className="font-semibold num">FY {v.year}</td>
@@ -234,41 +374,47 @@ function VersionSection({
                   </td>
                   <td className="text-right">
                     <div className="inline-flex gap-1 flex-wrap justify-end">
-                      {meta.nextActions.map((action) => {
-                        const isReject = action === 'reject'
-                        const isArchive = action === 'archive'
-                        const btnClass = isReject
-                          ? 'btn-ghost text-error'
-                          : isArchive
-                            ? 'btn-secondary'
-                            : 'btn-primary'
-                        const label = ACTION_LABELS[action]
-                        return (
-                          <button
-                            key={action}
-                            type="button"
-                            className={btnClass}
-                            style={{ padding: '.4rem .75rem', fontSize: '.75rem' }}
-                            disabled={actionPending}
-                            onClick={() => {
-                              if (isReject) {
-                                const reason = prompt('Red sebebi giriniz:')
-                                if (!reason?.trim()) return
-                                onAction(v.id, action, reason)
-                                return
-                              }
-                              const confirmMsg = `"${v.name}" versiyonu için "${label}" aksiyonunu uygulamak istiyor musunuz?`
-                              if (!confirm(confirmMsg)) return
-                              onAction(v.id, action)
-                            }}
-                          >
-                            {actionPending ? '…' : label}
-                          </button>
-                        )
-                      })}
                       {meta.nextActions.length === 0 ? (
                         <span className="text-xs text-on-surface-variant">—</span>
-                      ) : null}
+                      ) : allowedActions.length === 0 ? (
+                        <span className="chip chip-neutral text-xs">Yetkisiz</span>
+                      ) : (
+                        allowedActions.map((action) => {
+                          const isReject = action === 'reject'
+                          const isArchive = action === 'archive'
+                          const isCfoActivate = action === 'approve-cfo-activate'
+                          const btnClass = isReject
+                            ? 'btn-ghost text-error'
+                            : isArchive
+                              ? 'btn-secondary'
+                              : 'btn-primary'
+                          const label = ACTION_LABELS[action]
+                          return (
+                            <button
+                              key={action}
+                              type="button"
+                              className={btnClass}
+                              style={{ padding: '.4rem .75rem', fontSize: '.75rem' }}
+                              disabled={actionPending}
+                              onClick={() => {
+                                if (isReject) {
+                                  const reason = prompt('Red sebebi giriniz:')
+                                  if (!reason?.trim()) return
+                                  onAction(v.id, action, reason)
+                                  return
+                                }
+                                const confirmMsg = isCfoActivate
+                                  ? `"${v.name}" CFO onayı ile YAYINA ALINACAK. Mevcut yürürlükteki versiyon arşivlenecek. Emin misiniz?`
+                                  : `"${v.name}" versiyonu için "${label}" aksiyonunu uygulamak istiyor musunuz?`
+                                if (!confirm(confirmMsg)) return
+                                onAction(v.id, action)
+                              }}
+                            >
+                              {actionPending ? '…' : label}
+                            </button>
+                          )
+                        })
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -277,6 +423,31 @@ function VersionSection({
           </tbody>
         </table>
       )}
+    </div>
+  )
+}
+
+function CollapsibleSection({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="card p-0 overflow-hidden mb-6">
+      <button
+        type="button"
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-container-low transition-colors"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <h3 className="text-base font-bold text-on-surface">{title}</h3>
+        <span className="material-symbols-outlined">
+          {open ? 'expand_less' : 'expand_more'}
+        </span>
+      </button>
+      {open ? children : null}
     </div>
   )
 }
