@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import api from '../lib/api'
 import { useActiveVersion } from '../lib/useActiveVersion'
+import { PageIntro } from '../components/shared/PageIntro'
 
 type ReportKind = 'budget-excel' | 'management-pdf'
 
@@ -99,22 +100,72 @@ export function ReportsPage() {
       setError(e instanceof Error ? e.message : 'İndirme başarısız'),
   })
 
+  const ready = reports.filter((r) => r.id !== 'soon' && r.endpoint)
+  const upcoming = reports.filter((r) => r.id === 'soon')
+
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">Raporlar</h2>
-          {versionName && year ? (
-            <p className="text-sm text-on-surface-variant mt-1">
+      <PageIntro
+        title="Raporlar"
+        purpose="Aktif versiyondan resmi rapor üretimi (Excel + PDF). Her rapor bir karar/iletişim aracıdır — Excel ham veri analizi için, PDF yönetim/yönetim kurulu paylaşımı için."
+        context={
+          versionName && year ? (
+            <p className="text-sm text-on-surface-variant">
               Aktif: FY{year} · {versionName}
             </p>
-          ) : null}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
       {error ? <div className="card mb-4 text-sm text-error">{error}</div> : null}
 
-      <div className="grid grid-cols-3 gap-6">
+      <ReportSection
+        heading="Kullanıma Hazır"
+        description="Şu anda indirilebilir raporlar — aktif versiyonu kullanır."
+        reports={ready}
+        downloading={downloading}
+        disabled={isLoading || versionId === null}
+        onDownload={(r) => {
+          setError(null)
+          downloadMutation.mutate(r)
+        }}
+      />
+
+      <ReportSection
+        heading="Yakında"
+        description="Sprint devamında eklenecek raporlar — kart açıklamasında scope detayı."
+        reports={upcoming}
+        downloading={downloading}
+        disabled
+        onDownload={() => {}}
+      />
+    </section>
+  )
+}
+
+function ReportSection({
+  heading,
+  description,
+  reports,
+  downloading,
+  disabled,
+  onDownload,
+}: {
+  heading: string
+  description: string
+  reports: readonly ReportCard[]
+  downloading: ReportKind | null
+  disabled: boolean
+  onDownload: (card: ReportCard) => void
+}) {
+  if (reports.length === 0) return null
+  return (
+    <div className="mb-8">
+      <div className="flex items-baseline gap-3 mb-3">
+        <h3 className="text-lg font-bold text-on-surface">{heading}</h3>
+        <p className="text-xs text-on-surface-variant">{description}</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {reports.map((r, idx) => {
           const isReady = r.id !== 'soon' && r.endpoint
           const isBusy = downloading === r.id
@@ -123,16 +174,17 @@ export function ReportsPage() {
               key={`${r.title}-${idx}`}
               type="button"
               className="card hover:shadow-lg transition-all text-left disabled:opacity-60 disabled:cursor-not-allowed"
-              disabled={!isReady || isLoading || versionId === null || isBusy}
+              disabled={disabled || !isReady || isBusy}
               onClick={() => {
                 if (!isReady) return
-                setError(null)
-                downloadMutation.mutate(r)
+                onDownload(r)
               }}
             >
               <div
                 className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${
-                  r.accent === 'primary' ? 'bg-primary/10 text-primary' : 'bg-tertiary/10 text-tertiary'
+                  r.accent === 'primary'
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-tertiary/10 text-tertiary'
                 }`}
               >
                 <span className="material-symbols-outlined">{r.icon}</span>
@@ -151,6 +203,6 @@ export function ReportsPage() {
           )
         })}
       </div>
-    </section>
+    </div>
   )
 }

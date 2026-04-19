@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
+import { PageIntro } from '../components/shared/PageIntro'
 
 interface AuditLogDto {
   id: number
@@ -73,11 +74,10 @@ export function AuditLogPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">Audit Log</h2>
-        </div>
-        <div className="flex gap-3">
+      <PageIntro
+        title="İşlem Geçmişi"
+        purpose="Sistemdeki tüm CRUD + onay + import/export işlemlerinin append-only kaydı (KVKK + audit gereksinimi). 7 yıl retention."
+        actions={
           <select
             className="select"
             value={days ?? ''}
@@ -91,8 +91,8 @@ export function AuditLogPage() {
             <option value="30">Son 30 gün</option>
             <option value="">Tüm</option>
           </select>
-        </div>
-      </div>
+        }
+      />
 
       <div className="card p-0 overflow-hidden">
         {auditQuery.isLoading ? (
