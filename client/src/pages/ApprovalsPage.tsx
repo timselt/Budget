@@ -106,6 +106,7 @@ export function ApprovalsPage() {
   const [yearFilter, setYearFilter] = useState<number | 'all'>('all')
   const [onlyMine, setOnlyMine] = useState(false)
   const [rejectTarget, setRejectTarget] = useState<{ id: number; name: string } | null>(null)
+  const [tab, setTab] = useState<'pending' | 'active' | 'archived'>('pending')
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
   const years = yearsQuery.data ?? []
@@ -270,34 +271,73 @@ export function ApprovalsPage() {
         </div>
       ) : null}
 
-      <VersionSection
-        title={`Bekleyen Onaylar (${pending.length})`}
-        emptyText="Şu an onayınızı bekleyen versiyon yok. Bütçe Planlama'dan yeni bir taslak başlatabilirsiniz."
-        versions={pending}
-        canPerform={canPerform}
-        onAction={(versionId, action, reason) =>
-          actionMutation.mutate({ versionId, action, reason })
-        }
-        onRejectRequest={(id, name) => setRejectTarget({ id, name })}
-        actionPending={actionMutation.isPending}
-      />
+      <div className="flex gap-1 mb-4 bg-surface-container-low rounded-lg p-1 w-fit">
+        <button
+          type="button"
+          className={`tab ${tab === 'pending' ? 'active' : ''}`}
+          onClick={() => setTab('pending')}
+        >
+          <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
+            pending_actions
+          </span>
+          Benden Bekleyenler ({pending.length})
+        </button>
+        <button
+          type="button"
+          className={`tab ${tab === 'active' ? 'active' : ''}`}
+          onClick={() => setTab('active')}
+        >
+          <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
+            verified
+          </span>
+          Yürürlüktekiler ({active.length})
+        </button>
+        <button
+          type="button"
+          className={`tab ${tab === 'archived' ? 'active' : ''}`}
+          onClick={() => setTab('archived')}
+        >
+          <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
+            inventory_2
+          </span>
+          Sonuçlananlar ({terminal.length})
+        </button>
+      </div>
 
-      <VersionSection
-        title={`Yürürlükteki Versiyonlar (${active.length})`}
-        emptyText="Henüz yürürlükteki versiyon yok."
-        versions={active}
-        canPerform={canPerform}
-        onAction={(versionId, action, reason) =>
-          actionMutation.mutate({ versionId, action, reason })
-        }
-        onRejectRequest={(id, name) => setRejectTarget({ id, name })}
-        actionPending={actionMutation.isPending}
-      />
-
-      <CollapsibleSection title={`Arşiv (${terminal.length})`}>
+      {tab === 'pending' && (
         <VersionSection
           title=""
-          emptyText="Henüz arşivli versiyon yok."
+          emptyText="Şu an onayınızı bekleyen versiyon yok. Bütçe Planlama'dan yeni bir taslak başlatabilirsiniz."
+          versions={pending}
+          canPerform={canPerform}
+          onAction={(versionId, action, reason) =>
+            actionMutation.mutate({ versionId, action, reason })
+          }
+          onRejectRequest={(id, name) => setRejectTarget({ id, name })}
+          actionPending={actionMutation.isPending}
+          hideHeader
+        />
+      )}
+
+      {tab === 'active' && (
+        <VersionSection
+          title=""
+          emptyText="Henüz yürürlükteki versiyon yok."
+          versions={active}
+          canPerform={canPerform}
+          onAction={(versionId, action, reason) =>
+            actionMutation.mutate({ versionId, action, reason })
+          }
+          onRejectRequest={(id, name) => setRejectTarget({ id, name })}
+          actionPending={actionMutation.isPending}
+          hideHeader
+        />
+      )}
+
+      {tab === 'archived' && (
+        <VersionSection
+          title=""
+          emptyText="Henüz arşivlenmiş veya tamamlanmış versiyon yok."
           versions={terminal}
           canPerform={canPerform}
           onAction={(versionId, action, reason) =>
@@ -307,7 +347,7 @@ export function ApprovalsPage() {
           actionPending={actionMutation.isPending}
           hideHeader
         />
-      </CollapsibleSection>
+      )}
 
       {rejectTarget ? (
         <RejectModal
@@ -440,31 +480,6 @@ function VersionSection({
           </tbody>
         </table>
       )}
-    </div>
-  )
-}
-
-function CollapsibleSection({
-  title,
-  children,
-}: {
-  title: string
-  children: React.ReactNode
-}) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="card p-0 overflow-hidden mb-6">
-      <button
-        type="button"
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-container-low transition-colors"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <h3 className="text-base font-bold text-on-surface">{title}</h3>
-        <span className="material-symbols-outlined">
-          {open ? 'expand_less' : 'expand_more'}
-        </span>
-      </button>
-      {open ? children : null}
     </div>
   )
 }
