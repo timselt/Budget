@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { isEditableStatus, getStatusLabel } from '../components/budget-planning/types'
 
 interface BudgetYearRow {
   id: number
@@ -109,9 +110,7 @@ export function ExpenseEntriesPage() {
       return
     }
     if (versionId !== null && versions.some((v) => v.id === versionId)) return
-    const editable = versions.find((v) =>
-      ['Draft', 'Rejected', 'DRAFT', 'REJECTED'].includes(v.status),
-    )
+    const editable = versions.find((v) => isEditableStatus(v.status))
     if (editable) {
       setVersionId(editable.id)
       return
@@ -121,9 +120,7 @@ export function ExpenseEntriesPage() {
   }, [versions, versionId])
 
   const currentVersion = versions.find((v) => v.id === versionId) ?? null
-  const isEditable =
-    currentVersion !== null &&
-    ['Draft', 'Rejected', 'DRAFT', 'REJECTED'].includes(currentVersion.status)
+  const isEditable = isEditableStatus(currentVersion?.status)
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['expense-entries', yearId, versionId] })
@@ -191,7 +188,7 @@ export function ExpenseEntriesPage() {
           <option value="">—</option>
           {versions.map((v) => (
             <option key={v.id} value={v.id}>
-              {v.name} — {v.status}
+              {v.name} — {getStatusLabel(v.status)}
             </option>
           ))}
         </select>
@@ -218,8 +215,9 @@ export function ExpenseEntriesPage() {
             lock
           </span>
           <div>
-            <strong>{currentVersion.name}</strong> versiyonu durumu{' '}
-            <strong>{currentVersion.status}</strong> — gider girişi yapılamaz.
+            <strong>{currentVersion.name}</strong> versiyonu{' '}
+            <strong>{getStatusLabel(currentVersion.status)}</strong> — gider girişi
+            yapılamaz.
             <br />
             <span className="text-xs text-on-surface-variant">
               Yeni gider eklemek için Bütçe Versiyonları sayfasından bir Taslak versiyon

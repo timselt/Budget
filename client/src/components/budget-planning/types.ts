@@ -121,12 +121,64 @@ export type RowValues = Record<number, CellValue>
 
 export const MONTHS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
 export const CURRENCIES = ['TRY', 'USD', 'EUR', 'GBP'] as const
-// API status'u UPPER-case serialize ediyor ("DRAFT", "DEPTAPPROVED", vb. —
-// BudgetVersionsController: `Status.ToString().ToUpperInvariant()`).
-// Frontend compare case-insensitive olmalı.
-export const EDITABLE_STATUSES = new Set(['DRAFT', 'REJECTED'])
+
+// ADR-0015: 6-değer onay state machine (Submit edit eski 8 → 6).
+// Backend artık PascalCase string serialize ediyor: 'Draft', 'PendingFinance',
+// 'PendingCfo', 'Active', 'Rejected', 'Archived'.
+export type BudgetVersionStatus =
+  | 'Draft'
+  | 'PendingFinance'
+  | 'PendingCfo'
+  | 'Active'
+  | 'Rejected'
+  | 'Archived'
+
+/** Türkçe etiket sözlüğü — UI'da chip / banner başlığı vb. */
+export const STATUS_LABELS: Record<BudgetVersionStatus, string> = {
+  Draft: 'Taslak',
+  PendingFinance: 'Finans Onayında',
+  PendingCfo: 'CFO Onayında',
+  Active: 'Yürürlükte',
+  Rejected: 'Reddedildi',
+  Archived: 'Arşiv',
+}
+
+/** Chip CSS class (finopstur.css'teki chip-* sınıfları). */
+export const STATUS_CHIP_CLASS: Record<BudgetVersionStatus, string> = {
+  Draft: 'chip-neutral',
+  PendingFinance: 'chip-warning',
+  PendingCfo: 'chip-warning',
+  Active: 'chip-success',
+  Rejected: 'chip-error',
+  Archived: 'chip-neutral',
+}
+
+/** Düzenlenebilir statüler — entry CRUD için izin verilen tek iki durum. */
+export const EDITABLE_STATUSES: ReadonlySet<BudgetVersionStatus> = new Set([
+  'Draft',
+  'Rejected',
+])
 
 export function isEditableStatus(status: string | null | undefined): boolean {
   if (!status) return false
-  return EDITABLE_STATUSES.has(status.toUpperCase())
+  return EDITABLE_STATUSES.has(status as BudgetVersionStatus)
+}
+
+/** Tek-aktif-versiyon ile yıl başına tek "çalışılan taslak" invariant'ları
+ *  için kullanılan kümeler. */
+export const IN_PROGRESS_STATUSES: ReadonlySet<BudgetVersionStatus> = new Set([
+  'Draft',
+  'PendingFinance',
+  'PendingCfo',
+  'Rejected',
+])
+
+export function getStatusLabel(status: string | null | undefined): string {
+  if (!status) return '—'
+  return STATUS_LABELS[status as BudgetVersionStatus] ?? status
+}
+
+export function getStatusChipClass(status: string | null | undefined): string {
+  if (!status) return 'chip-neutral'
+  return STATUS_CHIP_CLASS[status as BudgetVersionStatus] ?? 'chip-neutral'
 }

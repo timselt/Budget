@@ -85,14 +85,65 @@ export async function deleteEntry(versionId: number, entryId: number): Promise<v
   await api.delete(`/budget/versions/${versionId}/entries/${entryId}`)
 }
 
-export async function submitVersion(versionId: number): Promise<void> {
-  await api.post(`/budget/versions/${versionId}/submit`)
+/** Draft | Rejected → PendingFinance (RejectionReason backend'de temizlenir). */
+export async function submitVersion(versionId: number): Promise<BudgetVersionRow> {
+  const { data } = await api.post<BudgetVersionRow>(
+    `/budget/versions/${versionId}/submit`,
+  )
+  return data
+}
+
+/** PendingFinance → PendingCfo. */
+export async function approveFinance(versionId: number): Promise<BudgetVersionRow> {
+  const { data } = await api.post<BudgetVersionRow>(
+    `/budget/versions/${versionId}/approve-finance`,
+  )
+  return data
+}
+
+/** PendingCfo → Active (atomic — eski Active varsa Archived olur). */
+export async function approveCfoAndActivate(
+  versionId: number,
+): Promise<BudgetVersionRow> {
+  const { data } = await api.post<BudgetVersionRow>(
+    `/budget/versions/${versionId}/approve-cfo-activate`,
+  )
+  return data
+}
+
+/** PendingFinance | PendingCfo → Rejected (sebep zorunlu). */
+export async function rejectVersion(
+  versionId: number,
+  reason: string,
+): Promise<BudgetVersionRow> {
+  const { data } = await api.post<BudgetVersionRow>(
+    `/budget/versions/${versionId}/reject`,
+    { reason },
+  )
+  return data
+}
+
+/** Active → Archived. */
+export async function archiveVersion(versionId: number): Promise<BudgetVersionRow> {
+  const { data } = await api.post<BudgetVersionRow>(
+    `/budget/versions/${versionId}/archive`,
+  )
+  return data
+}
+
+/** Active versiyondan revizyon taslağı açar (entry'ler kopyalanır). */
+export async function createRevision(versionId: number): Promise<BudgetVersionRow> {
+  const { data } = await api.post<BudgetVersionRow>(
+    `/budget/versions/${versionId}/create-revision`,
+  )
+  return data
 }
 
 export interface CreateVersionPayload {
   name: string
 }
 
+/** Yıl içinde ilk taslak (yıl boş olduğunda kullanılır). */
 export async function createVersion(
   yearId: number,
   payload: CreateVersionPayload,
