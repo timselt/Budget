@@ -69,6 +69,7 @@ export function SidebarSection({ section }: Props) {
         onClick={toggle}
         className="sidebar-section-header"
         aria-expanded={open}
+        data-section-id={section.id}
       >
         {section.icon && (
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
@@ -88,12 +89,20 @@ export function SidebarSection({ section }: Props) {
         <div className="sidebar-section-items">
           {section.items.map((item) => {
             const active = matchItem(item, location.pathname, location.search)
+            // className'i callback olarak veriyoruz — string verirsek NavLink
+            // kendi default 'active' class'ını da ekliyor ve query string
+            // farklılığını (?tab=versions) ayırt edemiyor. Callback verirsek
+            // NavLink override etmiyor; kendi matchItem sonucumuz tek otorite.
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
-                className={`nav-item nav-item-child ${active ? 'active' : ''}`}
+                className={() =>
+                  active
+                    ? 'nav-item nav-item-child active'
+                    : 'nav-item nav-item-child'
+                }
               >
                 <span
                   className="material-symbols-outlined"

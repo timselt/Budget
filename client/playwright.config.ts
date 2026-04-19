@@ -21,7 +21,18 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    // Bir kez login olup storageState'i diske yazan setup projesi.
+    // Diğer projeler bu dosyadan token okuyup AuthGuard'ı geçer; her test
+    // başında login etmeyiz. Token süresi dolarsa setup tekrar çalışır.
+    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'e2e/.auth/user.json',
+      },
+      dependencies: ['setup'],
+    },
   ],
   webServer: {
     command: 'pnpm dev',
