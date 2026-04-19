@@ -94,4 +94,71 @@ public sealed class CustomerTests
         customer.UpdatedByUserId.Should().Be(5);
         customer.UpdatedAt.Should().Be(later);
     }
+
+    // ----- Mutabakat önkoşul #1 (00a) — external ref -----
+
+    [Fact]
+    public void LinkExternalRef_ValidInputs_SetsFieldsAndVerificationStamp()
+    {
+        var customer = Customer.Create(1, "C1", "Acme", 1, 1, Now);
+        var at = Now.AddHours(2);
+
+        customer.LinkExternalRef("1500003063", "LOGO", actorUserId: 7, verifiedAt: at);
+
+        customer.ExternalCustomerRef.Should().Be("1500003063");
+        customer.ExternalSourceSystem.Should().Be("LOGO");
+        customer.ExternalRefVerifiedAt.Should().Be(at);
+        customer.ExternalRefVerifiedByUserId.Should().Be(7);
+        customer.UpdatedAt.Should().Be(at);
+        customer.UpdatedByUserId.Should().Be(7);
+    }
+
+    [Theory]
+    [InlineData("logo", "LOGO")]
+    [InlineData("Mikro", "MIKRO")]
+    [InlineData(" manual ", "MANUAL")]
+    public void LinkExternalRef_NormalizesSourceSystemToUpperInvariant(string input, string expected)
+    {
+        var customer = Customer.Create(1, "C1", "Acme", 1, 1, Now);
+        customer.LinkExternalRef("ABC", input, 1, Now);
+        customer.ExternalSourceSystem.Should().Be(expected);
+    }
+
+    [Fact]
+    public void LinkExternalRef_TrimsExternalRef()
+    {
+        var customer = Customer.Create(1, "C1", "Acme", 1, 1, Now);
+        customer.LinkExternalRef("  1500003063  ", "LOGO", 1, Now);
+        customer.ExternalCustomerRef.Should().Be("1500003063");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void LinkExternalRef_EmptyRef_Throws(string? extRef)
+    {
+        var customer = Customer.Create(1, "C1", "Acme", 1, 1, Now);
+        var act = () => customer.LinkExternalRef(extRef!, "LOGO", 1, Now);
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void LinkExternalRef_RefTooLong_Throws()
+    {
+        var customer = Customer.Create(1, "C1", "Acme", 1, 1, Now);
+        var act = () => customer.LinkExternalRef(new string('X', 33), "LOGO", 1, Now);
+        act.Should().Throw<ArgumentException>().WithMessage("*max 32*");
+    }
+
+    [Theory]
+    [InlineData("SAP")]
+    [InlineData("NETSIS")]
+    [InlineData("")]
+    public void LinkExternalRef_UnknownSourceSystem_Throws(string source)
+    {
+        var customer = Customer.Create(1, "C1", "Acme", 1, 1, Now);
+        var act = () => customer.LinkExternalRef("1500001", source, 1, Now);
+        act.Should().Throw<ArgumentException>();
+    }
 }

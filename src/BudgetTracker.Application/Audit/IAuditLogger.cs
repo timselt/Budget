@@ -33,10 +33,14 @@ public static class AuditActions
     public const string ImportCommitted = "IMPORT_COMMITTED";
     public const string ImportRejectedLimit = "IMPORT_REJECTED_LIMIT";
     public const string ImportConcurrencyConflict = "IMPORT_CONCURRENCY_CONFLICT";
+
+    // Mutabakat önkoşul #1 (00a) — Customer.external_customer_ref bağlama.
+    public const string CustomerExternalRefLinked = "CUSTOMER_EXTERNAL_REF_LINKED";
 }
 
 public static class AuditEntityNames
 {
     public const string UserAccount = "UserAccount";
     public const string BudgetVersion = "BudgetVersion";
+    public const string Customer = "Customer";
 }

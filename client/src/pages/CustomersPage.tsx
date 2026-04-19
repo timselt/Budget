@@ -18,7 +18,13 @@ interface CustomerRow {
   accountManager: string | null
   defaultCurrencyCode: string | null
   isActive: boolean
+  externalCustomerRef: string | null
+  externalSourceSystem: string | null
+  externalRefVerifiedAt: string | null
 }
+
+type ExternalSource = 'LOGO' | 'MIKRO' | 'MANUAL'
+const EXTERNAL_SOURCES: ExternalSource[] = ['LOGO', 'MIKRO', 'MANUAL']
 
 interface SegmentRow {
   id: number
@@ -507,6 +513,12 @@ function CustomerModal({
             ) : null}
           </div>
 
+          {mode === 'edit' && customer ? (
+            <div className="col-span-2">
+              <ExternalRefSection customer={customer} onLinked={onSaved} />
+            </div>
+          ) : null}
+
           {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
 
           <div className="col-span-2 flex items-center justify-between gap-2 mt-2">
@@ -558,5 +570,93 @@ function Field({
       <span className="label-sm block mb-1.5">{label}</span>
       {children}
     </label>
+  )
+}
+
+/* =====================================================================
+   ExternalRefSection — Mutabakat önkoşul #1 (00a)
+   Logo / Mikro / Manuel dış sistem müşteri kodunu bağlar.
+   ===================================================================== */
+function ExternalRefSection({
+  customer,
+  onLinked,
+}: {
+  customer: CustomerRow
+  onLinked: () => void
+}) {
+  const [extRef, setExtRef] = useState<string>(customer.externalCustomerRef ?? '')
+  const [source, setSource] = useState<ExternalSource>(
+    (customer.externalSourceSystem as ExternalSource | null) ?? 'LOGO',
+  )
+  const [localError, setLocalError] = useState<string | null>(null)
+
+  const linkMutation = useMutation({
+    mutationFn: async () => {
+      const trimmed = extRef.trim()
+      if (!trimmed) throw new Error('Dış sistem kodu zorunlu.')
+      if (trimmed.length > 32) throw new Error('Dış sistem kodu en fazla 32 karakter.')
+      await api.post(`/customers/${customer.id}/link-external`, {
+        externalRef: trimmed,
+        sourceSystem: source,
+      })
+    },
+    onSuccess: () => {
+      setLocalError(null)
+      onLinked()
+    },
+    onError: (e: unknown) => setLocalError(e instanceof Error ? e.message : 'Bağlama başarısız.'),
+  })
+
+  const verified = customer.externalRefVerifiedAt
+    ? new Date(customer.externalRefVerifiedAt).toLocaleString('tr-TR')
+    : null
+
+  return (
+    <fieldset className="border border-outline-variant rounded-lg p-4 mt-2">
+      <legend className="label-sm px-2">Dış Sistem Kodu (Mutabakat)</legend>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Kod (Logo/Mikro müşteri no, max 32)">
+          <input
+            className="input w-full font-mono"
+            maxLength={32}
+            value={extRef}
+            onChange={(e) => setExtRef(e.target.value)}
+            placeholder="1500003063"
+          />
+        </Field>
+        <Field label="Kaynak Sistem">
+          <select
+            className="select w-full"
+            value={source}
+            onChange={(e) => setSource(e.target.value as ExternalSource)}
+          >
+            {EXTERNAL_SOURCES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <div className="flex items-center justify-between mt-3">
+        <p className="text-xs text-on-surface-variant">
+          {verified
+            ? `Son doğrulama: ${verified}`
+            : 'Henüz bir dış sistem kodu bağlı değil.'}
+        </p>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => {
+            setLocalError(null)
+            linkMutation.mutate()
+          }}
+          disabled={linkMutation.isPending}
+        >
+          {linkMutation.isPending ? 'Bağlanıyor…' : customer.externalCustomerRef ? 'Güncelle' : 'Bağla'}
+        </button>
+      </div>
+      {localError ? <p className="text-xs text-error mt-2">{localError}</p> : null}
+    </fieldset>
   )
 }
