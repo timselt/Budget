@@ -57,6 +57,7 @@ import {
   marginPercent,
   toNumber,
 } from '../components/budget-planning/utils'
+import { useAppContextStore } from '../stores/appContext'
 
 type Modal = 'copy' | 'grow' | 'excel' | null
 
@@ -64,7 +65,8 @@ export function BudgetEntryPage() {
   const queryClient = useQueryClient()
   const [mode, setMode] = useState<BudgetMode>('tree')
   const [yearId, setYearId] = useState<number | null>(null)
-  const [versionId, setVersionId] = useState<number | null>(null)
+  const versionId = useAppContextStore((s) => s.selectedVersionId)
+  const setVersion = useAppContextStore((s) => s.setVersion)
   const [scenarioId, setScenarioId] = useState<number | null>(null)
   const [currency, setCurrency] = useState<string>('TRY')
   const [selection, setSelection] = useState<TreeSelection | null>(null)
@@ -154,18 +156,18 @@ export function BudgetEntryPage() {
   // bir versiyona düşmesi için.
   useEffect(() => {
     if (versions.length === 0) {
-      setVersionId(null)
+      setVersion(null)
       return
     }
     if (versionId !== null && versions.some((v) => v.id === versionId)) return
     const editable = versions.find((v) => isEditableStatus(v.status))
     if (editable) {
-      setVersionId(editable.id)
+      setVersion({ id: editable.id, label: editable.name, status: editable.status })
       return
     }
-    const active = versions.find((v) => v.isActive)
-    setVersionId((active ?? versions[0]).id)
-  }, [versions, versionId])
+    const fallback = versions.find((v) => v.isActive) ?? versions[0]
+    setVersion({ id: fallback.id, label: fallback.name, status: fallback.status })
+  }, [versions, versionId, setVersion])
 
   useEffect(() => {
     if (scenarioId === null && scenarios.length > 0) setScenarioId(scenarios[0].id)
@@ -365,7 +367,7 @@ export function BudgetEntryPage() {
     },
     onSuccess: (created) => {
       setCreateDraftError(null)
-      setVersionId(created.id)
+      setVersion({ id: created.id, label: created.name, status: created.status })
       setSelection(null)
       queryClient.invalidateQueries({ queryKey: ['budget-versions', yearId] })
       queryClient.invalidateQueries({ queryKey: ['budget-entries', created.id] })
@@ -537,7 +539,7 @@ export function BudgetEntryPage() {
           value={yearId ?? ''}
           onChange={(e) => {
             setYearId(e.target.value === '' ? null : Number(e.target.value))
-            setVersionId(null)
+            setVersion(null)
             setSelection(null)
           }}
         >
@@ -553,7 +555,13 @@ export function BudgetEntryPage() {
           className="select"
           value={versionId ?? ''}
           onChange={(e) => {
-            setVersionId(e.target.value === '' ? null : Number(e.target.value))
+            const id = e.target.value === '' ? null : Number(e.target.value)
+            if (id === null) {
+              setVersion(null)
+            } else {
+              const v = versions.find((x) => x.id === id)
+              if (v) setVersion({ id: v.id, label: v.name, status: v.status })
+            }
             setSelection(null)
           }}
           disabled={!yearId}
