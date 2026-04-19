@@ -198,7 +198,7 @@ public sealed class ReconciliationBatchServiceTests : IAsyncLifetime
         var resolver = NSubstitute.Substitute.For<
             BudgetTracker.Application.Reconciliation.Lines.ILinePricingResolver>();
         var autoCreator = new BudgetTracker.Infrastructure.Reconciliation.Cases
-            .ReconciliationCaseAutoCreator(ctx, time, resolver);
+            .ReconciliationCaseAutoCreator(ctx, time, resolver, audit);
         return (new ReconciliationBatchService(ctx, parser, audit, time, autoCreator), audit);
     }
 

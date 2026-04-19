@@ -143,7 +143,9 @@ public sealed class ReconciliationCaseAutoCreatorTests : IAsyncLifetime
         // autoCreator tekrar çağrılırsa yeni Case yaratmamalı.
         await using var ctx = _fixture.CreateSuperuserContext();
         var noopResolver = Substitute.For<ILinePricingResolver>();
-        var autoCreator = new ReconciliationCaseAutoCreator(ctx, TimeProvider.System, noopResolver);
+        var noopAudit = Substitute.For<IAuditLogger>();
+        var autoCreator = new ReconciliationCaseAutoCreator(
+            ctx, TimeProvider.System, noopResolver, noopAudit);
         var rerun = await autoCreator.CreateCasesForBatchAsync(
             firstDetail.Id, companyId, userId, CancellationToken.None);
 
@@ -193,7 +195,7 @@ public sealed class ReconciliationCaseAutoCreatorTests : IAsyncLifetime
         // dayanır (PendingReview + 0). Task 5 testleri ayrı fixture ile gerçek
         // PricingLookupService kullanır.
         var resolver = Substitute.For<ILinePricingResolver>();
-        var autoCreator = new ReconciliationCaseAutoCreator(ctx, time, resolver);
+        var autoCreator = new ReconciliationCaseAutoCreator(ctx, time, resolver, audit);
         return (new ReconciliationBatchService(ctx, parser, audit, time, autoCreator), audit);
     }
 

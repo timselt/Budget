@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text.Json;
+using BudgetTracker.Application.Audit;
 using BudgetTracker.Application.Common.Abstractions;
 using BudgetTracker.Application.Reconciliation.Cases;
 using BudgetTracker.Application.Reconciliation.Lines;
@@ -32,15 +34,18 @@ public sealed class ReconciliationCaseAutoCreator : IReconciliationCaseAutoCreat
     private readonly IApplicationDbContext _db;
     private readonly TimeProvider _time;
     private readonly ILinePricingResolver _pricingResolver;
+    private readonly IAuditLogger _audit;
 
     public ReconciliationCaseAutoCreator(
         IApplicationDbContext db,
         TimeProvider time,
-        ILinePricingResolver pricingResolver)
+        ILinePricingResolver pricingResolver,
+        IAuditLogger audit)
     {
         _db = db;
         _time = time;
         _pricingResolver = pricingResolver;
+        _audit = audit;
     }
 
     public async Task<CaseAutoCreateResult> CreateCasesForBatchAsync(
@@ -160,6 +165,20 @@ public sealed class ReconciliationCaseAutoCreator : IReconciliationCaseAutoCreat
                 // Case Id'sini Line FK için erken öğrenmek gerek.
                 await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 createdCaseIds.Add(kase.Id);
+
+                await _audit.LogAsync(new AuditEvent(
+                    EntityName: AuditEntityNames.ReconciliationCase,
+                    EntityKey: kase.Id.ToString(CultureInfo.InvariantCulture),
+                    Action: AuditActions.ReconciliationCaseOpened,
+                    CompanyId: companyId,
+                    UserId: ownerUserId,
+                    NewValuesJson: JsonSerializer.Serialize(new
+                    {
+                        batch_id = batchId,
+                        flow = batch.Flow.ToString(),
+                        period_code = batch.PeriodCode,
+                        customer_id = customerId,
+                    })), cancellationToken).ConfigureAwait(false);
             }
 
             foreach (var sourceRow in rows)
@@ -200,6 +219,25 @@ public sealed class ReconciliationCaseAutoCreator : IReconciliationCaseAutoCreat
         }
 
         await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        // Unmatched customers özet audit event (tek satır, row-level değil —
+        // bulk; detay Task 8 bucket endpoint'inden alınır).
+        if (unmatchedCount > 0)
+        {
+            await _audit.LogAsync(new AuditEvent(
+                EntityName: AuditEntityNames.ReconciliationBatch,
+                EntityKey: batchId.ToString(CultureInfo.InvariantCulture),
+                Action: AuditActions.ReconciliationUnmatchedCustomerDetected,
+                CompanyId: companyId,
+                UserId: ownerUserId,
+                NewValuesJson: JsonSerializer.Serialize(new
+                {
+                    unmatched_row_count = unmatchedCount,
+                    unique_refs = uniqueRefs
+                        .Where(r => !refToCustomerId.ContainsKey(r))
+                        .ToArray(),
+                })), cancellationToken).ConfigureAwait(false);
+        }
 
         return new CaseAutoCreateResult(
             CreatedCaseIds: createdCaseIds,
