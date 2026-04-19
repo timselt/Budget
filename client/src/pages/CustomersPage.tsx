@@ -60,8 +60,14 @@ export function CustomersPage() {
   const customersQuery = useQuery({ queryKey: ['customers'], queryFn: getCustomers })
   const segmentsQuery = useQuery({ queryKey: ['segments'], queryFn: getSegments })
 
-  const customers = customersQuery.data ?? []
-  const segments = segmentsQuery.data ?? []
+  // `customersQuery.data ?? []` her render'da taze array referansı üretir
+  // ve `filtered` useMemo'nun dep array'ini gereksiz yere yenileyerek sonsuz
+  // loop riski doğurur — useMemo ile sabitliyoruz.
+  const customers = useMemo(
+    () => customersQuery.data ?? [],
+    [customersQuery.data],
+  )
+  const segments = useMemo(() => segmentsQuery.data ?? [], [segmentsQuery.data])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
