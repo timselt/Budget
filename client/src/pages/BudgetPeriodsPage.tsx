@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import {
+  getStatusChipClass,
+  getStatusLabel,
+  IN_PROGRESS_STATUSES,
+  type BudgetVersionStatus,
+} from '../components/budget-planning/types'
 
 interface BudgetYearRow {
   id: number
@@ -34,34 +40,24 @@ async function getVersions(yearId: number): Promise<BudgetVersionRow[]> {
   return data
 }
 
-// State machine actions sorted by typical flow
-const STATE_ACTIONS: { status: string; label: string; endpoint: string; chipClass: string }[] = [
-  { status: 'DRAFT', label: 'Onaya Gönder', endpoint: 'submit', chipClass: 'chip-warning' },
-  { status: 'SUBMITTED', label: 'Departman Onayı', endpoint: 'approve/dept', chipClass: 'chip-info' },
-  { status: 'DEPTAPPROVED', label: 'Finans Onayı', endpoint: 'approve/finance', chipClass: 'chip-info' },
-  { status: 'FINANCEAPPROVED', label: 'CFO Onayı', endpoint: 'approve/cfo', chipClass: 'chip-info' },
-  { status: 'CFOAPPROVED', label: 'Aktifleştir', endpoint: 'activate', chipClass: 'chip-success' },
+// ADR-0015: 2-aşamalı onay akışı.
+// Draft|Rejected → submit → PendingFinance → approve-finance → PendingCfo
+//                                            → approve-cfo-activate → Active
+const STATE_ACTIONS: {
+  status: BudgetVersionStatus
+  label: string
+  endpoint: string
+}[] = [
+  { status: 'Draft', label: 'Onaya Gönder', endpoint: 'submit' },
+  { status: 'Rejected', label: 'Tekrar Gönder', endpoint: 'submit' },
+  { status: 'PendingFinance', label: 'Finans Onayla', endpoint: 'approve-finance' },
+  { status: 'PendingCfo', label: 'Onayla ve Yayına Al', endpoint: 'approve-cfo-activate' },
 ]
 
-function statusChipClass(status: string): string {
-  switch (status) {
-    case 'DRAFT':
-      return 'chip-neutral'
-    case 'SUBMITTED':
-    case 'DEPTAPPROVED':
-    case 'FINANCEAPPROVED':
-    case 'CFOAPPROVED':
-      return 'chip-info'
-    case 'ACTIVE':
-      return 'chip-success'
-    case 'REJECTED':
-      return 'chip-error'
-    case 'ARCHIVED':
-      return 'chip-neutral'
-    default:
-      return 'chip-neutral'
-  }
-}
+const REJECTABLE_STATUSES: ReadonlySet<BudgetVersionStatus> = new Set([
+  'PendingFinance',
+  'PendingCfo',
+])
 
 export function BudgetPeriodsPage() {
   const [selectedYearId, setSelectedYearId] = useState<number | null>(null)
@@ -78,6 +74,9 @@ export function BudgetPeriodsPage() {
   const years = yearsQuery.data ?? []
   const versions = versionsQuery.data ?? []
   const selectedYear = years.find((y) => y.id === selectedYearId) ?? null
+  const hasInProgressDraft = versions.some((v) =>
+    IN_PROGRESS_STATUSES.has(v.status as BudgetVersionStatus),
+  )
 
   // Auto-select first year once data loads
   useEffect(() => {
@@ -126,7 +125,12 @@ export function BudgetPeriodsPage() {
           <button
             type="button"
             className="btn-primary"
-            disabled={!selectedYearId}
+            disabled={!selectedYearId || hasInProgressDraft}
+            title={
+              hasInProgressDraft
+                ? 'Bu yılda zaten çalışılan bir taslak var (yıl başına tek invariant).'
+                : undefined
+            }
             onClick={() => selectedYearId && setModal({ kind: 'version', yearId: selectedYearId })}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
@@ -189,8 +193,9 @@ export function BudgetPeriodsPage() {
               {selectedYear ? `${selectedYear.year} Versiyonları` : 'Versiyonlar'}
             </h3>
             <p className="text-xs text-on-surface-variant mt-1">
-              DRAFT → SUBMITTED → DEPT → FINANCE → CFO → ACTIVE. Reddedilen versiyonlar
-              REJECTED, kullanımdan çıkarılanlar ARCHIVED olur.
+              Taslak → Finans Onayında → CFO Onayında → Yürürlükte. Reddedilen
+              versiyonlar düzeltilip "Tekrar Gönder" ile akışa geri sokulabilir;
+              eskimiş aktifler arşive alınır.
             </p>
           </div>
           {!selectedYearId ? (
@@ -215,11 +220,10 @@ export function BudgetPeriodsPage() {
               </thead>
               <tbody>
                 {versions.map((version) => {
-                  const nextAction = STATE_ACTIONS.find((a) => a.status === version.status)
-                  const canReject = ['SUBMITTED', 'DEPTAPPROVED', 'FINANCEAPPROVED', 'CFOAPPROVED'].includes(
-                    version.status,
-                  )
-                  const canArchive = version.status === 'ACTIVE'
+                  const status = version.status as BudgetVersionStatus
+                  const nextAction = STATE_ACTIONS.find((a) => a.status === status)
+                  const canReject = REJECTABLE_STATUSES.has(status)
+                  const canArchive = status === 'Active'
                   return (
                     <tr key={version.id}>
                       <td>
@@ -227,8 +231,8 @@ export function BudgetPeriodsPage() {
                         <p className="text-[0.65rem] font-mono text-on-surface-variant">#{version.id}</p>
                       </td>
                       <td>
-                        <span className={`chip ${statusChipClass(version.status)}`}>
-                          {version.status}
+                        <span className={`chip ${getStatusChipClass(version.status)}`}>
+                          {getStatusLabel(version.status)}
                         </span>
                       </td>
                       <td className="text-xs text-on-surface-variant">
