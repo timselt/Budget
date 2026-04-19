@@ -52,5 +52,75 @@
     "forbidden": "You do not have permission to view this page.",
     "notFound": "Page not found.",
     "unexpected": "An unexpected error occurred."
+  },
+  "reconciliation": {
+    "batchList": {
+      "title": "Reconciliation Batch List",
+      "subtitle": "Period-based reconciliation files — insurer policy lists + automotive TARS/Power BI exports.",
+      "newBatchButton": "Upload New Batch",
+      "tabs": {
+        "all": "All",
+        "insurance": "Insurance",
+        "automotive": "Automotive"
+      },
+      "filters": {
+        "period": "Period",
+        "status": "Status",
+        "anyPeriod": "All periods",
+        "anyStatus": "All statuses"
+      },
+      "columns": {
+        "flow": "Flow",
+        "periodCode": "Period",
+        "sourceType": "Source",
+        "sourceFileName": "File",
+        "rowCount": "Rows",
+        "status": "Status",
+        "importedAt": "Imported",
+        "notes": "Notes"
+      },
+      "status": {
+        "draft": "Draft",
+        "parsed": "Parsed",
+        "mapped": "Mapped",
+        "archived": "Archived"
+      },
+      "flow": {
+        "insurance": "Insurance",
+        "automotive": "Automotive"
+      },
+      "sourceType": {
+        "insurerList": "Insurer List",
+        "tarsPowerBi": "TARS / Power BI",
+        "manualCsv": "Manual CSV"
+      },
+      "empty": {
+        "title": "No batches imported yet",
+        "description": "Upload an insurer policy list or TARS export at period start — the parser breaks down rows and distributes to cases.",
+        "cta": "Upload First Batch"
+      }
+    },
+    "upload": {
+      "modalTitle": "New Reconciliation Batch",
+      "stepFlow": "Flow Type",
+      "stepPeriod": "Period (YYYY-MM)",
+      "stepSource": "Source Type",
+      "stepFile": "File",
+      "stepNotes": "Notes (optional)",
+      "fileHint": ".xlsx or .csv — max 25 MB, 20,000 rows",
+      "notesPlaceholder": "e.g. April 2026 Anadolu Insurance policy list (revised)",
+      "submit": "Upload & Parse",
+      "submitting": "Uploading…",
+      "cancel": "Cancel",
+      "success": "Batch imported: {rowCount} rows parsed ({okCount} ok, {warningCount} warnings, {errorCount} errors).",
+      "duplicateError": "This file has been uploaded before (batch #{existingBatchId}). Same content cannot be uploaded twice.",
+      "readError": "File could not be read — corrupt or unsupported format.",
+      "validation": {
+        "fileRequired": "File selection is required.",
+        "periodFormat": "Period must be in YYYY-MM format (e.g. 2026-04).",
+        "flowRequired": "Flow type selection is required.",
+        "sourceRequired": "Source type selection is required."
+      }
+    }
   }
 }
