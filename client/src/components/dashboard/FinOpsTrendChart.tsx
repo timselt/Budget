@@ -1,5 +1,6 @@
 import { Doughnut, Line } from 'react-chartjs-2'
 import { GRID } from '../../lib/chart-config'
+import { METRIC_LABELS } from '../../lib/metric-labels'
 
 const MONTHS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
 
@@ -48,7 +49,7 @@ export function FinOpsTrendChart({
             pointHoverRadius: 5,
           },
           {
-            label: 'Teknik Marj',
+            label: METRIC_LABELS.technicalMargin,
             data: technicalMarginSeries,
             borderColor: '#15803d',
             backgroundColor: 'rgba(21,128,61,0.06)',

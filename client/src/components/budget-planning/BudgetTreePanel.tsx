@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { BudgetTree, TreeSelection } from './types'
 import { formatCompact } from './utils'
 
@@ -17,8 +17,28 @@ interface Props {
   loading: boolean
 }
 
-export function BudgetTreePanel({ tree, selection, onSelect, loading }: Props) {
+export function BudgetTreePanel({
+  tree,
+  selection,
+  onSelect,
+  loading,
+}: Props) {
   const [query, setQuery] = useState('')
+  const [expandedSegments, setExpandedSegments] = useState<Set<number>>(new Set())
+
+  useEffect(() => {
+    if (!tree) return
+    setExpandedSegments((prev) => {
+      if (prev.size === 0) {
+        return new Set(tree.segments.map((segment) => segment.segmentId))
+      }
+      return new Set(
+        [...prev].filter((segmentId) =>
+          tree.segments.some((segment) => segment.segmentId === segmentId),
+        ),
+      )
+    })
+  }, [tree])
 
   const filtered = useMemo(() => {
     if (!tree) return { segments: [], opex: [] }
@@ -86,29 +106,103 @@ export function BudgetTreePanel({ tree, selection, onSelect, loading }: Props) {
 
           {filtered.segments.map((segment) => {
             const isSelected =
-              selection?.kind === 'segment' && selection.segmentId === segment.segmentId
+              (selection?.kind === 'segment' && selection.segmentId === segment.segmentId) ||
+              (selection?.kind === 'customer' && selection.segmentId === segment.segmentId)
+            const isExpanded = query.trim()
+              ? true
+              : expandedSegments.has(segment.segmentId)
             return (
-              <button
-                key={segment.segmentId}
-                type="button"
-                className={`tree-item w-full text-left px-4 py-2.5 flex items-center gap-2 hover:bg-surface-container-low ml-2 ${
-                  isSelected ? 'bg-primary-container text-on-primary-container font-semibold' : ''
-                }`}
-                onClick={() => onSelect({ kind: 'segment', segmentId: segment.segmentId })}
-              >
-                <span
-                  className={`inline-block w-2 h-2 rounded-full ${
-                    SEGMENT_COLOR[segment.segmentCode] ?? 'bg-on-surface-variant'
+              <div key={segment.segmentId} className="ml-2">
+                <div
+                  className={`tree-item w-full px-4 py-2.5 flex items-center gap-2 hover:bg-surface-container-low ${
+                    isSelected ? 'bg-primary-container text-on-primary-container font-semibold' : ''
                   }`}
-                />
-                <span className="flex-1 font-semibold">{segment.segmentName}</span>
-                <span className="text-xs num text-on-surface-variant">
-                  {segment.customers.length} müşteri
-                </span>
-                <span className="text-xs num text-on-surface-variant">
-                  {formatCompact(segment.revenueTotalTry)}
-                </span>
-              </button>
+                >
+                  <button
+                    type="button"
+                    className="shrink-0 inline-flex items-center justify-center rounded p-0.5 hover:bg-black/5"
+                    aria-label={isExpanded ? 'Kategoriyi daralt' : 'Kategoriyi genişlet'}
+                    onClick={() => {
+                      if (!query.trim()) {
+                        setExpandedSegments((prev) => {
+                          const next = new Set(prev)
+                          if (next.has(segment.segmentId)) {
+                            next.delete(segment.segmentId)
+                          } else {
+                            next.add(segment.segmentId)
+                          }
+                          return next
+                        })
+                      }
+                    }}
+                  >
+                    <span
+                      className="material-symbols-outlined text-on-surface-variant"
+                      style={{ fontSize: 18 }}
+                    >
+                      {isExpanded ? 'expand_more' : 'chevron_right'}
+                    </span>
+                  </button>
+                  <span
+                    className={`inline-block w-2 h-2 rounded-full ${
+                      SEGMENT_COLOR[segment.segmentCode] ?? 'bg-on-surface-variant'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    className="flex-1 text-left font-semibold"
+                    onClick={() => onSelect({ kind: 'segment', segmentId: segment.segmentId })}
+                  >
+                    {segment.segmentName}
+                  </button>
+                  <span className="text-xs num text-on-surface-variant">
+                    {segment.customers.length} müşteri
+                  </span>
+                  <span className="text-xs num text-on-surface-variant">
+                    {formatCompact(segment.revenueTotalTry)}
+                  </span>
+                </div>
+
+                <div className={isExpanded ? 'pb-2' : 'hidden'}>
+                  {segment.customers.map((customer) => {
+                    const isCustomerSelected =
+                      selection?.kind === 'customer' &&
+                      selection.customerId === customer.customerId
+
+                    return (
+                      <button
+                        key={customer.customerId}
+                        type="button"
+                        className={`tree-item w-full text-left pl-10 pr-4 py-2 flex items-center gap-2 hover:bg-surface-container-low ${
+                          isCustomerSelected
+                            ? 'bg-primary-container text-on-primary-container font-semibold'
+                            : ''
+                        }`}
+                        onClick={() => {
+                          onSelect({
+                            kind: 'customer',
+                            customerId: customer.customerId,
+                            segmentId: segment.segmentId,
+                          })
+                        }}
+                      >
+                        <span className="material-symbols-outlined text-on-surface-variant" style={{ fontSize: 16 }}>
+                          person
+                        </span>
+                        <span className="flex-1">
+                          <span className="block text-sm font-medium">{customer.customerName}</span>
+                          <span className="block text-[0.65rem] text-on-surface-variant font-mono">
+                            {customer.customerCode}
+                          </span>
+                        </span>
+                        <span className="text-xs num text-on-surface-variant">
+                          {formatCompact(customer.revenueTotalTry)}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             )
           })}
         </details>

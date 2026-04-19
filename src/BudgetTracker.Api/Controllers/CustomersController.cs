@@ -11,10 +11,12 @@ namespace BudgetTracker.Api.Controllers;
 public sealed class CustomersController : ControllerBase
 {
     private readonly ICustomerService _service;
+    private readonly ICustomerImportService _importService;
 
-    public CustomersController(ICustomerService service)
+    public CustomersController(ICustomerService service, ICustomerImportService importService)
     {
         _service = service;
+        _importService = importService;
     }
 
     [HttpGet]
@@ -40,6 +42,48 @@ public sealed class CustomersController : ControllerBase
         var userId = GetUserId();
         var result = await _service.CreateAsync(request, userId, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+    }
+
+    [HttpPost("import/preview")]
+    [Authorize(Policy = "RequireFinanceRole")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 10 * 1024 * 1024)]
+    public async Task<IActionResult> PreviewImport(
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { error = "Dosya yüklenmedi." });
+        }
+
+        var userId = GetUserId();
+        await using var stream = file.OpenReadStream();
+        var preview = await _importService.PreviewAsync(
+            stream, file.Length, userId, cancellationToken);
+
+        return Ok(preview);
+    }
+
+    [HttpPost("import/commit")]
+    [Authorize(Policy = "RequireFinanceRole")]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 10 * 1024 * 1024)]
+    public async Task<IActionResult> CommitImport(
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { error = "Dosya yüklenmedi." });
+        }
+
+        var userId = GetUserId();
+        await using var stream = file.OpenReadStream();
+        var result = await _importService.CommitAsync(
+            stream, file.Length, userId, cancellationToken);
+
+        return Ok(result);
     }
 
     [HttpPut("{id:int}")]
