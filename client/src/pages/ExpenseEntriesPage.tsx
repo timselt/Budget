@@ -4,7 +4,7 @@ import api from '../lib/api'
 import { translateApiError } from '../lib/api-error'
 import { isEditableStatus, getStatusLabel } from '../components/budget-planning/types'
 import { Stepper } from '../components/budget-planning/Stepper'
-import { showToast } from '../components/shared/Toast'
+import { showToast } from '../components/shared/toast-bus'
 
 interface BudgetYearRow {
   id: number

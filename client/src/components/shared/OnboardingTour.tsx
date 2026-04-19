@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-
-const STORAGE_KEY = 'finopstur-onboarding-completed-v1'
+import { ONBOARDING_STORAGE_KEY as STORAGE_KEY } from './onboarding-storage'
 
 interface Step {
   title: string
@@ -49,12 +48,9 @@ const STEPS: Step[] = [
 
 export function OnboardingTour() {
   const [step, setStep] = useState(0)
-  const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    const completed = localStorage.getItem(STORAGE_KEY) === '1'
-    if (!completed) setOpen(true)
-  }, [])
+  const [open, setOpen] = useState(
+    () => localStorage.getItem(STORAGE_KEY) !== '1',
+  )
 
   const dismiss = () => {
     localStorage.setItem(STORAGE_KEY, '1')
@@ -133,7 +129,3 @@ export function OnboardingTour() {
   )
 }
 
-/** Admin ekranından "Tanıtımı tekrar göster" için reset. */
-export function resetOnboardingTour() {
-  localStorage.removeItem(STORAGE_KEY)
-}

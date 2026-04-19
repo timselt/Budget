@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BudgetTreePanel } from '../components/budget-planning/BudgetTreePanel'
-import {
-  BudgetCustomerGrid,
-  cellKey,
-} from '../components/budget-planning/BudgetCustomerGrid'
+import { BudgetCustomerGrid } from '../components/budget-planning/BudgetCustomerGrid'
+import { cellKey } from '../components/budget-planning/budget-grid-types'
 import type {
   CellId,
   ContractRow,
   GridValues,
-} from '../components/budget-planning/BudgetCustomerGrid'
+} from '../components/budget-planning/budget-grid-types'
 import { BudgetOpexGrid } from '../components/budget-planning/BudgetOpexGrid'
 import {
   CopyFromYearModal,

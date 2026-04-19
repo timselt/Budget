@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
-import { resetOnboardingTour } from '../components/shared/OnboardingTour'
+import { resetOnboardingTour } from '../components/shared/onboarding-storage'
 
 type Tab = 'users' | 'companies'
 
