@@ -45,6 +45,22 @@ describe('SidebarSection', () => {
     expect(localStorage.getItem('sidebar-section-open:test-section')).toBe('1')
   })
 
+  it('pilot: true item label sağında Pilot etiketi render eder', () => {
+    const pilotSection: SidebarSectionType = {
+      id: 'analysis',
+      label: 'Analizler',
+      defaultOpen: true,
+      items: [
+        { label: 'Tahmin', to: '/forecast', icon: 'trending_up', pilot: true },
+        { label: 'Sapma', to: '/variance', icon: 'compare_arrows' },
+      ],
+    }
+    renderSection(pilotSection)
+    expect(screen.getByText('Pilot')).toBeInTheDocument()
+    // Sadece pilot item'da olmalı: 1 adet "Pilot"
+    expect(screen.getAllByText('Pilot')).toHaveLength(1)
+  })
+
   it('renders as direct link when items is empty', () => {
     const linkSection: SidebarSectionType = {
       id: 'home',

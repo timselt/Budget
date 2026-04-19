@@ -110,7 +110,12 @@ export function SidebarSection({ section }: Props) {
                 >
                   {item.icon}
                 </span>
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {item.pilot && (
+                  <span className="text-[0.625rem] text-warning font-semibold uppercase tracking-wider">
+                    Pilot
+                  </span>
+                )}
               </NavLink>
             )
           })}
