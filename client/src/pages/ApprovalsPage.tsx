@@ -9,6 +9,9 @@ import {
   type BudgetVersionStatus,
 } from '../components/budget-planning/types'
 import { RejectModal } from '../components/budget-planning/RejectModal'
+import { ApprovalCard } from '../components/approvals/ApprovalCard'
+import { PageIntro } from '../components/shared/PageIntro'
+import { EmptyState } from '../components/shared/EmptyState'
 
 interface BudgetYearRow {
   id: number
@@ -72,14 +75,6 @@ const STATUS_META: Record<BudgetVersionStatus, {
     label: STATUS_LABELS.Archived,
     nextActions: [],
   },
-}
-
-const ACTION_LABELS: Record<WorkflowAction, string> = {
-  submit: 'Onaya Gönder',
-  'approve-finance': 'Finans Onayla',
-  'approve-cfo-activate': 'Onayla ve Yayına Al',
-  reject: 'Reddet',
-  archive: 'Arşivle',
 }
 
 const TERMINAL_STATUSES: ReadonlySet<BudgetVersionStatus> = new Set(['Archived'])
@@ -207,17 +202,10 @@ export function ApprovalsPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
-            Onay Akışı
-          </h2>
-          <p className="page-context-hint">
-            Bekleyen onayları yönetin. <strong>CFO onayı</strong> versiyonu
-            yayına alır ve eski aktifi otomatik arşivler.
-          </p>
-        </div>
-      </div>
+      <PageIntro
+        title="Onaylar"
+        purpose="Karar merkezi — bekleyen versiyonların onay/red kararları + yürürlüktekiler + sonuçlananlar. CFO onayı versiyonu yayına alır ve eski aktifi otomatik arşivler."
+      />
 
       <div className="grid grid-cols-12 gap-6 mb-6">
         <KpiCard title="Bekleyen" value={pending.length} subtitle="aksiyon gerekir" chip="chip-warning" />
@@ -306,8 +294,8 @@ export function ApprovalsPage() {
 
       {tab === 'pending' && (
         <VersionSection
-          title=""
           emptyText="Şu an onayınızı bekleyen versiyon yok. Bütçe Planlama'dan yeni bir taslak başlatabilirsiniz."
+          emptyIcon="pending_actions"
           versions={pending}
           canPerform={canPerform}
           onAction={(versionId, action, reason) =>
@@ -315,14 +303,13 @@ export function ApprovalsPage() {
           }
           onRejectRequest={(id, name) => setRejectTarget({ id, name })}
           actionPending={actionMutation.isPending}
-          hideHeader
         />
       )}
 
       {tab === 'active' && (
         <VersionSection
-          title=""
           emptyText="Henüz yürürlükteki versiyon yok."
+          emptyIcon="verified"
           versions={active}
           canPerform={canPerform}
           onAction={(versionId, action, reason) =>
@@ -330,14 +317,13 @@ export function ApprovalsPage() {
           }
           onRejectRequest={(id, name) => setRejectTarget({ id, name })}
           actionPending={actionMutation.isPending}
-          hideHeader
         />
       )}
 
       {tab === 'archived' && (
         <VersionSection
-          title=""
           emptyText="Henüz arşivlenmiş veya tamamlanmış versiyon yok."
+          emptyIcon="inventory_2"
           versions={terminal}
           canPerform={canPerform}
           onAction={(versionId, action, reason) =>
@@ -345,7 +331,6 @@ export function ApprovalsPage() {
           }
           onRejectRequest={(id, name) => setRejectTarget({ id, name })}
           actionPending={actionMutation.isPending}
-          hideHeader
         />
       )}
 
@@ -367,119 +352,52 @@ export function ApprovalsPage() {
 }
 
 function VersionSection({
-  title,
   emptyText,
+  emptyIcon = 'inbox',
   versions,
   canPerform,
   onAction,
   onRejectRequest,
   actionPending,
-  hideHeader = false,
 }: {
-  title: string
   emptyText: string
+  emptyIcon?: string
   versions: VersionWithYear[]
   canPerform: (action: WorkflowAction) => boolean
   onAction: (versionId: number, action: WorkflowAction, reason?: string) => void
   onRejectRequest: (versionId: number, versionName: string) => void
   actionPending: boolean
-  hideHeader?: boolean
 }) {
+  if (versions.length === 0) {
+    return (
+      <EmptyState
+        icon={emptyIcon}
+        title="Bu sekmede versiyon yok"
+        description={emptyText}
+      />
+    )
+  }
   return (
-    <div className={`card p-0 overflow-hidden ${hideHeader ? '' : 'mb-6'}`}>
-      {hideHeader ? null : (
-        <div className="p-4 border-b border-outline-variant">
-          <h3 className="text-base font-bold text-on-surface">{title}</h3>
-        </div>
-      )}
-      {versions.length === 0 ? (
-        <p className="p-6 text-sm text-on-surface-variant">{emptyText}</p>
-      ) : (
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th>Yıl</th>
-              <th>Versiyon</th>
-              <th>Durum</th>
-              <th>Oluşturuldu</th>
-              <th>Red Sebebi</th>
-              <th className="text-right">Aksiyon</th>
-            </tr>
-          </thead>
-          <tbody>
-            {versions.map((v) => {
-              const status = v.status as BudgetVersionStatus
-              const meta = STATUS_META[status] ?? {
-                chip: 'chip-neutral',
-                label: v.status,
-                nextActions: [] as WorkflowAction[],
-              }
-              const allowedActions = meta.nextActions.filter(canPerform)
-              return (
-                <tr key={v.id}>
-                  <td className="font-semibold num">FY {v.year}</td>
-                  <td className="font-semibold">
-                    {v.name}
-                    {v.isActive ? <span className="chip chip-success ml-2">Aktif</span> : null}
-                  </td>
-                  <td>
-                    <span className={`chip ${meta.chip}`}>{meta.label}</span>
-                  </td>
-                  <td className="text-xs text-on-surface-variant">
-                    {new Date(v.createdAt).toLocaleDateString('tr-TR')}
-                  </td>
-                  <td className="text-xs text-on-surface-variant max-w-[240px] truncate">
-                    {v.rejectionReason ?? '—'}
-                  </td>
-                  <td className="text-right">
-                    <div className="inline-flex gap-1 flex-wrap justify-end">
-                      {meta.nextActions.length === 0 ? (
-                        <span className="text-xs text-on-surface-variant">—</span>
-                      ) : allowedActions.length === 0 ? (
-                        <span className="chip chip-neutral text-xs">Yetkisiz</span>
-                      ) : (
-                        allowedActions.map((action) => {
-                          const isReject = action === 'reject'
-                          const isArchive = action === 'archive'
-                          const isCfoActivate = action === 'approve-cfo-activate'
-                          const btnClass = isReject
-                            ? 'btn-ghost text-error'
-                            : isArchive
-                              ? 'btn-secondary'
-                              : 'btn-primary'
-                          const label = ACTION_LABELS[action]
-                          return (
-                            <button
-                              key={action}
-                              type="button"
-                              className={btnClass}
-                              style={{ padding: '.4rem .75rem', fontSize: '.75rem' }}
-                              disabled={actionPending}
-                              onClick={() => {
-                                if (isReject) {
-                                  onRejectRequest(v.id, v.name)
-                                  return
-                                }
-                                const confirmMsg = isCfoActivate
-                                  ? `"${v.name}" CFO onayı ile YAYINA ALINACAK. Mevcut yürürlükteki versiyon arşivlenecek. Emin misiniz?`
-                                  : `"${v.name}" versiyonu için "${label}" aksiyonunu uygulamak istiyor musunuz?`
-                                if (!confirm(confirmMsg)) return
-                                onAction(v.id, action)
-                              }}
-                            >
-                              {actionPending ? '…' : label}
-                            </button>
-                          )
-                        })
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      )}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {versions.map((v) => {
+        const status = v.status as BudgetVersionStatus
+        const meta = STATUS_META[status] ?? {
+          chip: 'chip-neutral',
+          label: v.status,
+          nextActions: [] as WorkflowAction[],
+        }
+        return (
+          <ApprovalCard
+            key={v.id}
+            version={v}
+            allowedActions={meta.nextActions}
+            canPerform={canPerform}
+            pending={actionPending}
+            onAction={(action) => onAction(v.id, action)}
+            onRejectRequest={() => onRejectRequest(v.id, v.name)}
+          />
+        )
+      })}
     </div>
   )
 }
