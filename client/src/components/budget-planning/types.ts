@@ -136,11 +136,26 @@ export type BudgetVersionStatus =
 /** Türkçe etiket sözlüğü — UI'da chip / banner başlığı vb. */
 export const STATUS_LABELS: Record<BudgetVersionStatus, string> = {
   Draft: 'Taslak',
-  PendingFinance: 'Finans Onayında',
+  PendingFinance: 'Finans Kontrolünde',
   PendingCfo: 'CFO Onayında',
   Active: 'Yürürlükte',
   Rejected: 'Reddedildi',
   Archived: 'Arşiv',
+}
+
+/** Sıradaki adım — eylem-odaklı, kullanıcıya "şimdi ne yap?" cevabı verir. */
+export const STATUS_NEXT_ACTIONS: Record<BudgetVersionStatus, string> = {
+  Draft: 'Bütçeyi tamamla',
+  PendingFinance: 'Finans onayı bekleniyor',
+  PendingCfo: 'CFO onayı bekleniyor',
+  Active: 'Revizyon aç',
+  Rejected: 'Düzeltmeye Devam Et',
+  Archived: '—',
+}
+
+export function getStatusNextAction(status: string | null | undefined): string {
+  if (!status) return '—'
+  return STATUS_NEXT_ACTIONS[status as BudgetVersionStatus] ?? '—'
 }
 
 /** Chip CSS class (finopstur.css'teki chip-* sınıfları). */
