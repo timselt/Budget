@@ -16,6 +16,7 @@ import {
   GrowByPercentModal,
 } from '../components/budget-planning/QuickActionModals'
 import { ExcelImportModal } from '../components/budget-planning/ExcelImportModal'
+import { BudgetPeriodsPage } from './BudgetPeriodsPage'
 import {
   bulkUpsertEntries,
   createRevision,
@@ -489,6 +490,16 @@ export function BudgetEntryPage() {
           </span>
           Müşteri Odaklı Giriş (C)
         </button>
+        <button
+          type="button"
+          className={`tab ${mode === 'versions' ? 'active' : ''}`}
+          onClick={() => setMode('versions')}
+        >
+          <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
+            calendar_month
+          </span>
+          Versiyonlar
+        </button>
       </div>
 
       <div className="card mb-4 flex flex-wrap items-center gap-3">
@@ -670,7 +681,9 @@ export function BudgetEntryPage() {
         />
       </div>
 
-      {mode === 'tree' ? (
+      {mode === 'versions' ? (
+        <BudgetPeriodsPage embedded />
+      ) : mode === 'tree' ? (
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 lg:col-span-3">
             <BudgetTreePanel

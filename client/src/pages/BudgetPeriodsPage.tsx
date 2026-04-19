@@ -59,7 +59,15 @@ const REJECTABLE_STATUSES: ReadonlySet<BudgetVersionStatus> = new Set([
   'PendingCfo',
 ])
 
-export function BudgetPeriodsPage() {
+interface BudgetPeriodsPageProps {
+  /** Bütçe Planlama sayfasının "Versiyonlar" tab'ı içinde gömülü
+   *  render edildiğinde true. Bu durumda H2 başlık + üst aksiyon
+   *  butonları (Yeni Yıl / Yeni Versiyon) sayfa header'ına yapışmaz —
+   *  küçük bir toolbar olarak gösterilir. */
+  embedded?: boolean
+}
+
+export function BudgetPeriodsPage({ embedded = false }: BudgetPeriodsPageProps = {}) {
   const [selectedYearId, setSelectedYearId] = useState<number | null>(null)
   const [modal, setModal] = useState<ModalState>({ kind: 'none' })
   const queryClient = useQueryClient()
@@ -105,12 +113,18 @@ export function BudgetPeriodsPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
-            Bütçe Dönemleri & Versiyonları
-          </h2>
-        </div>
+      <div
+        className={`flex justify-between items-end ${embedded ? 'mb-4' : 'mb-8'}`}
+      >
+        {embedded ? (
+          <div />
+        ) : (
+          <div>
+            <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
+              Bütçe Dönemleri & Versiyonları
+            </h2>
+          </div>
+        )}
         <div className="flex gap-3">
           <button
             type="button"

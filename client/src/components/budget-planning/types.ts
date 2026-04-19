@@ -114,7 +114,7 @@ export type TreeSelection =
   | { kind: 'customer'; customerId: number; segmentId: number }
   | { kind: 'opex'; expenseCategoryId: number }
 
-export type BudgetMode = 'tree' | 'customer'
+export type BudgetMode = 'tree' | 'customer' | 'versions'
 
 export type CellValue = { id: number | null; amount: string }
 export type RowValues = Record<number, CellValue>

@@ -17,7 +17,8 @@ const CustomersPage = lazy(() => import('./pages/CustomersPage').then(m => ({ de
 const ProductsPage = lazy(() => import('./pages/ProductsPage').then(m => ({ default: m.ProductsPage })))
 const ContractsPage = lazy(() => import('./pages/ContractsPage').then(m => ({ default: m.ContractsPage })))
 const SegmentsPage = lazy(() => import('./pages/SegmentsPage').then(m => ({ default: m.SegmentsPage })))
-const BudgetPeriodsPage = lazy(() => import('./pages/BudgetPeriodsPage').then(m => ({ default: m.BudgetPeriodsPage })))
+// BudgetPeriodsPage Bütçe Planlama sayfasının "Versiyonlar" tab'ı içine
+// gömüldü; ayrı route artık kaldırıldı (sol menüden de çıkarıldı).
 const ExpenseCategoriesPage = lazy(() => import('./pages/ExpenseCategoriesPage').then(m => ({ default: m.ExpenseCategoriesPage })))
 const ExpenseEntriesPage = lazy(() => import('./pages/ExpenseEntriesPage').then(m => ({ default: m.ExpenseEntriesPage })))
 const SpecialItemsPage = lazy(() => import('./pages/SpecialItemsPage').then(m => ({ default: m.SpecialItemsPage })))
@@ -64,7 +65,8 @@ export function App() {
           <Route path="products" element={<ProductsPage />} />
           <Route path="contracts" element={<ContractsPage />} />
           <Route path="segments" element={<SegmentsPage />} />
-          <Route path="budget/periods" element={<BudgetPeriodsPage />} />
+          {/* Eski /budget/periods URL'i Bütçe Planlama Versiyonlar tab'ına yönlendir. */}
+          <Route path="budget/periods" element={<Navigate to="/budget/planning" replace />} />
           <Route path="expense-categories" element={<ExpenseCategoriesPage />} />
           <Route path="expenses" element={<ExpenseEntriesPage />} />
           <Route path="special-items" element={<SpecialItemsPage />} />
