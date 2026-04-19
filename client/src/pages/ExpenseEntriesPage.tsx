@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { translateApiError } from '../lib/api-error'
 import { isEditableStatus, getStatusLabel } from '../components/budget-planning/types'
+import { Stepper } from '../components/budget-planning/Stepper'
+import { showToast } from '../components/shared/Toast'
 
 interface BudgetYearRow {
   id: number
@@ -351,6 +353,10 @@ function ExpenseEntryModal({
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
 
+  // Visual stepper — alanlar tamamlandıkça current adım ilerler
+  const currentStep =
+    categoryId === '' ? 1 : !month ? 2 : Number(amount) <= 0 ? 3 : 4
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -373,7 +379,12 @@ function ExpenseEntryModal({
         notes: notes.trim() || null,
       })
     },
-    onSuccess: () => onSaved(),
+    onSuccess: () => {
+      const catName = categories.find((c) => c.id === categoryId)?.name ?? 'Kayıt'
+      const ay = MONTH_LABELS[month - 1] ?? '?'
+      showToast(`✓ "${catName} — ${ay}" gideri eklendi.`)
+      onSaved()
+    },
     onError: (e: unknown) => setError(translateApiError(e, { resource: 'expense' })),
   })
 
@@ -387,7 +398,7 @@ function ExpenseEntryModal({
         style={{ padding: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between px-6 pt-4 pb-2">
           <h3 className="text-lg font-bold text-on-surface">
             Yeni Gider ({entryType === 'BUDGET' ? 'Bütçe' : 'Gerçekleşen'})
           </h3>
@@ -398,6 +409,17 @@ function ExpenseEntryModal({
           >
             <span className="material-symbols-outlined">close</span>
           </button>
+        </div>
+        <div className="px-6 pb-2">
+          <Stepper
+            steps={[
+              { label: 'Kategori' },
+              { label: 'Ay' },
+              { label: 'Tutar' },
+              { label: 'Onay' },
+            ]}
+            current={currentStep}
+          />
         </div>
         <form
           className="grid grid-cols-2 gap-4 px-6 pb-6"

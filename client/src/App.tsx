@@ -5,6 +5,7 @@ import { AuthGuard } from './components/layout/AuthGuard'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoginPage } from './pages/LoginPage'
 import { ForbiddenPage } from './shared/ui/ForbiddenPage'
+import { ToastContainer } from './components/shared/Toast'
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const BudgetEntryPage = lazy(() => import('./pages/BudgetEntryPage').then(m => ({ default: m.BudgetEntryPage })))
@@ -39,6 +40,7 @@ function PageLoader() {
 
 export function App() {
   return (
+    <>
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -80,5 +82,7 @@ export function App() {
         </Route>
       </Routes>
     </Suspense>
+    <ToastContainer />
+    </>
   )
 }
