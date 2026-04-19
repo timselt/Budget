@@ -8,6 +8,7 @@ import {
   formatCompactAmount,
   formatPercent,
 } from '../lib/number-format'
+import { METRIC_LABELS } from '../lib/metric-labels'
 import { useActiveVersion } from '../lib/useActiveVersion'
 import {
   FinOpsTrendChart,
@@ -296,7 +297,7 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-12 gap-6 mb-6">
         <div className="col-span-12 lg:col-span-3 card-tonal">
-          <span className="label-sm block mb-4">Yıllık Gelir</span>
+          <span className="label-sm block mb-4">{METRIC_LABELS.revenue}</span>
           <div className="flex items-baseline gap-2">
             <span className="text-[3.2rem] font-extrabold tracking-display leading-none text-[#002366] num">
               {kpis ? formatCompactAmount(kpis.totalRevenue) : '—'}
@@ -311,7 +312,7 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-12 lg:col-span-3 card-tonal">
-          <span className="label-sm block mb-4">Yıllık Hasar</span>
+          <span className="label-sm block mb-4">{METRIC_LABELS.claims}</span>
           <div className="flex items-baseline gap-2">
             <span className="text-[3.2rem] font-extrabold tracking-display leading-none text-[#002366] num">
               {kpis ? formatCompactAmount(kpis.totalClaims) : '—'}
@@ -327,7 +328,7 @@ export function DashboardPage() {
 
         <div className="col-span-12 lg:col-span-3 card-tonal">
           <span className="label-sm">
-            Teknik Marj
+            {METRIC_LABELS.technicalMargin}
             <HelpHint text="Teknik Marj = Prim Geliri − Hasar Maliyeti. Reasürans öncesi sigortacılık karlılığı." />
           </span>
           <p className="text-[3.2rem] font-extrabold tracking-display num mt-4 text-[#002366]">
@@ -340,7 +341,7 @@ export function DashboardPage() {
 
         <div className="col-span-12 lg:col-span-3 card-tonal">
           <span className="label-sm">
-            EBITDA
+            {METRIC_LABELS.ebitda}
             <HelpHint text="EBITDA = Faiz, Vergi, Amortisman ve İtfa öncesi kar. Operasyonel performans göstergesi." />
           </span>
           <p className="text-[3.2rem] font-extrabold tracking-display num mt-4 text-[#002366]">
@@ -353,12 +354,12 @@ export function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-12 gap-4 mb-6">
-        <MiniKpiCard title="Net Kar/Zarar" value={kpis ? formatCompactAmount(kpis.netProfit) : '—'} />
-        <MiniKpiCard title="Teknik Kar" value={kpis ? formatCompactAmount(kpis.technicalProfit) : '—'} />
-        <MiniKpiCard title="Gider Rasyosu" value={kpis ? formatPercent(kpis.expenseRatio * 100) : '—'} />
-        <MiniKpiCard title="Combined Ratio" value={kpis ? formatPercent(kpis.combinedRatio * 100) : '—'} />
-        <MiniKpiCard title="Muallak Oranı" value={kpis ? formatPercent(kpis.muallakRatio * 100) : '—'} />
-        <MiniKpiCard title="Finansal Gelir" value={kpis ? formatCompactAmount(kpis.financialIncome) : '—'} />
+        <MiniKpiCard title={METRIC_LABELS.netProfit} value={kpis ? formatCompactAmount(kpis.netProfit) : '—'} />
+        <MiniKpiCard title={METRIC_LABELS.technicalProfit} value={kpis ? formatCompactAmount(kpis.technicalProfit) : '—'} />
+        <MiniKpiCard title={METRIC_LABELS.expenseRatio} value={kpis ? formatPercent(kpis.expenseRatio * 100) : '—'} />
+        <MiniKpiCard title={METRIC_LABELS.combinedRatio} value={kpis ? formatPercent(kpis.combinedRatio * 100) : '—'} />
+        <MiniKpiCard title={METRIC_LABELS.muallakRatio} value={kpis ? formatPercent(kpis.muallakRatio * 100) : '—'} />
+        <MiniKpiCard title={METRIC_LABELS.financialIncome} value={kpis ? formatCompactAmount(kpis.financialIncome) : '—'} />
       </div>
 
       <div className="grid grid-cols-12 gap-6 mb-6">

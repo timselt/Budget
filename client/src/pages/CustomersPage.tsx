@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { PageIntro } from '../components/shared/PageIntro'
+import { CustomerImportModal } from '../components/customers/CustomerImportModal'
 
 interface CustomerRow {
   id: number
@@ -36,7 +37,11 @@ interface SegmentRow {
 }
 
 type Tab = 'customers'
-type ModalState = { kind: 'none' } | { kind: 'create' } | { kind: 'edit'; customer: CustomerRow }
+type ModalState =
+  | { kind: 'none' }
+  | { kind: 'create' }
+  | { kind: 'edit'; customer: CustomerRow }
+  | { kind: 'import' }
 
 const CURRENCY_OPTIONS = ['TRY', 'EUR', 'USD', 'GBP'] as const
 
@@ -97,16 +102,28 @@ export function CustomersPage() {
         title="Müşteriler"
         purpose='Aktif müşteri kartları, segment + "Grup İçi" flag yönetimi. Bütçe planlama ve sapma analizi bu liste üzerinden çalışır; grup-içi müşteriler konsolidasyonda elimine edilir.'
         actions={
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => setModal({ kind: 'create' })}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              person_add
-            </span>
-            Yeni Müşteri
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setModal({ kind: 'import' })}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                upload_file
+              </span>
+              Excel'den İçe Aktar
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setModal({ kind: 'create' })}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                person_add
+              </span>
+              Yeni Müşteri
+            </button>
+          </div>
         }
       />
 
@@ -230,7 +247,17 @@ export function CustomersPage() {
         </>
       ) : null}
 
-      {modal.kind !== 'none' ? (
+      {modal.kind === 'import' ? (
+        <CustomerImportModal
+          onClose={() => setModal({ kind: 'none' })}
+          onSuccess={() => {
+            invalidate()
+            setModal({ kind: 'none' })
+          }}
+        />
+      ) : null}
+
+      {modal.kind !== 'none' && modal.kind !== 'import' ? (
         <CustomerModal
           mode={modal.kind === 'create' ? 'create' : 'edit'}
           customer={modal.kind === 'edit' ? modal.customer : null}

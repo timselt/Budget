@@ -23,6 +23,7 @@ import {
 } from '../components/budget-planning/useNextStepNavigator'
 import { BudgetPeriodsPage } from './BudgetPeriodsPage'
 import { translateApiError } from '../lib/api-error'
+import { METRIC_LABELS } from '../lib/metric-labels'
 import { HelpHint } from '../components/shared/Tooltip'
 import { showToast } from '../components/shared/toast-bus'
 import {
@@ -51,6 +52,7 @@ import type {
   BudgetEntryUpsert,
   BudgetMode,
   BudgetVersionStatus,
+  CustomerRow,
   TreeSelection,
 } from '../components/budget-planning/types'
 import {
@@ -66,13 +68,19 @@ type Modal = 'copy' | 'grow' | 'excel' | null
 
 export function BudgetEntryPage() {
   const queryClient = useQueryClient()
+  const ALL_OPTION = '__all__'
   const [mode, setMode] = useState<BudgetMode>('tree')
   const [yearOverride, setYearOverride] = useState<number | null>(null)
   const versionId = useAppContextStore((s) => s.selectedVersionId)
   const setVersion = useAppContextStore((s) => s.setVersion)
   const [currency, setCurrency] = useState<string>('TRY')
   const [selectionOverride, setSelectionOverride] = useState<TreeSelection | null>(null)
+  const [customerModeSegmentId, setCustomerModeSegmentId] = useState<number | null>(null)
+  const [customerModeCustomerId, setCustomerModeCustomerId] = useState<number | null>(null)
   const [values, setValues] = useState<GridValues>({})
+  const [customerDrafts, setCustomerDrafts] = useState<Record<number, GridValues>>({})
+  const [dirtyCustomerIds, setDirtyCustomerIds] = useState<number[]>([])
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<number[]>([])
   const [saveError, setSaveError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [createDraftError, setCreateDraftError] = useState<string | null>(null)
@@ -128,15 +136,14 @@ export function BudgetEntryPage() {
   //  - C (customer) → ilk müşteri
   const selection = useMemo<TreeSelection | null>(() => {
     if (!tree) return selectionOverride
+    if (selectionOverride) return selectionOverride
     if (mode === 'tree') {
-      if (selectionOverride?.kind === 'segment') return selectionOverride
       const firstSegment = tree.segments[0]
       if (firstSegment) {
         return { kind: 'segment', segmentId: firstSegment.segmentId }
       }
-      return selectionOverride
+      return null
     }
-    if (selectionOverride?.kind === 'customer') return selectionOverride
     const firstCustomer = tree.segments.find((s) => s.customers.length > 0)?.customers[0]
     if (firstCustomer) {
       return {
@@ -145,7 +152,7 @@ export function BudgetEntryPage() {
         segmentId: firstCustomer.segmentId,
       }
     }
-    return selectionOverride
+    return null
   }, [tree, mode, selectionOverride])
   const setSelection = setSelectionOverride
 
@@ -159,7 +166,11 @@ export function BudgetEntryPage() {
 
   // selection'a bağımlı kontrat sorgusu.
   const selectedCustomerId =
-    selection?.kind === 'customer' ? selection.customerId : null
+    mode === 'customer'
+      ? customerModeCustomerId
+      : selection?.kind === 'customer'
+        ? selection.customerId
+        : null
   const contractsQuery = useQuery({
     queryKey: ['customer-contracts', selectedCustomerId],
     queryFn: () =>
@@ -215,21 +226,23 @@ export function BudgetEntryPage() {
   // React 19: "Storing information from previous renders" — useEffect yerine
   // render sırasında setState (guarded) ile server verisini form'a sync et.
   const [valuesSyncKey, setValuesSyncKey] = useState<{
-    selection: TreeSelection | null
+    selectedCustomerId: number | null
     entries: typeof entries
     contractByProductId: typeof contractByProductId
-  }>({ selection, entries, contractByProductId })
+  }>({ selectedCustomerId, entries, contractByProductId })
   if (
-    valuesSyncKey.selection !== selection ||
+    valuesSyncKey.selectedCustomerId !== selectedCustomerId ||
     valuesSyncKey.entries !== entries ||
     valuesSyncKey.contractByProductId !== contractByProductId
   ) {
-    setValuesSyncKey({ selection, entries, contractByProductId })
-    if (selection?.kind !== 'customer') {
+    setValuesSyncKey({ selectedCustomerId, entries, contractByProductId })
+    if (selectedCustomerId === null) {
       setValues({})
+    } else if (customerDrafts[selectedCustomerId]) {
+      setValues(customerDrafts[selectedCustomerId]!)
     } else {
       const next: GridValues = {}
-      const customerEntries = entries.filter((e) => e.customerId === selection.customerId)
+      const customerEntries = entries.filter((e) => e.customerId === selectedCustomerId)
       for (const e of customerEntries) {
         let contractId: number | null = null
         if (e.contractId) {
@@ -245,22 +258,37 @@ export function BudgetEntryPage() {
         next[key] = { id: e.id, amount: e.amountOriginal.toString() }
       }
       setValues(next)
+      setCustomerDrafts((prev) => ({ ...prev, [selectedCustomerId]: next }))
       const firstCurrency = customerEntries.find((e) => e.currencyCode)?.currencyCode
       if (firstCurrency) setCurrency(firstCurrency)
     }
   }
 
-  const { revenueTotal, claimTotal } = useMemo(() => {
-    let rev = 0
-    let cla = 0
-    for (const key of Object.keys(values)) {
-      const [, kind] = key.split(':')
-      const amount = toNumber(values[key].amount)
-      if (kind === 'REVENUE') rev += amount
-      else if (kind === 'CLAIM') cla += amount
-    }
-    return { revenueTotal: rev, claimTotal: cla }
-  }, [values])
+  const selectedSegmentData =
+    selection?.kind === 'segment'
+      ? tree?.segments.find((s) => s.segmentId === selection.segmentId) ?? null
+      : null
+
+  const selectedOpex =
+    selection?.kind === 'opex'
+      ? tree?.opexCategories.find(
+          (o) => o.expenseCategoryId === selection.expenseCategoryId,
+        )
+      : null
+
+  const selectedCustomerData =
+    selection?.kind === 'customer'
+      ? tree?.segments
+          .flatMap((segment) => segment.customers)
+          .find((customer) => customer.customerId === selection.customerId) ?? null
+      : null
+
+  const activeSegmentData =
+    selection?.kind === 'segment'
+      ? selectedSegmentData
+      : selection?.kind === 'customer'
+        ? tree?.segments.find((segment) => segment.segmentId === selection.segmentId) ?? null
+        : null
 
   // Müşteri başına tamamlandı: versiyonda o müşterinin en az 1 BudgetEntry'si
   // varsa "tamamlandı" sayılır (design doc §4 karar A).
@@ -275,6 +303,26 @@ export function BudgetEntryPage() {
   const allCustomersComplete =
     totalCustomerCount > 0 && completedCustomerCount === totalCustomerCount
   const missingCustomerCount = Math.max(0, totalCustomerCount - completedCustomerCount)
+  const customerModeSegment = useMemo(
+    () =>
+      customerModeSegmentId === null
+        ? null
+        : (tree?.segments.find((segment) => segment.segmentId === customerModeSegmentId) ?? null),
+    [customerModeSegmentId, tree],
+  )
+  const customerModeFilteredCustomers = useMemo(
+    () =>
+      customers.filter((c) =>
+        customerModeSegmentId ? c.segmentId === customerModeSegmentId : true,
+      ),
+    [customers, customerModeSegmentId],
+  )
+  const customerModeLabel = customerModeSegment
+    ? `${customerModeSegment.segmentName} müşterileri`
+    : 'Müşteri Seç'
+  const customerModeAllLabel = customerModeSegment
+    ? `Tüm ${customerModeSegment.segmentName} müşterileri`
+    : 'Tüm müşteriler'
 
   const hasInProgressDraft = versions.some((v) =>
     IN_PROGRESS_STATUSES.has(v.status as BudgetVersionStatus),
@@ -307,47 +355,65 @@ export function BudgetEntryPage() {
     opexCategories: opexLite,
   })
 
-  const margin = revenueTotal - claimTotal
-  const lossRatio = lossRatioPercent(revenueTotal, claimTotal)
-  const marginPct = marginPercent(revenueTotal, claimTotal)
+  const overviewTotals = useMemo(
+    () => ({
+      revenueTotal: tree?.revenueTotalTry ?? 0,
+      claimTotal: tree?.claimTotalTry ?? 0,
+    }),
+    [tree],
+  )
+
+  const overviewMargin = overviewTotals.revenueTotal - overviewTotals.claimTotal
+  const overviewLossRatio = lossRatioPercent(
+    overviewTotals.revenueTotal,
+    overviewTotals.claimTotal,
+  )
+  const overviewMarginPct = marginPercent(
+    overviewTotals.revenueTotal,
+    overviewTotals.claimTotal,
+  )
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!versionId || selection?.kind !== 'customer') {
-        throw new Error('Yıl, versiyon ve müşteri seçin')
+      if (!versionId || dirtyCustomerIds.length === 0) {
+        throw new Error('Kaydedilecek değişiklik yok')
       }
       const upserts: BudgetEntryUpsert[] = []
-      for (const key of Object.keys(values)) {
-        const cell = values[key]
-        const [rawContractId, kind, monthStr] = key.split(':')
-        const amount = toNumber(cell.amount)
-        const hasContent = cell.amount.trim() !== ''
-        if (!hasContent && cell.id === null) continue
+      for (const customerId of dirtyCustomerIds) {
+        const draft = customerDrafts[customerId] ?? {}
+        for (const key of Object.keys(draft)) {
+          const cell = draft[key]
+          const [rawContractId, kind, monthStr] = key.split(':')
+          const amount = toNumber(cell.amount)
+          const hasContent = cell.amount.trim() !== ''
+          if (!hasContent && cell.id === null) continue
 
-        const contractId =
-          rawContractId === 'fb' || rawContractId === ''
-            ? null
-            : Number(rawContractId)
-        const productId =
-          contractId != null
-            ? contracts.find((c) => c.id === contractId)?.productId ?? null
-            : null
+          const contractId =
+            rawContractId === 'fb' || rawContractId === ''
+              ? null
+              : Number(rawContractId)
 
-        upserts.push({
-          id: cell.id,
-          customerId: selection.customerId,
-          month: Number(monthStr),
-          entryType: kind as 'REVENUE' | 'CLAIM',
-          amountOriginal: amount,
-          currencyCode: currency,
-          contractId,
-          productId,
-        })
+          upserts.push({
+            id: cell.id,
+            customerId,
+            month: Number(monthStr),
+            entryType: kind as 'REVENUE' | 'CLAIM',
+            amountOriginal: amount,
+            currencyCode: currency,
+            contractId,
+          })
+        }
       }
       await bulkUpsertEntries(versionId, upserts)
+      for (const entryId of pendingDeleteIds) {
+        await deleteEntry(versionId, entryId)
+      }
     },
     onSuccess: () => {
       setSaveError(null)
+      setCustomerDrafts({})
+      setDirtyCustomerIds([])
+      setPendingDeleteIds([])
       queryClient.invalidateQueries({ queryKey: ['budget-entries', versionId] })
       queryClient.invalidateQueries({ queryKey: ['budget-tree', versionId] })
       queryClient.invalidateQueries({ queryKey: ['customer-summary', versionId] })
@@ -357,17 +423,6 @@ export function BudgetEntryPage() {
         resource: 'budget',
         statusLabel: getStatusLabel(currentVersion?.status),
       }))
-    },
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: async (entryId: number) => {
-      if (!versionId) return
-      await deleteEntry(versionId, entryId)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['budget-entries', versionId] })
-      queryClient.invalidateQueries({ queryKey: ['budget-tree', versionId] })
     },
   })
 
@@ -410,6 +465,10 @@ export function BudgetEntryPage() {
       setCreateDraftError(null)
       setVersion({ id: created.id, label: created.name, status: created.status })
       setSelection(null)
+      setCustomerModeSegmentId(null)
+      setCustomerModeCustomerId(null)
+      setCustomerDrafts({})
+      setDirtyCustomerIds([])
       queryClient.invalidateQueries({ queryKey: ['budget-versions', yearId] })
       queryClient.invalidateQueries({ queryKey: ['budget-entries', created.id] })
       queryClient.invalidateQueries({ queryKey: ['budget-tree', created.id] })
@@ -426,6 +485,8 @@ export function BudgetEntryPage() {
       const cust = customers.find((c) => c.id === action.customerId)
       if (cust) {
         setMode('customer')
+        setCustomerModeSegmentId(cust.segmentId)
+        setCustomerModeCustomerId(cust.id)
         setSelection({
           kind: 'customer',
           customerId: cust.id,
@@ -442,22 +503,54 @@ export function BudgetEntryPage() {
   }
 
   const updateCell = (cell: CellId, amount: string) => {
+    if (selectedCustomerId === null) return
     setValues((prev) => {
       const key = cellKey(cell)
       const existing = prev[key]
-      return {
+      const next = {
         ...prev,
         [key]: {
           id: existing?.id ?? null,
           amount,
         },
       }
+      setCustomerDrafts((drafts) => ({
+        ...drafts,
+        [selectedCustomerId]: next,
+      }))
+      setDirtyCustomerIds((prevDirty) =>
+        prevDirty.includes(selectedCustomerId)
+          ? prevDirty
+          : [...prevDirty, selectedCustomerId],
+      )
+      return next
     })
   }
 
   const deleteCellHandler = (cell: CellId, entryId: number) => {
     if (!confirm(`${MONTHS[cell.month - 1]} kaydı silinecek. Emin misiniz?`)) return
-    deleteMutation.mutate(entryId)
+    if (selectedCustomerId !== null) {
+      setValues((prev) => {
+        const key = cellKey(cell)
+        const next = {
+          ...prev,
+          [key]: { id: null, amount: '' },
+        }
+        setCustomerDrafts((drafts) => ({
+          ...drafts,
+          [selectedCustomerId]: next,
+        }))
+        setDirtyCustomerIds((prevDirty) =>
+          prevDirty.includes(selectedCustomerId)
+            ? prevDirty
+            : [...prevDirty, selectedCustomerId],
+        )
+        return next
+      })
+    }
+    setPendingDeleteIds((prev) =>
+      prev.includes(entryId) ? prev : [...prev, entryId],
+    )
   }
 
   const handleModalSuccess = () => {
@@ -465,18 +558,6 @@ export function BudgetEntryPage() {
     queryClient.invalidateQueries({ queryKey: ['budget-tree', versionId] })
     queryClient.invalidateQueries({ queryKey: ['customer-summary', versionId] })
   }
-
-  const selectedSegmentData =
-    selection?.kind === 'segment'
-      ? tree?.segments.find((s) => s.segmentId === selection.segmentId) ?? null
-      : null
-
-  const selectedOpex =
-    selection?.kind === 'opex'
-      ? tree?.opexCategories.find(
-          (o) => o.expenseCategoryId === selection.expenseCategoryId,
-        )
-      : null
 
   const handleSubmit = () => {
     if (!isEditable || !allCustomersComplete) return
@@ -524,7 +605,7 @@ export function BudgetEntryPage() {
               type="button"
               className="btn-secondary"
               disabled={
-                !isEditable || saveMutation.isPending || selection?.kind !== 'customer'
+                !isEditable || saveMutation.isPending || dirtyCustomerIds.length === 0
               }
               onClick={() => {
                 setSaveError(null)
@@ -534,7 +615,11 @@ export function BudgetEntryPage() {
               <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
                 save
               </span>
-              {saveMutation.isPending ? 'Kaydediliyor…' : 'Değişiklikleri Kaydet'}
+              {saveMutation.isPending
+                ? 'Kaydediliyor…'
+                : dirtyCustomerIds.length > 1
+                  ? `Tüm Değişiklikleri Kaydet (${dirtyCustomerIds.length})`
+                  : 'Tüm Değişiklikleri Kaydet'}
             </button>
           ) : null}
         </div>
@@ -549,7 +634,7 @@ export function BudgetEntryPage() {
           <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
             account_tree
           </span>
-          Hiyerarşik Planlama (A)
+          Hiyerarşik Planlama
         </button>
         <button
           type="button"
@@ -559,7 +644,7 @@ export function BudgetEntryPage() {
           <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: 16 }}>
             person_pin
           </span>
-          Müşteri Odaklı Giriş (C)
+          Müşteri Odaklı Giriş
         </button>
         <button
           type="button"
@@ -582,6 +667,10 @@ export function BudgetEntryPage() {
             setYearId(e.target.value === '' ? null : Number(e.target.value))
             setVersion(null)
             setSelection(null)
+            setCustomerModeSegmentId(null)
+            setCustomerModeCustomerId(null)
+            setCustomerDrafts({})
+            setDirtyCustomerIds([])
           }}
         >
           <option value="">Yıl —</option>
@@ -604,6 +693,10 @@ export function BudgetEntryPage() {
               if (v) setVersion({ id: v.id, label: v.name, status: v.status })
             }
             setSelection(null)
+            setCustomerModeSegmentId(null)
+            setCustomerModeCustomerId(null)
+            setCustomerDrafts({})
+            setDirtyCustomerIds([])
           }}
           disabled={!yearId}
         >
@@ -677,29 +770,29 @@ export function BudgetEntryPage() {
 
       <div className="grid grid-cols-12 gap-4 mb-4">
         <KpiCard
-          title="Plan Gelir"
-          value={formatCompact(revenueTotal)}
+          title={METRIC_LABELS.revenue}
+          value={formatCompact(overviewTotals.revenueTotal)}
           chipClass="chip-error"
-          helpText="Bu versiyondaki tüm müşterilerin yıllık prim/komisyon planı toplamı."
+          helpText="Seçili versiyonun toplam yıllık bütçe geliri."
         />
         <KpiCard
-          title="Plan Hasar"
-          value={formatCompact(claimTotal)}
+          title={METRIC_LABELS.claims}
+          value={formatCompact(overviewTotals.claimTotal)}
           chipClass="chip-warning"
-          helpText="Bu versiyondaki tüm müşterilerin yıllık beklenen hasar toplamı."
+          helpText="Seçili versiyonun toplam yıllık bütçe hasarı."
         />
         <KpiCard
-          title="Teknik Marj"
-          value={formatCompact(margin)}
+          title={METRIC_LABELS.technicalMargin}
+          value={formatCompact(overviewMargin)}
           chipClass="chip-info"
-          note={`%${formatAmount(marginPct)} marj`}
-          helpText="Plan Gelir − Plan Hasar. Reasürans öncesi sigortacılık karlılığı."
+          note={`%${formatAmount(overviewMarginPct)} marj`}
+          helpText={`Seçili versiyon için ${METRIC_LABELS.revenue} − ${METRIC_LABELS.claims}.`}
         />
         <KpiCard
-          title="Loss Ratio"
-          value={`%${formatAmount(lossRatio)}`}
+          title={METRIC_LABELS.lossRatio}
+          value={`%${formatAmount(overviewLossRatio)}`}
           chipClass="chip-neutral"
-          helpText="Hasar / Prim oranı. ≤55% iyi, 55-70% normal, >70% riskli."
+          helpText="Seçili versiyonun toplam hasar / prim oranı."
         />
       </div>
 
@@ -750,18 +843,38 @@ export function BudgetEntryPage() {
             />
           </div>
           <div className="col-span-12 lg:col-span-9">
-            {selection?.kind === 'segment' && selectedSegmentData ? (
-              <SegmentSummaryPanel
-                segment={selectedSegmentData}
-                onGoToCustomerMode={(customerId) => {
-                  setSelection({
-                    kind: 'customer',
-                    customerId,
-                    segmentId: selectedSegmentData.segmentId,
-                  })
-                  setMode('customer')
-                }}
-              />
+            {activeSegmentData ? (
+              <>
+                {selection?.kind === 'customer' && selectedCustomerData ? (
+                  <CustomerSummaryPanel
+                    customer={selectedCustomerData}
+                    onOpenCustomerMode={() => setMode('customer')}
+                  />
+                ) : (
+                  <SegmentSummaryPanel segment={activeSegmentData} />
+                )}
+                <SegmentCustomersTable
+                  segment={activeSegmentData}
+                  selectedCustomerId={
+                    selection?.kind === 'customer' ? selection.customerId : null
+                  }
+                  onSelectCustomer={(customerId) =>
+                    setSelection({
+                      kind: 'customer',
+                      customerId,
+                      segmentId: activeSegmentData.segmentId,
+                    })
+                  }
+                  onGoToCustomerMode={(customerId) => {
+                    setSelection({
+                      kind: 'customer',
+                      customerId,
+                      segmentId: activeSegmentData.segmentId,
+                    })
+                    setMode('customer')
+                  }}
+                />
+              </>
             ) : selectedOpex ? (
               <BudgetOpexGrid opex={selectedOpex} />
             ) : (
@@ -774,23 +887,48 @@ export function BudgetEntryPage() {
       ) : (
         <div>
           <div className="card mb-4 flex flex-wrap items-center gap-3">
-            <span className="label-sm">Müşteri Seç</span>
+            <span className="label-sm">Kategori Seç</span>
+            <select
+              className="select min-w-[260px]"
+              value={customerModeSegmentId ?? ALL_OPTION}
+              onChange={(e) => {
+                if (e.target.value === ALL_OPTION) {
+                  setCustomerModeSegmentId(null)
+                  setCustomerModeCustomerId(null)
+                  return
+                }
+                const id = Number(e.target.value)
+                setCustomerModeSegmentId(id)
+                setCustomerModeCustomerId(null)
+              }}
+              disabled={!tree || tree.segments.length === 0}
+            >
+              <option value={ALL_OPTION}>Tümü</option>
+              {(tree?.segments ?? []).map((segment) => (
+                <option key={segment.segmentId} value={segment.segmentId}>
+                  {segment.segmentName}
+                </option>
+              ))}
+            </select>
+            <span className="label-sm">{customerModeLabel}</span>
             <select
               className="select min-w-[420px]"
-              value={selectedCustomerId ?? ''}
+              value={customerModeCustomerId ?? ALL_OPTION}
               onChange={(e) => {
-                const id = e.target.value === '' ? null : Number(e.target.value)
+                if (e.target.value === ALL_OPTION) {
+                  setCustomerModeCustomerId(null)
+                  return
+                }
+                const id = Number(e.target.value)
                 const cust = customers.find((c) => c.id === id)
-                setSelection(
-                  id && cust
-                    ? { kind: 'customer', customerId: id, segmentId: cust.segmentId }
-                    : null,
-                )
+                if (!cust) return
+                setCustomerModeSegmentId(cust.segmentId)
+                setCustomerModeCustomerId(cust.id)
               }}
               disabled={customers.length === 0}
             >
-              <option value="">—</option>
-              {customers.map((c) => {
+              <option value={ALL_OPTION}>{customerModeAllLabel}</option>
+              {customerModeFilteredCustomers.map((c) => {
                 const done = completedCustomerIds.has(c.id)
                 return (
                   <option key={c.id} value={c.id}>
@@ -805,7 +943,7 @@ export function BudgetEntryPage() {
               <button
                 type="button"
                 className="btn-secondary"
-                disabled={!isEditable || selectedCustomerId == null}
+                disabled={!isEditable || customerModeCustomerId == null}
                 onClick={() => setModal('copy')}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
@@ -816,7 +954,7 @@ export function BudgetEntryPage() {
               <button
                 type="button"
                 className="btn-secondary"
-                disabled={!isEditable || selectedCustomerId == null}
+                disabled={!isEditable || customerModeCustomerId == null}
                 onClick={() => setModal('grow')}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
@@ -827,7 +965,7 @@ export function BudgetEntryPage() {
             </div>
           </div>
 
-          {selection?.kind === 'customer' ? (
+          {customerModeCustomerId !== null ? (
             <BudgetCustomerGrid
               contracts={gridContracts}
               values={values}
@@ -836,9 +974,24 @@ export function BudgetEntryPage() {
               onCellDelete={deleteCellHandler}
             />
           ) : (
-            <div className="card text-sm text-on-surface-variant">
-              Müşteri seçin — aylık plan burada açılacak.
-            </div>
+            <FilteredCustomersTable
+              customers={customers.filter((c) =>
+                customerModeSegmentId ? c.segmentId === customerModeSegmentId : true,
+              )}
+              scopeLabel={
+                customerModeSegmentId
+                  ? (tree?.segments.find((segment) => segment.segmentId === customerModeSegmentId)
+                      ?.segmentName ?? 'Seçili kategori')
+                  : 'Tüm müşteriler'
+              }
+              completedCustomerIds={completedCustomerIds}
+              onSelectCustomer={(customerId) => {
+                const customer = customers.find((c) => c.id === customerId)
+                if (!customer) return
+                setCustomerModeSegmentId(customer.segmentId)
+                setCustomerModeCustomerId(customer.id)
+              }}
+            />
           )}
         </div>
       )}
@@ -846,7 +999,7 @@ export function BudgetEntryPage() {
       {modal === 'copy' && versionId ? (
         <CopyFromYearModal
           versionId={versionId}
-          customerId={selectedCustomerId}
+          customerId={customerModeCustomerId}
           years={years}
           currentYearId={yearId}
           onClose={() => setModal(null)}
@@ -856,7 +1009,7 @@ export function BudgetEntryPage() {
       {modal === 'grow' && versionId ? (
         <GrowByPercentModal
           versionId={versionId}
-          customerId={selectedCustomerId}
+          customerId={customerModeCustomerId}
           onClose={() => setModal(null)}
           onSuccess={handleModalSuccess}
         />
@@ -881,15 +1034,24 @@ function KpiCard({
   chipClass,
   note,
   helpText,
+  tone = 'neutral',
 }: {
   title: string
   value: string
   chipClass: string
   note?: string
   helpText?: string
+  tone?: 'neutral' | 'category' | 'customer'
 }) {
+  const toneClass =
+    tone === 'category'
+      ? 'border border-[#f5c7c3] bg-[#fff7f5]'
+      : tone === 'customer'
+        ? 'border border-[#c9d8ff] bg-[#f5f8ff]'
+        : ''
+
   return (
-    <div className="col-span-12 md:col-span-3 card">
+    <div className={`col-span-12 md:col-span-3 card ${toneClass}`}>
       <div className="flex items-center gap-2">
         <span className="label-sm">
           {title}
@@ -922,12 +1084,20 @@ interface SegmentSummary {
   customers: SegmentCustomerRow[]
 }
 
+interface CustomerSummary {
+  customerId: number
+  customerCode: string
+  customerName: string
+  activeContractCount: number
+  revenueTotalTry: number
+  claimTotalTry: number
+  lossRatioPercent: number
+}
+
 function SegmentSummaryPanel({
   segment,
-  onGoToCustomerMode,
 }: {
   segment: SegmentSummary
-  onGoToCustomerMode: (customerId: number) => void
 }) {
   const segmentLossRatio =
     segment.revenueTotalTry > 0
@@ -940,21 +1110,27 @@ function SegmentSummaryPanel({
 
   return (
     <>
-      <div className="card mb-4 flex items-center gap-4">
+      <div className="card mb-4 flex items-center gap-4 border-l-4 border-l-primary">
         <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
           <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
             category
           </span>
         </div>
         <div className="flex-1">
-          <p className="text-[0.65rem] text-on-surface-variant font-semibold uppercase tracking-[0.08em]">
-            Seçili kategori
-          </p>
-          <h3 className="text-[1.5rem] leading-none font-black tracking-display text-on-surface mt-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="chip chip-info">Kategori Özeti</span>
+            <p className="text-[0.65rem] text-on-surface-variant font-semibold uppercase tracking-[0.08em]">
+              Seçili kategori
+            </p>
+          </div>
+          <h3 className="text-[1.5rem] leading-none font-black tracking-display text-on-surface mt-2">
             {segment.segmentName}
           </h3>
           <p className="text-sm text-on-surface-variant mt-1">
-            {segment.customers.length} müşteri · Toplam gelir {formatCompact(segment.revenueTotalTry)} · Loss Ratio %
+            Bu alandaki kartlar, kategorinin altındaki tum musteri toplamlarini gosterir.
+          </p>
+          <p className="text-sm text-on-surface-variant mt-1">
+            {segment.customers.length} müşteri · {METRIC_LABELS.revenue} {formatCompact(segment.revenueTotalTry)} · {METRIC_LABELS.lossRatio} %
             {formatAmount(segmentLossRatio)}
           </p>
         </div>
@@ -962,62 +1138,168 @@ function SegmentSummaryPanel({
 
       <div className="grid grid-cols-12 gap-4 mb-4">
         <KpiCard
-          title="Plan Gelir"
+          title={METRIC_LABELS.revenue}
           value={formatCompact(segment.revenueTotalTry)}
           chipClass="chip-info"
+          tone="category"
         />
         <KpiCard
-          title="Plan Hasar"
+          title={METRIC_LABELS.claims}
           value={formatCompact(segment.claimTotalTry)}
           chipClass="chip-error"
+          tone="category"
         />
         <KpiCard
-          title="Teknik Marj"
+          title={METRIC_LABELS.technicalMargin}
           value={formatCompact(segmentMargin)}
           chipClass="chip-neutral"
           note={`%${formatAmount(marginPct)} marj`}
+          tone="category"
         />
         <KpiCard
-          title="Loss Ratio"
+          title={METRIC_LABELS.lossRatio}
           value={`%${formatAmount(segmentLossRatio)}`}
           chipClass="chip-neutral"
+          tone="category"
         />
       </div>
+    </>
+  )
+}
 
-      <div className="card p-0 overflow-hidden">
-        <div className="p-4 flex items-center justify-between border-b border-outline-variant">
-          <div>
-            <h4 className="text-base font-bold">Kategoriye bağlı müşteriler</h4>
-            <p className="text-xs text-on-surface-variant mt-1">
-              Detaylı aylık giriş için müşteri satırına tıkla — Müşteri Odaklı Giriş
-              sekmesine geçilir.
+function CustomerSummaryPanel({
+  customer,
+  onOpenCustomerMode,
+}: {
+  customer: CustomerSummary
+  onOpenCustomerMode: () => void
+}) {
+  const technicalMargin = customer.revenueTotalTry - customer.claimTotalTry
+  const marginPct =
+    customer.revenueTotalTry > 0
+      ? (technicalMargin / customer.revenueTotalTry) * 100
+      : 0
+
+  return (
+    <>
+      <div className="card mb-4 flex items-center gap-4 border-l-4 border-l-[#002366]">
+        <div className="w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
+            person
+          </span>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="chip chip-neutral">Müşteri Özeti</span>
+            <p className="text-[0.65rem] text-on-surface-variant font-semibold uppercase tracking-[0.08em]">
+              Seçili müşteri
             </p>
           </div>
-        </div>
-        {segment.customers.length === 0 ? (
-          <p className="p-6 text-sm text-on-surface-variant">
-            Bu kategoride henüz müşteri yok.
+          <h3 className="text-[1.5rem] leading-none font-black tracking-display text-on-surface mt-2">
+            {customer.customerName}
+          </h3>
+          <p className="text-sm text-on-surface-variant mt-1">
+            Bu alandaki kartlar yalnızca seçilen müşterinin verilerini gösterir.
           </p>
-        ) : (
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th>Müşteri</th>
-                <th className="text-right">Plan Gelir (TL)</th>
-                <th className="text-right">Plan Hasar (TL)</th>
-                <th className="text-right">Loss Ratio</th>
-                <th className="text-right">Aktif Kontrat</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {segment.customers.map((c) => (
-                <tr key={c.customerId}>
+          <p className="text-sm text-on-surface-variant mt-1">
+            {customer.customerCode} · {customer.activeContractCount} aktif kontrat
+          </p>
+        </div>
+        <button type="button" className="btn-secondary" onClick={onOpenCustomerMode}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            arrow_forward
+          </span>
+          Müşteri Odaklı Girişte Aç
+        </button>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        <KpiCard
+          title={METRIC_LABELS.revenue}
+          value={formatCompact(customer.revenueTotalTry)}
+          chipClass="chip-info"
+          tone="customer"
+        />
+        <KpiCard
+          title={METRIC_LABELS.claims}
+          value={formatCompact(customer.claimTotalTry)}
+          chipClass="chip-error"
+          tone="customer"
+        />
+        <KpiCard
+          title={METRIC_LABELS.technicalMargin}
+          value={formatCompact(technicalMargin)}
+          chipClass="chip-neutral"
+          note={`%${formatAmount(marginPct)} marj`}
+          tone="customer"
+        />
+        <KpiCard
+          title={METRIC_LABELS.lossRatio}
+          value={`%${formatAmount(customer.lossRatioPercent)}`}
+          chipClass="chip-neutral"
+          tone="customer"
+        />
+      </div>
+    </>
+  )
+}
+
+function SegmentCustomersTable({
+  segment,
+  selectedCustomerId,
+  onSelectCustomer,
+  onGoToCustomerMode,
+}: {
+  segment: SegmentSummary
+  selectedCustomerId: number | null
+  onSelectCustomer: (customerId: number) => void
+  onGoToCustomerMode: (customerId: number) => void
+}) {
+  return (
+    <div className="card p-0 overflow-hidden">
+      <div className="p-4 flex items-center justify-between border-b border-outline-variant">
+        <div>
+          <h4 className="text-base font-bold">Kategoriye bağlı müşteriler</h4>
+          <p className="text-xs text-on-surface-variant mt-1">
+            Müşteri seçildiğinde liste görünür kalır; yalnızca üst özet seçilen müşteriye döner.
+          </p>
+        </div>
+      </div>
+      {segment.customers.length === 0 ? (
+        <p className="p-6 text-sm text-on-surface-variant">
+          Bu kategoride henüz müşteri yok.
+        </p>
+      ) : (
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Müşteri</th>
+              <th className="text-right">{METRIC_LABELS.revenue} (TL)</th>
+              <th className="text-right">{METRIC_LABELS.claims} (TL)</th>
+              <th className="text-right">{METRIC_LABELS.lossRatio}</th>
+              <th className="text-right">Aktif Kontrat</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {segment.customers.map((c) => {
+              const isSelected = selectedCustomerId === c.customerId
+              return (
+                <tr
+                  key={c.customerId}
+                  className={isSelected ? 'bg-[#f5f8ff]' : undefined}
+                >
                   <td>
-                    <div className="font-semibold">{c.customerName}</div>
-                    <div className="text-[0.65rem] text-on-surface-variant font-mono">
-                      {c.customerCode}
-                    </div>
+                    <button
+                      type="button"
+                      className="text-left"
+                      onClick={() => onSelectCustomer(c.customerId)}
+                    >
+                      <div className="font-semibold">{c.customerName}</div>
+                      <div className="text-[0.65rem] text-on-surface-variant font-mono">
+                        {c.customerCode}
+                      </div>
+                    </button>
                   </td>
                   <td className="text-right num">{formatAmount(c.revenueTotalTry)}</td>
                   <td className="text-right num">{formatAmount(c.claimTotalTry)}</td>
@@ -1038,12 +1320,96 @@ function SegmentSummaryPanel({
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              )
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  )
+}
+
+function FilteredCustomersTable({
+  customers,
+  scopeLabel,
+  completedCustomerIds,
+  onSelectCustomer,
+}: {
+  customers: CustomerRow[]
+  scopeLabel: string
+  completedCustomerIds: Set<number>
+  onSelectCustomer: (customerId: number) => void
+}) {
+  const completedCount = customers.filter((customer) =>
+    completedCustomerIds.has(customer.id),
+  ).length
+
+  return (
+    <div className="card p-0 overflow-hidden">
+      <div className="p-4 border-b border-outline-variant">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h4 className="text-base font-bold">Toplu Çalışma Paneli</h4>
+            <p className="text-xs text-on-surface-variant mt-1">
+              Kapsam: <span className="font-semibold text-on-surface">{scopeLabel}</span>
+            </p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <span className="chip chip-neutral">{customers.length} müşteri</span>
+            <span className="chip chip-success">{completedCount} dolu</span>
+          </div>
+        </div>
+        <p className="text-xs text-on-surface-variant mt-3">
+          Kategori filtresine göre müşterileri görün, tekil seçim yapınca ürün listesi açılır.
+        </p>
       </div>
-    </>
+      {customers.length === 0 ? (
+        <p className="p-6 text-sm text-on-surface-variant">
+          Bu filtre için müşteri bulunamadı.
+        </p>
+      ) : (
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Müşteri</th>
+              <th>Segment</th>
+              <th>Durum</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {customers.map((customer: CustomerRow) => (
+              <tr key={customer.id}>
+                <td>
+                  <div className="font-semibold">{customer.name}</div>
+                  <div className="text-[0.65rem] text-on-surface-variant font-mono">
+                    {customer.code}
+                  </div>
+                </td>
+                <td>{customer.segmentName ?? '—'}</td>
+                <td>
+                  <span className={`chip ${completedCustomerIds.has(customer.id) ? 'chip-success' : 'chip-neutral'}`}>
+                    {completedCustomerIds.has(customer.id) ? 'Dolu' : 'Boş'}
+                  </span>
+                </td>
+                <td className="text-right">
+                  <button
+                    type="button"
+                    className="p-1 text-on-surface-variant hover:text-primary"
+                    title="Bu müşteriyi aç"
+                    onClick={() => onSelectCustomer(customer.id)}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                      arrow_forward
+                    </span>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   )
 }
 

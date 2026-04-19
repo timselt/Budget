@@ -7,6 +7,7 @@ import {
   formatPercent,
   formatSignedPercent,
 } from '../lib/number-format'
+import { METRIC_LABELS } from '../lib/metric-labels'
 import { PageIntro } from '../components/shared/PageIntro'
 
 interface BudgetYearRow {
@@ -350,28 +351,28 @@ export function ScenariosPage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
                 <ScenarioMetricCard
-                  label="EBITDA"
+                  label={METRIC_LABELS.ebitda}
                   base={previewQuery.data.base.ebitda}
                   scenario={previewQuery.data.scenario.ebitda}
                   delta={previewQuery.data.delta.ebitda}
                   kind="amount"
                 />
                 <ScenarioMetricCard
-                  label="Net Kar"
+                  label={METRIC_LABELS.netProfit}
                   base={previewQuery.data.base.netProfit}
                   scenario={previewQuery.data.scenario.netProfit}
                   delta={previewQuery.data.delta.netProfit}
                   kind="amount"
                 />
                 <ScenarioMetricCard
-                  label="Loss Ratio"
+                  label={METRIC_LABELS.lossRatio}
                   base={previewQuery.data.base.lossRatio}
                   scenario={previewQuery.data.scenario.lossRatio}
                   delta={previewQuery.data.delta.lossRatio}
                   kind="ratio"
                 />
                 <ScenarioMetricCard
-                  label="Combined Ratio"
+                  label={METRIC_LABELS.combinedRatio}
                   base={previewQuery.data.base.combinedRatio}
                   scenario={previewQuery.data.scenario.combinedRatio}
                   delta={previewQuery.data.delta.combinedRatio}
@@ -467,31 +468,31 @@ export function ScenariosPage() {
                   </thead>
                   <tbody>
                     <CompareRow
-                      label="EBITDA"
+                      label={METRIC_LABELS.ebitda}
                       base={compareQuery.data.base.ebitda}
                       values={compareQuery.data.scenarios.map((scenario) => scenario.pnl.ebitda)}
                       kind="amount"
                     />
                     <CompareRow
-                      label="Net Kar"
+                      label={METRIC_LABELS.netProfit}
                       base={compareQuery.data.base.netProfit}
                       values={compareQuery.data.scenarios.map((scenario) => scenario.pnl.netProfit)}
                       kind="amount"
                     />
                     <CompareRow
-                      label="Loss Ratio"
+                      label={METRIC_LABELS.lossRatio}
                       base={compareQuery.data.base.lossRatio}
                       values={compareQuery.data.scenarios.map((scenario) => scenario.pnl.lossRatio)}
                       kind="ratio"
                     />
                     <CompareRow
-                      label="Combined Ratio"
+                      label={METRIC_LABELS.combinedRatio}
                       base={compareQuery.data.base.combinedRatio}
                       values={compareQuery.data.scenarios.map((scenario) => scenario.pnl.combinedRatio)}
                       kind="ratio"
                     />
                     <CompareRow
-                      label="Teknik Marj"
+                      label={METRIC_LABELS.technicalMargin}
                       base={compareQuery.data.base.technicalMargin}
                       values={compareQuery.data.scenarios.map((scenario) => scenario.pnl.technicalMargin)}
                       kind="amount"
@@ -695,18 +696,18 @@ function ScenarioCompareCard({ item }: { item: ScenarioComparisonItem }) {
           </p>
         </div>
         <span className={`chip ${item.delta.netProfit >= 0 ? 'chip-success' : 'chip-error'}`}>
-          Net {formatSignedAmount(item.delta.netProfit)}
+          {METRIC_LABELS.netProfit} {formatSignedAmount(item.delta.netProfit)}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-3 mt-4">
         <div className="rounded-lg bg-white p-3">
-          <p className="text-xs text-on-surface-variant uppercase tracking-wide">EBITDA</p>
+          <p className="text-xs text-on-surface-variant uppercase tracking-wide">{METRIC_LABELS.ebitda}</p>
           <p className="mt-2 text-lg font-black text-on-surface num">
             {formatCompactAmount(item.pnl.ebitda)}
           </p>
         </div>
         <div className="rounded-lg bg-white p-3">
-          <p className="text-xs text-on-surface-variant uppercase tracking-wide">Combined Ratio</p>
+          <p className="text-xs text-on-surface-variant uppercase tracking-wide">{METRIC_LABELS.combinedRatio}</p>
           <p className="mt-2 text-lg font-black text-on-surface num">
             {formatPercent(item.pnl.combinedRatio * 100, 1)}
           </p>

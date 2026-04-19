@@ -1,6 +1,7 @@
 import { MONTHS } from './types'
 import { formatAmount, toNumber } from './utils'
 import { formatPercent } from '../../lib/number-format'
+import { METRIC_LABELS } from '../../lib/metric-labels'
 import { cellKey } from './budget-grid-types'
 import type { CellId, ContractRow, EntryKind, GridValues } from './budget-grid-types'
 
@@ -161,7 +162,7 @@ export function BudgetCustomerGrid({
 
             {/* LOSS RATIO */}
             <tr>
-              <td className="font-semibold">Loss Ratio</td>
+              <td className="font-semibold">{METRIC_LABELS.lossRatio}</td>
               {monthTotals.map((t) => {
                 const lr = t.revenueSum > 0 ? (t.claimSum / t.revenueSum) * 100 : 0
                 return (
