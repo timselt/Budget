@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { resetOnboardingTour } from '../components/shared/OnboardingTour'
 
 type Tab = 'users' | 'companies'
 
@@ -65,6 +66,20 @@ export function AdminPage() {
         <div>
           <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Yönetim</h2>
         </div>
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={() => {
+            resetOnboardingTour()
+            window.location.reload()
+          }}
+          title="İlk kullanım rehber balonlarını yeniden başlat"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            replay
+          </span>
+          Tanıtımı Tekrar Göster
+        </button>
       </div>
 
       <div className="flex gap-1 mb-4 bg-surface-container-low rounded-lg p-1 w-fit">

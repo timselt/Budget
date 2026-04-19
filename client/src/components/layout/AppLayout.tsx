@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { TopNavBar } from './TopNavBar'
+import { OnboardingTour } from '../shared/OnboardingTour'
 
 export function AppLayout() {
   return (
@@ -14,6 +15,7 @@ export function AppLayout() {
           </div>
         </main>
       </div>
+      <OnboardingTour />
     </div>
   )
 }
