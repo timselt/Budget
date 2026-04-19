@@ -11,8 +11,10 @@ using BudgetTracker.Application.ExpenseCategories;
 using BudgetTracker.Application.Expenses;
 using BudgetTracker.Application.PriceBooks;
 using BudgetTracker.Application.Reconciliation.Batches;
+using BudgetTracker.Application.Reconciliation.Cases;
 using BudgetTracker.Application.Reconciliation.Import;
 using BudgetTracker.Infrastructure.Reconciliation.Batches;
+using BudgetTracker.Infrastructure.Reconciliation.Cases;
 using BudgetTracker.Infrastructure.Reconciliation.Import;
 using BudgetTracker.Application.Pricing;
 using BudgetTracker.Application.Products;
@@ -128,6 +130,9 @@ public static class DependencyInjection
         services.AddScoped<CsvStreamReader>();
         services.AddScoped<IReconciliationImportParser, ReconciliationImportParser>();
         services.AddScoped<IReconciliationBatchService, ReconciliationBatchService>();
+
+        // Mutabakat Sprint 2 — Case/Line auto-creation (Task 4).
+        services.AddScoped<IReconciliationCaseAutoCreator, ReconciliationCaseAutoCreator>();
         services.AddScoped<IBudgetEntryService, BudgetEntryService>();
         services.AddScoped<IBudgetTreeService, BudgetTreeService>();
         services.AddScoped<IBudgetOperationsService, BudgetOperationsService>();
