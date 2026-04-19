@@ -8,6 +8,7 @@ Tur Assist Grubu için çoklu kiracılı, KVKK uyumlu bütçe planlama ve perfor
 > - `docs/architecture.md` — ADR-0001 → ADR-0011 karar geçmişi
 > - `docs/MIGRATION_PLAN.md` — fazların yol haritası + kabul kriterleri
 > - `docs/BUDGET_WORKFLOW.md` — güncel bütçe yönetim akışı + rol bazlı kullanım
+> - `docs/RECONCILIATION_BILLING_COLLECTIONS.md` — mutabakat, faturalama ve tahsilat modülü iş akışı
 > - `CHANGELOG.md` — her PR için teslim kaydı
 
 ## Hızlı Başlangıç (< 10 dk)

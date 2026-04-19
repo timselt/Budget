@@ -16,6 +16,9 @@ import {
   GrowByPercentModal,
 } from '../components/budget-planning/QuickActionModals'
 import { ExcelImportModal } from '../components/budget-planning/ExcelImportModal'
+import { WorkContextBar } from '../components/budget-planning/WorkContextBar'
+import { SubmissionChecklist } from '../components/budget-planning/SubmissionChecklist'
+import { useSubmissionChecklist } from '../components/budget-planning/useSubmissionChecklist'
 import { BudgetPeriodsPage } from './BudgetPeriodsPage'
 import { translateApiError } from '../lib/api-error'
 import {
@@ -35,7 +38,6 @@ import {
 import type { CustomerContractRow } from '../components/budget-planning/api'
 import {
   CURRENCIES,
-  getStatusChipClass,
   getStatusLabel,
   IN_PROGRESS_STATUSES,
   isEditableStatus,
@@ -253,6 +255,14 @@ export function BudgetEntryPage() {
     IN_PROGRESS_STATUSES.has(v.status as BudgetVersionStatus),
   )
 
+  // Onaya hazırlık checklist (esnek: 1 sert + 4 yumuşak kural)
+  const checklist = useSubmissionChecklist({
+    customers,
+    entries,
+    expenseEntries: [],
+    scenarioId,
+  })
+
   const margin = revenueTotal - claimTotal
   const lossRatio = lossRatioPercent(revenueTotal, claimTotal)
   const marginPct = marginPercent(revenueTotal, claimTotal)
@@ -459,7 +469,15 @@ export function BudgetEntryPage() {
             }
             onClick={() => {
               if (!isEditable || !allCustomersComplete) return
-              if (!confirm('Bu versiyon onaya gönderilecek. Emin misiniz?')) return
+              const warningList = checklist.items
+                .filter((i) => i.level === 'warn')
+                .map((i) => `   • ${i.message}`)
+                .join('\n')
+              const msg =
+                checklist.warnCount > 0
+                  ? `Bu versiyon onaya gönderilecek.\n\n⚠ Uyarılar (göndermeyi engellemez):\n${warningList}\n\nDevam etmek istiyor musunuz?`
+                  : 'Bu versiyon onaya gönderilecek. Emin misiniz?'
+              if (!confirm(msg)) return
               setSubmitError(null)
               submitMutation.mutate()
             }}
@@ -591,87 +609,25 @@ export function BudgetEntryPage() {
       {createDraftError ? (
         <div className="card mb-4 text-sm text-error">{createDraftError}</div>
       ) : null}
-      {yearId && currentVersion && !isEditable ? (
-        <div className="card mb-4 flex items-center gap-4 border-l-4 border-primary">
-          <span
-            className="material-symbols-outlined text-primary"
-            style={{ fontSize: 24 }}
-          >
-            lock
-          </span>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-on-surface">
-              {currentVersion.name} —{' '}
-              <strong>{getStatusLabel(currentVersion.status)}</strong>{' '}
-              <span className="text-on-surface-variant">(salt-okunur)</span>
-            </p>
-            <p className="text-xs text-on-surface-variant mt-0.5">
-              {hasInProgressDraft
-                ? 'Bu yılda zaten çalışılan bir taslak var. Devam etmek için Versiyon dropdown\'undan onu seç.'
-                : 'Revize etmek için yeni bir revizyon taslağı açabilirsin. Aktif versiyondaki tüm girişler yeni taslağa kopyalanır.'}
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={createDraftMutation.isPending || hasInProgressDraft}
-            title={
-              hasInProgressDraft
-                ? 'Bu yılda zaten çalışılan bir taslak var (yıl başına tek invariant).'
-                : undefined
-            }
-            onClick={() => {
-              if (hasInProgressDraft) return
-              setCreateDraftError(null)
-              createDraftMutation.mutate()
-            }}
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              edit_note
-            </span>
-            {createDraftMutation.isPending
-              ? 'Oluşturuluyor…'
-              : 'Revizyon Taslağı Oluştur'}
-          </button>
-        </div>
-      ) : null}
-      {yearId && currentVersion && isEditable ? (
-        <div className="card mb-4">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-sm font-semibold text-on-surface">
-              {currentVersion.name}
-            </span>
-            <span className={`chip ${getStatusChipClass(currentVersion.status)}`}>
-              {getStatusLabel(currentVersion.status)}
-            </span>
-            {allCustomersComplete ? (
-              <span className="chip chip-success">Hepsi Tamam ✓</span>
-            ) : null}
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex-1 max-w-md">
-              <div className="h-2 bg-surface-container-low rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all"
-                  style={{
-                    width:
-                      totalCustomerCount > 0
-                        ? `${(completedCustomerCount / totalCustomerCount) * 100}%`
-                        : '0%',
-                  }}
-                />
-              </div>
-            </div>
-            <span className="text-xs text-on-surface-variant num whitespace-nowrap">
-              {completedCustomerCount}/{totalCustomerCount} müşteri tamamlandı
-            </span>
-            {!allCustomersComplete && missingCustomerCount > 0 ? (
-              <span className="text-xs text-on-surface-variant">
-                · {missingCustomerCount} müşteride henüz tutar girilmedi
-              </span>
-            ) : null}
-          </div>
-        </div>
+      {yearId && currentVersion ? (
+        <WorkContextBar
+          yearLabel={years.find((y) => y.id === yearId)?.year ?? 0}
+          version={currentVersion}
+          isEditable={isEditable}
+          completedCount={completedCustomerCount}
+          totalCount={totalCustomerCount}
+          currency={currency}
+          scenarioName={scenarios.find((s) => s.id === scenarioId)?.name}
+          onCreateRevision={
+            hasInProgressDraft
+              ? undefined
+              : () => {
+                  setCreateDraftError(null)
+                  createDraftMutation.mutate()
+                }
+          }
+          createRevisionPending={createDraftMutation.isPending}
+        />
       ) : null}
 
       <div className="grid grid-cols-12 gap-4 mb-4">
@@ -689,6 +645,10 @@ export function BudgetEntryPage() {
           chipClass="chip-neutral"
         />
       </div>
+
+      {isEditable && currentVersion && mode !== 'versions' ? (
+        <SubmissionChecklist result={checklist} />
+      ) : null}
 
       {mode === 'versions' ? (
         <BudgetPeriodsPage embedded />
