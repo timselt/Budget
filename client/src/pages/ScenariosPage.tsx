@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { PageIntro } from '../components/shared/PageIntro'
 
 interface BudgetYearRow {
   id: number
@@ -96,24 +97,23 @@ export function ScenariosPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
-            Senaryolar
-          </h2>
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          disabled={!versionId}
-          onClick={() => setShowModal(true)}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            add
-          </span>
-          Yeni Senaryo
-        </button>
-      </div>
+      <PageIntro
+        title="Senaryolar"
+        purpose="Gelir/hasar/gider varsayımlarını % bazında değiştirerek bütçenin hassasiyet analizini yapın. Senaryolar baz bütçeyi değiştirmez — Dashboard ve raporlarda karşılaştırmalı görünür."
+        actions={
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!versionId}
+            onClick={() => setShowModal(true)}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              add
+            </span>
+            Yeni Senaryo
+          </button>
+        }
+      />
 
       <div className="card mb-4 flex gap-3 flex-wrap items-center">
         <label className="label-sm">Yıl</label>

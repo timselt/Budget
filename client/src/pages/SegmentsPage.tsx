@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { PageIntro } from '../components/shared/PageIntro'
+import { EmptyState } from '../components/shared/EmptyState'
 
 interface SegmentRow {
   id: number
@@ -29,23 +31,22 @@ export function SegmentsPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
-            Müşteri Kategorileri (Segment)
-          </h2>
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => setModal({ kind: 'create' })}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            add
-          </span>
-          Yeni Kategori
-        </button>
-      </div>
+      <PageIntro
+        title="Segmentler"
+        purpose="Müşteri sınıflandırması için kullanılır — bütçe, sapma ve raporlarda müşteriler bu segmentlere göre gruplanır."
+        actions={
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setModal({ kind: 'create' })}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              add
+            </span>
+            Yeni Segment
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-12 gap-6 mb-6">
         <div className="col-span-12 md:col-span-3 card">
@@ -61,9 +62,23 @@ export function SegmentsPage() {
         ) : segmentsQuery.isError ? (
           <p className="px-4 py-6 text-sm text-error">Kategoriler alınamadı.</p>
         ) : segments.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-on-surface-variant">
-            Henüz kategori yok. "Yeni Kategori" ile ekleyin.
-          </p>
+          <EmptyState
+            icon="category"
+            title="Henüz segment yok"
+            description='Yeni segment ekleyin — müşteriler bu segmentlere göre gruplandırılır (örn. "KOBİ", "Kurumsal").'
+            cta={
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setModal({ kind: 'create' })}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                  add
+                </span>
+                Yeni Segment
+              </button>
+            }
+          />
         ) : (
           <table className="tbl">
             <thead>
