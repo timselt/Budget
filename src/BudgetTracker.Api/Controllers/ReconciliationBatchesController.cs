@@ -164,6 +164,57 @@ public sealed class ReconciliationBatchesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// GET /api/v1/reconciliation/batches/{id}/unmatched-customers — Sprint 2 Task 8.
+    /// Customer eşleşmeyen benzersiz external_customer_ref'ler + satır sayıları.
+    /// </summary>
+    [HttpGet("{id:int}/unmatched-customers")]
+    [Authorize(Policy = "Reconciliation.ViewReports")]
+    public async Task<IActionResult> GetUnmatchedCustomers(int id, CancellationToken cancellationToken)
+    {
+        var companyId = _tenant.CurrentCompanyId
+            ?? throw new InvalidOperationException("tenant context missing company_id");
+        var result = await _service.GetUnmatchedCustomersAsync(id, companyId, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// POST /api/v1/reconciliation/batches/{id}/unmatched-customers/{ref}/link — Sprint 2 Task 8.
+    /// Customer'a external_ref bağlar + autoCreator idempotent re-run (yeni Case/Line).
+    /// </summary>
+    [HttpPost("{id:int}/unmatched-customers/{externalRef}/link")]
+    [Authorize(Policy = "Reconciliation.Manage")]
+    public async Task<IActionResult> LinkUnmatchedCustomer(
+        int id,
+        string externalRef,
+        [FromBody] LinkUnmatchedCustomerRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.CustomerId <= 0)
+            return BadRequest(new { error = "customerId > 0 required" });
+        if (string.IsNullOrWhiteSpace(externalRef))
+            return BadRequest(new { error = "externalRef required" });
+
+        var companyId = _tenant.CurrentCompanyId
+            ?? throw new InvalidOperationException("tenant context missing company_id");
+        var userId = this.GetRequiredUserId();
+
+        try
+        {
+            var result = await _service.LinkUnmatchedCustomerAsync(
+                id, externalRef, request.CustomerId, companyId, userId, cancellationToken);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     private static async Task<MemoryStream> CopyToMemoryStreamAsync(
         Stream source, CancellationToken cancellationToken)
     {

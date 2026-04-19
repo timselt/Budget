@@ -229,6 +229,83 @@ public sealed class ReconciliationBatchService : IReconciliationBatchService
         return true;
     }
 
+    public async Task<IReadOnlyList<UnmatchedCustomerRefDto>> GetUnmatchedCustomersAsync(
+        int batchId, int companyId, CancellationToken cancellationToken = default)
+    {
+        // Bu batch'e ait tüm external_customer_ref'leri + customer match durumlarıyla çek.
+        var rows = await _db.ReconciliationSourceRows.AsNoTracking()
+            .Where(r => r.BatchId == batchId && r.ParseStatus == ReconciliationParseStatus.Ok)
+            .Select(r => new { r.ExternalCustomerRef, r.ExternalDocumentRef })
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        if (rows.Count == 0) return Array.Empty<UnmatchedCustomerRefDto>();
+
+        var uniqueRefs = rows
+            .Select(r => r.ExternalCustomerRef)
+            .Where(r => !string.IsNullOrWhiteSpace(r))
+            .Distinct()
+            .ToList();
+
+        var matchedRefs = await _db.Customers.AsNoTracking()
+            .Where(c => c.CompanyId == companyId
+                && c.ExternalCustomerRef != null
+                && uniqueRefs.Contains(c.ExternalCustomerRef))
+            .Select(c => c.ExternalCustomerRef!)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var matchedSet = new HashSet<string>(matchedRefs, StringComparer.OrdinalIgnoreCase);
+
+        return rows
+            .Where(r => !matchedSet.Contains(r.ExternalCustomerRef ?? string.Empty))
+            .GroupBy(r => r.ExternalCustomerRef)
+            .Select(g => new UnmatchedCustomerRefDto(
+                ExternalCustomerRef: g.Key ?? string.Empty,
+                RowCount: g.Count(),
+                SampleDocumentRefs: g
+                    .Select(r => r.ExternalDocumentRef ?? string.Empty)
+                    .Where(s => !string.IsNullOrEmpty(s))
+                    .Distinct()
+                    .Take(5)
+                    .ToList()))
+            .OrderByDescending(d => d.RowCount)
+            .ToList();
+    }
+
+    public async Task<LinkUnmatchedCustomerResult> LinkUnmatchedCustomerAsync(
+        int batchId, string externalCustomerRef, int targetCustomerId,
+        int companyId, int actorUserId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(externalCustomerRef);
+
+        var customer = await _db.Customers
+            .FirstOrDefaultAsync(c => c.Id == targetCustomerId && c.CompanyId == companyId, cancellationToken)
+            .ConfigureAwait(false)
+            ?? throw new InvalidOperationException(
+                $"customer {targetCustomerId} not found in company {companyId}");
+
+        var now = _time.GetUtcNow();
+
+        // Customer'ı external_ref'e bağla (00a LinkExternalRef domain metodu).
+        // Eğer customer zaten farklı bir ref'e sahipse override eder — operasyonel
+        // düzeltme senaryosu beklenen davranış.
+        customer.LinkExternalRef(externalCustomerRef, "LOGO", actorUserId, now);
+        await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        // AutoCreator idempotent re-invoke — yeni eşleşme üzerinden Case/Line üretir.
+        var retryResult = await _caseAutoCreator
+            .CreateCasesForBatchAsync(batchId, companyId, actorUserId, cancellationToken)
+            .ConfigureAwait(false);
+
+        return new LinkUnmatchedCustomerResult(
+            CustomerId: targetCustomerId,
+            ExternalCustomerRef: externalCustomerRef,
+            NewCasesCreated: retryResult.CreatedCaseIds.Count,
+            NewLinesCreated: retryResult.TotalLinesCreated);
+    }
+
     private static BatchDetailDto ToDetail(
         ReconciliationBatch batch,
         int okCount, int warningCount, int errorCount, bool Truncated)
