@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
+import { useAuthStore } from '../stores/auth'
+import { createRevision } from '../components/budget-planning/api'
+import { RevisionTimeline } from '../components/budget-planning/RevisionTimeline'
 import {
   getStatusChipClass,
   getStatusLabel,
+  getStatusNextAction,
   IN_PROGRESS_STATUSES,
   type BudgetVersionStatus,
 } from '../components/budget-planning/types'
@@ -40,24 +45,59 @@ async function getVersions(yearId: number): Promise<BudgetVersionRow[]> {
   return data
 }
 
-// ADR-0015: 2-aşamalı onay akışı.
-// Draft|Rejected → submit → PendingFinance → approve-finance → PendingCfo
-//                                            → approve-cfo-activate → Active
-const STATE_ACTIONS: {
-  status: BudgetVersionStatus
-  label: string
-  endpoint: string
-}[] = [
-  { status: 'Draft', label: 'Onaya Gönder', endpoint: 'submit' },
-  { status: 'Rejected', label: 'Tekrar Gönder', endpoint: 'submit' },
-  { status: 'PendingFinance', label: 'Finans Onayla', endpoint: 'approve-finance' },
-  { status: 'PendingCfo', label: 'Onayla ve Yayına Al', endpoint: 'approve-cfo-activate' },
-]
-
 const REJECTABLE_STATUSES: ReadonlySet<BudgetVersionStatus> = new Set([
   'PendingFinance',
   'PendingCfo',
 ])
+
+interface RoleFlags {
+  isAdmin: boolean
+  isFinance: boolean
+  isCfo: boolean
+}
+interface ActionHandlers {
+  goToPlanning: (vid: number) => void
+  transition: (vid: number, endpoint: string) => void
+  createRevision: (vid: number) => void
+}
+
+/**
+ * Tek primary aksiyon mantığı — versiyon durumuna ve kullanıcının rolüne göre
+ * uygun "Ana Aksiyon" butonunu döner. Buton yoksa null (sütun "—" gösterir).
+ */
+function primaryAction(
+  v: BudgetVersionRow,
+  roles: RoleFlags,
+  handlers: ActionHandlers,
+): { label: string; onClick: () => void } | null {
+  const status = v.status as BudgetVersionStatus
+  const { isAdmin, isFinance, isCfo } = roles
+
+  switch (status) {
+    case 'Draft':
+      return isFinance
+        ? { label: 'Devam Et', onClick: () => handlers.goToPlanning(v.id) }
+        : null
+    case 'Rejected':
+      return isFinance
+        ? { label: 'Düzeltmeye Devam Et', onClick: () => handlers.goToPlanning(v.id) }
+        : null
+    case 'PendingFinance':
+      return isFinance
+        ? { label: 'Finans Onayla', onClick: () => handlers.transition(v.id, 'approve-finance') }
+        : null
+    case 'PendingCfo':
+      return isCfo
+        ? { label: 'Onayla ve Yayına Al', onClick: () => handlers.transition(v.id, 'approve-cfo-activate') }
+        : null
+    case 'Active':
+      return isFinance || isAdmin
+        ? { label: 'Revizyon Aç', onClick: () => handlers.createRevision(v.id) }
+        : null
+    default:
+      return null
+  }
+}
 
 interface BudgetPeriodsPageProps {
   /** Bütçe Planlama sayfasının "Versiyonlar" tab'ı içinde gömülü
@@ -71,6 +111,16 @@ export function BudgetPeriodsPage({ embedded = false }: BudgetPeriodsPageProps =
   const [selectedYearId, setSelectedYearId] = useState<number | null>(null)
   const [modal, setModal] = useState<ModalState>({ kind: 'none' })
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const roles = user?.roles ?? []
+  const isAdmin = roles.includes('Admin')
+  const isFinance = isAdmin || roles.includes('FinanceManager')
+  const isCfo = isAdmin || roles.includes('CFO')
+
+  const goToPlanning = (vid: number) => {
+    navigate(`/budget/planning?versionId=${vid}`)
+  }
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
   const versionsQuery = useQuery({
@@ -109,6 +159,14 @@ export function BudgetPeriodsPage({ embedded = false }: BudgetPeriodsPageProps =
       await api.post(`/budget/versions/${versionId}/archive`)
     },
     onSuccess: () => invalidateVersions(),
+  })
+
+  const createRevisionMutation = useMutation({
+    mutationFn: (versionId: number) => createRevision(versionId),
+    onSuccess: (created) => {
+      invalidateVersions()
+      navigate(`/budget/planning?versionId=${created.id}`)
+    },
   })
 
   return (
@@ -210,7 +268,21 @@ export function BudgetPeriodsPage({ embedded = false }: BudgetPeriodsPageProps =
           )}
         </aside>
 
-        <div className="col-span-12 lg:col-span-9 card p-0 overflow-hidden">
+        <div className="col-span-12 lg:col-span-9">
+          {selectedYear && versions.length > 0 && (
+            <RevisionTimeline
+              versions={versions}
+              yearLabel={selectedYear.year}
+              onSelect={(id) => {
+                const row = document.getElementById(`version-row-${id}`)
+                row?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                row?.classList.add('bg-primary-fixed')
+                setTimeout(() => row?.classList.remove('bg-primary-fixed'), 1000)
+              }}
+            />
+          )}
+
+          <div className="card p-0 overflow-hidden">
           <div className="p-4">
             <h3 className="text-base font-bold text-on-surface">
               {selectedYear ? `${selectedYear.year} Versiyonları` : 'Versiyonlar'}
@@ -250,83 +322,96 @@ export function BudgetPeriodsPage({ embedded = false }: BudgetPeriodsPageProps =
             <table className="tbl">
               <thead>
                 <tr>
-                  <th>Versiyon</th>
+                  <th>Sürüm</th>
                   <th>Durum</th>
-                  <th>Oluşturuldu</th>
-                  <th>Aktif?</th>
-                  <th>Açıklama</th>
-                  <th>İşlem</th>
+                  <th>Sıradaki Adım</th>
+                  <th>Ana Aksiyon</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
                 {versions.map((version) => {
                   const status = version.status as BudgetVersionStatus
-                  const nextAction = STATE_ACTIONS.find((a) => a.status === status)
+                  const action = primaryAction(version, { isAdmin, isFinance, isCfo }, {
+                    goToPlanning,
+                    transition: (vid, endpoint) =>
+                      transitionMutation.mutate({ versionId: vid, endpoint }),
+                    createRevision: (vid) => createRevisionMutation.mutate(vid),
+                  })
                   const canReject = REJECTABLE_STATUSES.has(status)
-                  const canArchive = status === 'Active'
+                  const canArchive = status === 'Active' && (isFinance || isAdmin)
                   return (
-                    <tr key={version.id}>
+                    <tr key={version.id} id={`version-row-${version.id}`}>
                       <td>
                         <strong>{version.name}</strong>
-                        <p className="text-[0.65rem] font-mono text-on-surface-variant">#{version.id}</p>
+                        {version.isActive && (
+                          <span className="chip chip-success ml-2 text-xs">Aktif</span>
+                        )}
+                        <p className="text-[0.65rem] font-mono text-on-surface-variant">
+                          #{version.id} · {new Date(version.createdAt).toLocaleDateString('tr-TR')}
+                          {version.rejectionReason ? ` · Red: ${version.rejectionReason}` : ''}
+                        </p>
                       </td>
                       <td>
                         <span className={`chip ${getStatusChipClass(version.status)}`}>
                           {getStatusLabel(version.status)}
                         </span>
                       </td>
-                      <td className="text-xs text-on-surface-variant">
-                        {new Date(version.createdAt).toLocaleDateString('tr-TR')}
+                      <td className="text-sm text-on-surface-variant">
+                        {getStatusNextAction(version.status)}
                       </td>
                       <td>
-                        {version.isActive ? (
-                          <span className="chip chip-success">Aktif</span>
+                        {action ? (
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            style={{ padding: '.4rem .75rem', fontSize: '.75rem' }}
+                            onClick={action.onClick}
+                            disabled={
+                              transitionMutation.isPending ||
+                              createRevisionMutation.isPending
+                            }
+                          >
+                            {action.label}
+                          </button>
                         ) : (
-                          <span className="chip chip-neutral">—</span>
+                          <span className="text-xs text-on-surface-variant">—</span>
                         )}
                       </td>
-                      <td className="text-xs text-error">{version.rejectionReason ?? ''}</td>
                       <td>
-                        <div className="flex gap-1 flex-wrap">
-                          {nextAction ? (
-                            <button
-                              type="button"
-                              className="btn-secondary"
-                              style={{ padding: '.3rem .6rem', fontSize: '.7rem' }}
-                              onClick={() =>
-                                transitionMutation.mutate({
-                                  versionId: version.id,
-                                  endpoint: nextAction.endpoint,
-                                })
-                              }
-                              disabled={transitionMutation.isPending}
-                            >
-                              {nextAction.label}
-                            </button>
-                          ) : null}
-                          {canReject ? (
-                            <button
-                              type="button"
-                              className="btn-tertiary"
-                              style={{ padding: '.3rem .6rem', fontSize: '.7rem' }}
-                              onClick={() => setModal({ kind: 'reject', versionId: version.id })}
-                            >
-                              Reddet
-                            </button>
-                          ) : null}
-                          {canArchive ? (
-                            <button
-                              type="button"
-                              className="btn-tertiary"
-                              style={{ padding: '.3rem .6rem', fontSize: '.7rem' }}
-                              onClick={() => {
-                                if (confirm('Bu versiyon arşivlenecek. Emin misiniz?')) {
-                                  archiveMutation.mutate(version.id)
-                                }
-                              }}
-                            >
-                              Arşivle
-                            </button>
+                        <div className="flex justify-end">
+                          {canReject || canArchive ? (
+                            <details className="relative">
+                              <summary className="cursor-pointer text-on-surface-variant hover:text-on-surface text-lg list-none px-2">
+                                ⋯
+                              </summary>
+                              <div className="absolute right-0 top-7 bg-surface-container-lowest border border-outline-variant rounded-md shadow-lg p-1 z-10 min-w-[140px]">
+                                {canReject && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setModal({ kind: 'reject', versionId: version.id })
+                                    }
+                                    className="block w-full text-left px-3 py-1.5 text-sm hover:bg-surface-container-low rounded"
+                                  >
+                                    Reddet
+                                  </button>
+                                )}
+                                {canArchive && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (confirm('Bu versiyon arşivlenecek. Emin misiniz?')) {
+                                        archiveMutation.mutate(version.id)
+                                      }
+                                    }}
+                                    className="block w-full text-left px-3 py-1.5 text-sm hover:bg-surface-container-low rounded"
+                                  >
+                                    Arşivle
+                                  </button>
+                                )}
+                              </div>
+                            </details>
                           ) : null}
                         </div>
                       </td>
@@ -336,6 +421,7 @@ export function BudgetPeriodsPage({ embedded = false }: BudgetPeriodsPageProps =
               </tbody>
             </table>
           )}
+          </div>
         </div>
       </div>
 
