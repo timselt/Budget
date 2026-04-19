@@ -17,6 +17,9 @@ const PnlReportPage = lazy(() => import('./pages/PnlReportPage').then(m => ({ de
 const CustomersPage = lazy(() => import('./pages/CustomersPage').then(m => ({ default: m.CustomersPage })))
 const ProductsPage = lazy(() => import('./pages/ProductsPage').then(m => ({ default: m.ProductsPage })))
 const ContractsPage = lazy(() => import('./pages/ContractsPage').then(m => ({ default: m.ContractsPage })))
+const ContractPriceBooksPage = lazy(() => import('./pages/ContractPriceBooksPage').then(m => ({ default: m.ContractPriceBooksPage })))
+const PriceBookEditorPage = lazy(() => import('./pages/PriceBookEditorPage').then(m => ({ default: m.PriceBookEditorPage })))
+const PriceLookupPage = lazy(() => import('./pages/PriceLookupPage').then(m => ({ default: m.PriceLookupPage })))
 const SegmentsPage = lazy(() => import('./pages/SegmentsPage').then(m => ({ default: m.SegmentsPage })))
 // BudgetPeriodsPage Bütçe Planlama sayfasının "Versiyonlar" tab'ı içine
 // gömüldü; ayrı route artık kaldırıldı (sol menüden de çıkarıldı).
@@ -67,6 +70,9 @@ export function App() {
           <Route path="customers" element={<CustomersPage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="contracts" element={<ContractsPage />} />
+          <Route path="contracts/:contractId/price-books" element={<ContractPriceBooksPage />} />
+          <Route path="price-books/:id" element={<PriceBookEditorPage />} />
+          <Route path="pricing/lookup" element={<PriceLookupPage />} />
           <Route path="segments" element={<SegmentsPage />} />
           {/* Eski /budget/periods URL'i Bütçe Planlama Versiyonlar tab'ına yönlendir. */}
           <Route path="budget/periods" element={<Navigate to="/budget/planning" replace />} />

@@ -39,6 +39,8 @@ public sealed class ApplicationDbContext : IdentityDbContext<User, Role, int>, I
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<PriceBook> PriceBooks => Set<PriceBook>();
+    public DbSet<PriceBookItem> PriceBookItems => Set<PriceBookItem>();
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => base.SaveChangesAsync(cancellationToken);

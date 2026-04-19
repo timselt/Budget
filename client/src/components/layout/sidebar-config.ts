@@ -104,6 +104,15 @@ export const SIDEBAR_SECTIONS: readonly SidebarSection[] = [
     ],
   },
   {
+    id: 'reconciliation',
+    label: 'Mutabakat',
+    icon: 'fact_check',
+    defaultOpen: false,
+    items: [
+      { label: 'Fiyat Arama', to: '/pricing/lookup', icon: 'search' },
+    ],
+  },
+  {
     id: 'system',
     label: 'Sistem',
     icon: 'settings',

@@ -8,6 +8,12 @@ namespace BudgetTracker.Core.Entities;
 /// kontrat kodu 14 segment'ini üreten metadata alanları + <see cref="Version"/>
 /// + stored <see cref="ContractCode"/> kolonu eklendi. Mutation sonrasında
 /// <see cref="ContractCode"/> otomatik güncellenir.
+/// <para>
+/// Mutabakat modülü 00b önkoşulu ile genişletildi: <see cref="ContractName"/>,
+/// <see cref="CurrencyCode"/>, <see cref="Status"/> (4-state lifecycle) ve
+/// türetilmiş <see cref="Flow"/>. <see cref="IsActive"/> geri uyumluluk için
+/// korundu — <c>Status == Active</c> ile senkron tutulur.
+/// </para>
 /// </summary>
 public sealed class Contract : TenantEntity
 {
@@ -20,6 +26,26 @@ public sealed class Contract : TenantEntity
     public DateOnly? EndDate { get; private set; }
     public string? Notes { get; private set; }
     public bool IsActive { get; private set; }
+
+    // ----- 00b Mutabakat modülü genişletmeleri -----
+
+    /// <summary>İnsan okur ad (opsiyonel); yoksa UI <see cref="ContractCode"/> gösterir.</summary>
+    public string? ContractName { get; private set; }
+
+    /// <summary>ISO 4217 para birimi kodu. MVP'de "TRY" sabit.</summary>
+    public string CurrencyCode { get; private set; } = "TRY";
+
+    /// <summary>Yaşam döngüsü durumu. <see cref="IsActive"/> ile senkron.</summary>
+    public ContractStatus Status { get; private set; }
+
+    /// <summary>
+    /// Sonlandırma gerekçesi (Terminated'a geçerken atanır). Domain-only alan;
+    /// Notes'tan ayrı tutulur ki serbest not korunsun.
+    /// </summary>
+    public string? TerminationReason { get; private set; }
+
+    /// <summary>Mutabakat akış ayrımı; <see cref="SalesType"/>'tan türetilir (DB'de yok).</summary>
+    public ContractFlow Flow => ContractFlowMapper.FromSalesType(SalesType);
 
     // ----- ADR-0014: 14-segment kontrat kodu metadata'sı -----
 
@@ -71,7 +97,10 @@ public sealed class Contract : TenantEntity
         decimal? unitPriceTry = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
-        string? notes = null)
+        string? notes = null,
+        string? contractName = null,
+        string? currencyCode = null,
+        ContractStatus initialStatus = ContractStatus.Active)
     {
         if (companyId <= 0) throw new ArgumentOutOfRangeException(nameof(companyId));
         if (customerId <= 0) throw new ArgumentOutOfRangeException(nameof(customerId));
@@ -80,6 +109,7 @@ public sealed class Contract : TenantEntity
             throw new ArgumentOutOfRangeException(nameof(customerShortId), "short id 0-99");
         ValidateUnitPrice(unitPriceTry);
         ValidateDateRange(startDate, endDate);
+        var normalizedCurrency = NormalizeCurrency(currencyCode);
 
         var code = Contracts.ContractCode.Build(
             businessLine, salesType, productType, vehicleType,
@@ -96,7 +126,10 @@ public sealed class Contract : TenantEntity
             StartDate = startDate,
             EndDate = endDate,
             Notes = notes,
-            IsActive = true,
+            IsActive = initialStatus == ContractStatus.Active,
+            ContractName = string.IsNullOrWhiteSpace(contractName) ? null : contractName.Trim(),
+            CurrencyCode = normalizedCurrency,
+            Status = initialStatus,
             BusinessLine = businessLine,
             SalesType = salesType,
             ProductType = productType,
@@ -142,7 +175,8 @@ public sealed class Contract : TenantEntity
             ContractKind.CleanCut, ServiceArea.Domestic,
             createdAt, createdByUserId: null,
             unitPriceTry: unitPriceTry, startDate: startDate, endDate: endDate,
-            notes: notes);
+            notes: notes,
+            initialStatus: isActive ? ContractStatus.Active : ContractStatus.Terminated);
         if (!isActive)
         {
             contract.IsActive = false;
@@ -158,7 +192,9 @@ public sealed class Contract : TenantEntity
         decimal? unitPriceTry = null,
         DateOnly? startDate = null,
         DateOnly? endDate = null,
-        string? notes = null)
+        string? notes = null,
+        string? contractName = null,
+        string? currencyCode = null)
     {
         ValidateUnitPrice(unitPriceTry);
         ValidateDateRange(startDate, endDate);
@@ -168,6 +204,77 @@ public sealed class Contract : TenantEntity
         EndDate = endDate;
         Notes = notes;
         IsActive = isActive;
+        if (contractName is not null)
+        {
+            ContractName = string.IsNullOrWhiteSpace(contractName) ? null : contractName.Trim();
+        }
+        if (currencyCode is not null)
+        {
+            CurrencyCode = NormalizeCurrency(currencyCode);
+        }
+        SyncStatusWithIsActive(updatedAt);
+        UpdatedAt = updatedAt;
+        UpdatedByUserId = actorUserId;
+    }
+
+    /// <summary>
+    /// Draft → Active geçişi. Aktivasyon için <see cref="StartDate"/> zorunludur
+    /// (lookup bu alanla period eşleşmesi yapar).
+    /// </summary>
+    public void Activate(int actorUserId, DateTimeOffset updatedAt)
+    {
+        if (Status == ContractStatus.Active) return;
+        if (Status is ContractStatus.Expired or ContractStatus.Terminated)
+        {
+            throw new InvalidOperationException(
+                $"Cannot activate contract in terminal status '{Status}'.");
+        }
+        if (StartDate is null)
+        {
+            throw new InvalidOperationException(
+                "Activation requires StartDate to be set.");
+        }
+        Status = ContractStatus.Active;
+        IsActive = true;
+        UpdatedAt = updatedAt;
+        UpdatedByUserId = actorUserId;
+    }
+
+    /// <summary>Active/Draft → Terminated. <paramref name="effectiveDate"/> sonlandırma tarihi.</summary>
+    public void Terminate(
+        string reason,
+        DateOnly effectiveDate,
+        int actorUserId,
+        DateTimeOffset updatedAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        if (Status is ContractStatus.Expired or ContractStatus.Terminated)
+        {
+            throw new InvalidOperationException(
+                $"Contract already in terminal status '{Status}'.");
+        }
+        if (StartDate is not null && effectiveDate < StartDate.Value)
+        {
+            throw new ArgumentException(
+                "Termination date cannot precede StartDate.", nameof(effectiveDate));
+        }
+        Status = ContractStatus.Terminated;
+        IsActive = false;
+        EndDate = effectiveDate;
+        TerminationReason = reason.Trim();
+        UpdatedAt = updatedAt;
+        UpdatedByUserId = actorUserId;
+    }
+
+    /// <summary>
+    /// Active → Expired otomatik geçişi (EffectiveTo geçtiğinde scheduled job çağırır).
+    /// Elle <see cref="Terminate"/> ile karıştırılmamalı.
+    /// </summary>
+    public void Expire(int actorUserId, DateTimeOffset updatedAt)
+    {
+        if (Status != ContractStatus.Active) return;
+        Status = ContractStatus.Expired;
+        IsActive = false;
         UpdatedAt = updatedAt;
         UpdatedByUserId = actorUserId;
     }
@@ -267,6 +374,29 @@ public sealed class Contract : TenantEntity
         if (end.Value < start.Value)
         {
             throw new ArgumentException("end date must be on or after start date");
+        }
+    }
+
+    private static string NormalizeCurrency(string? code)
+    {
+        var value = string.IsNullOrWhiteSpace(code) ? "TRY" : code.Trim().ToUpperInvariant();
+        if (value.Length != 3)
+        {
+            throw new ArgumentException("currency code must be ISO 4217 (3 letters)", nameof(code));
+        }
+        return value;
+    }
+
+    /// <summary>IsActive ↔ Status senkronizasyonu (geri uyumluluk için).</summary>
+    private void SyncStatusWithIsActive(DateTimeOffset updatedAt)
+    {
+        if (IsActive && Status != ContractStatus.Active)
+        {
+            Status = ContractStatus.Active;
+        }
+        else if (!IsActive && Status == ContractStatus.Active)
+        {
+            Status = ContractStatus.Terminated;
         }
     }
 }

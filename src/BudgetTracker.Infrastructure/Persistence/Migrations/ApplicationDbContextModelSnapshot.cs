@@ -769,6 +769,11 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(30)")
                         .HasColumnName("contract_kind");
 
+                    b.Property<string>("ContractName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("contract_name");
+
                     b.Property<string>("ContractType")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -782,6 +787,13 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                     b.Property<int?>("CreatedByUserId")
                         .HasColumnType("integer")
                         .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
 
                     b.Property<int>("CustomerId")
                         .HasColumnType("integer")
@@ -847,6 +859,17 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("start_date");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TerminationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("termination_reason");
+
                     b.Property<decimal?>("UnitPriceTry")
                         .HasColumnType("numeric(18,2)")
                         .HasColumnName("unit_price_try");
@@ -882,6 +905,9 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ProductId", "IsActive")
                         .HasDatabaseName("ix_contracts_product_id_is_active");
+
+                    b.HasIndex("CompanyId", "Status", "CustomerId")
+                        .HasDatabaseName("ix_contracts_company_id_status_customer_id");
 
                     b.HasIndex("CompanyId", "CustomerId", "ProductId", "StartDate")
                         .IsUnique()
@@ -1431,6 +1457,189 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_import_periods_company_id_segment_id_import_date");
 
                     b.ToTable("import_periods", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.PriceBook", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at");
+
+                    b.Property<int?>("ApprovedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("approved_by_user_id");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("integer")
+                        .HasColumnName("company_id");
+
+                    b.Property<int>("ContractId")
+                        .HasColumnType("integer")
+                        .HasColumnName("contract_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<DateOnly>("EffectiveFrom")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_from");
+
+                    b.Property<DateOnly?>("EffectiveTo")
+                        .HasColumnType("date")
+                        .HasColumnName("effective_to");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<int>("VersionNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_no");
+
+                    b.HasKey("Id")
+                        .HasName("pk_price_books");
+
+                    b.HasIndex("CompanyId", "Status")
+                        .HasDatabaseName("ix_price_books_company_id_status");
+
+                    b.HasIndex("ContractId", "VersionNo")
+                        .IsUnique()
+                        .HasDatabaseName("ix_price_books_contract_id_version_no");
+
+                    b.HasIndex("ContractId", "Status", "EffectiveFrom")
+                        .HasDatabaseName("ix_price_books_contract_id_status_effective_from");
+
+                    b.ToTable("price_books", (string)null);
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.PriceBookItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int?>("CreatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character(3)")
+                        .HasColumnName("currency_code")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
+                    b.Property<int?>("DeletedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("deleted_by_user_id");
+
+                    b.Property<string>("ItemType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("item_type");
+
+                    b.Property<decimal?>("MinQuantity")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("min_quantity");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<int>("PriceBookId")
+                        .HasColumnType("integer")
+                        .HasColumnName("price_book_id");
+
+                    b.Property<string>("ProductCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("product_code");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("product_name");
+
+                    b.Property<decimal?>("TaxRate")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("tax_rate");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("unit");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("unit_price");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_price_book_items");
+
+                    b.HasIndex("PriceBookId", "ProductCode")
+                        .IsUnique()
+                        .HasDatabaseName("ix_price_book_items_price_book_id_product_code");
+
+                    b.ToTable("price_book_items", (string)null);
                 });
 
             modelBuilder.Entity("BudgetTracker.Core.Entities.Product", b =>
@@ -2676,6 +2885,33 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
                     b.Navigation("Segment");
                 });
 
+            modelBuilder.Entity("BudgetTracker.Core.Entities.PriceBook", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_price_books_companies_company_id");
+
+                    b.HasOne("BudgetTracker.Core.Entities.Contract", null)
+                        .WithMany()
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_price_books_contracts_contract_id");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.PriceBookItem", b =>
+                {
+                    b.HasOne("BudgetTracker.Core.Entities.PriceBook", null)
+                        .WithMany("Items")
+                        .HasForeignKey("PriceBookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_price_book_items_price_books_price_book_id");
+                });
+
             modelBuilder.Entity("BudgetTracker.Core.Entities.Product", b =>
                 {
                     b.HasOne("BudgetTracker.Core.Entities.Company", null)
@@ -2885,6 +3121,11 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("BudgetTracker.Core.Entities.ImportPeriod", b =>
                 {
                     b.Navigation("Invoices");
+                });
+
+            modelBuilder.Entity("BudgetTracker.Core.Entities.PriceBook", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("BudgetTracker.Infrastructure.Identity.User", b =>

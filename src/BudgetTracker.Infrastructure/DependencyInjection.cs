@@ -9,6 +9,8 @@ using BudgetTracker.Application.Contracts;
 using BudgetTracker.Application.Customers;
 using BudgetTracker.Application.ExpenseCategories;
 using BudgetTracker.Application.Expenses;
+using BudgetTracker.Application.PriceBooks;
+using BudgetTracker.Application.Pricing;
 using BudgetTracker.Application.Products;
 using BudgetTracker.Application.FxRates;
 using BudgetTracker.Application.Imports;
@@ -108,6 +110,13 @@ public static class DependencyInjection
         services.AddScoped<IProductCategoryService, ProductCategoryService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IContractService, ContractService>();
+        services.AddScoped<IPriceBookService, PriceBookService>();
+
+        // 00b — PriceBook lookup cache (IMemoryCache, L1, Redis yasağı nedeniyle).
+        // Scoped: IApplicationDbContext bağımlı; invalidation tokens static alanda
+        // paylaşıldığı için request'lar arası tutarlı.
+        services.AddMemoryCache();
+        services.AddScoped<IPricingLookupService, PricingLookupService>();
         services.AddScoped<IBudgetEntryService, BudgetEntryService>();
         services.AddScoped<IBudgetTreeService, BudgetTreeService>();
         services.AddScoped<IBudgetOperationsService, BudgetOperationsService>();

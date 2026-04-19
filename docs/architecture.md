@@ -1414,6 +1414,90 @@ Spec örnekleri farklı ProductType'ta aynı Product ID kullanımına izin verir
 
 ---
 
+## ADR-0015 — Mutabakat Önkoşul 00b: Contract Genişletme + PriceBook Altyapısı
+
+**Tarih:** 2026-04-19
+**Statü:** Kabul edildi
+**Karar Sahibi:** Timur Selçuk Turan
+**Bağlı Spec:** `docs/Mutabakat_Modulu/docs/specs/00b_prereq_pricebook.md`
+
+### 1. Bağlam
+
+Mutabakat modülü Faz 1'in çekirdek sorusunu yanıtlayacak altyapı: **"Bu satır sözleşmedeki fiyatla uyumlu mu?"**. Bugün bu bilgi sözleşme Word dosyalarında, muhasebede manuel tablolarda ve ekip hafızasında dağınık. Tek bir versiyonlu + sorgulanabilir veri modeli gerek.
+
+Mevcut `Contract` entity'si (ADR-0014) Customer × Product 1-1 eşleşmesi olarak tasarlandı: 14-segment `ContractCode`, tek `UnitPriceTry`, 10 metadata enum'u. Bu yapıyı:
+- PriceBook spec'indeki "Customer-level Contract + N PriceBookItem" modeline **tam dönüştürmek**, ya da
+- Mevcut Contract'ı koruyup PriceBook'u üstüne **bağlamak**.
+
+### 2. Karar
+
+**Mevcut Contract genişletilir, PriceBook ona bağlanır** (spec'teki Seçenek A).
+
+#### 2.1 Contract Genişletmeleri
+
+Yeni alanlar:
+- `ContractName` (string?, 255) — insan okur ad; UI'da opsiyonel.
+- `CurrencyCode` (char(3), default "TRY") — MVP'de TRY sabit.
+- `Status` (enum: `Draft / Active / Expired / Terminated`) — 4-state yaşam döngüsü.
+- `TerminationReason` (string?, 500) — Terminate sırasında zorunlu.
+- `Flow` **türetilmiş property** — `SalesType`'tan map edilir; DB'de kolon yok. `Insurance` ← Insurance/DirectChannel/Medical; `Automotive` ← Automotive/Fleet.
+
+Mevcut `IsActive` korunur, `Status` ile senkron tutulur (backward-compat). `StartDate`/`EndDate` mevcut DateOnly alanları spec'teki `EffectiveFrom`/`EffectiveTo` rolünü üstlenir.
+
+Domain metodları: `Activate()`, `Terminate(reason, effectiveDate)`, `Expire()`. ADR-0014'ün `BumpVersion`, `RevisePriceOnly`, `ReviseMetadata` davranışları değişmez.
+
+#### 2.2 PriceBook + PriceBookItem
+
+Yeni iki entity (`price_books`, `price_book_items`):
+- `PriceBook`: ContractId FK, VersionNo, EffectiveFrom/To, Status (`Draft/Active/Archived`), ApprovedBy/At.
+- `PriceBookItem`: PriceBookId FK, ProductCode (unique per PriceBook), ProductName, ItemType enum, Unit, UnitPrice (numeric(18,4)), CurrencyCode, TaxRate, MinQuantity.
+
+Tek Active sürüm garantisi: `EXCLUDE USING gist (contract_id WITH =, daterange(effective_from, COALESCE(effective_to, 'infinity'), '[]') WITH &&) WHERE (status='Active' AND deleted_at IS NULL)`. `btree_gist` extension migration tarafından oluşturulur.
+
+#### 2.3 Lookup Algoritması + Cache
+
+`/api/v1/pricing/lookup?customer_id=&flow=&period_code=&product_code=`:
+1. customer_id + flow + period → **Active Contract** (StartDate/EndDate pencere).
+2. Contract → **Active PriceBook** (EffectiveFrom/To pencere).
+3. PriceBook + product_code → PriceBookItem.
+4. Sonuç: `Found / PricingMismatch / ContractNotFound / ProductNotFound / MultipleContracts`.
+
+Cache: IMemoryCache (L1, Redis yasağı nedeniyle), TTL 5 dakika. Contract başına `CancellationTokenSource` ile invalidation — PriceBook onayı sonrası `InvalidateForContract(contractId)` tüm ilgili girdileri düşürür.
+
+### 3. Reddedilen Alternatifler
+
+- **Paralel `ReconContract` entity'si (Seçenek B)** — spec birebir UUID PK ile yeni tablo. İki "sözleşme" kavramı, sürekli sync yükü. Red: mevcut ADR-0014 + ADR-0013 yatırımını değersiz kılıyor.
+- **Contract'a dokunmadan PriceBook ekle (Seçenek C)** — PriceBook doğrudan (Customer, Product) ile match. Red: spec'in "Contract → PriceBook → Item" üç-seviye hiyerarşi ve versiyonlama semantik'ini atlıyor.
+- **Partial unique index (tek Active)** — EXCLUDE USING gist yerine. Red: gelecek tarihli Draft sürümün mevcut Active ile tarih-aralığı çakışmasını kontrol etmez.
+- **Redis L2 cache** — CLAUDE.md stack yasağı.
+
+### 4. Sonuçlar
+
+**Olumlu:**
+- ADR-0014 (14-segment kod) + ADR-0013 (ürün domain) + ADR-0012 (muhasebe kategorisi) tümü bozulmadan korunur.
+- Mutabakat import parser'ın beklediği lookup endpoint p95 < 5ms SLA'ı IMemoryCache ile sağlanır.
+- `Flow` türetilmiş olduğu için SalesType değişimi otomatik yansır; çift-yazım derdi yok.
+
+**Olumsuz / Takip gereken:**
+- `Contract.UnitPriceTry` artık authoritative değil (aktif PriceBook varsa). Faz 2'de deprecate edilecek.
+- `price_books` / `price_book_items` tabloları için RLS policy henüz yok (mevcut son migration'lar pattern'iyle uyumlu); KVKK tam uyumu için ileride `FORCE ROW LEVEL SECURITY` migration'ı şart.
+- Lookup cache 5-dakika TTL + invalidation token: çok-node deployment'te node-başı izole cache; Hangfire job tarafından çalışan background güncellemeler invalidation'ı manuel tetiklemeli.
+
+### 5. Kabul Kriterleri
+
+- [x] Contract entity genişletildi (5 yeni alan + state machine)
+- [x] PriceBook + PriceBookItem entity + migration
+- [x] EXCLUDE USING gist constraint çalışır (integration test doğruladı — Testcontainers Postgres 16)
+- [x] 12+ REST endpoint (Contract activate/terminate, PriceBook CRUD/bulk/approve, lookup)
+- [x] Bulk CSV import parser (RFC 4180 + Türk locale noktalı-virgül + ondalık toleransı)
+- [x] 4 UI ekranı (ContractsPage genişletildi, ContractPriceBooksPage, PriceBookEditorPage AG-Grid, PriceLookupPage)
+- [x] 3 audit event (PriceBookVersionCreated / Approved / ItemsChanged)
+- [x] Unit test 63 + integration test 4 (migration + EXCLUDE constraint doğrulaması)
+- [ ] RLS policy migration (follow-up)
+- [ ] Pilot seed veri (3-5 sigorta + 3-5 otomotiv) — operasyon ekibi CSV bulk import ile yükleyecek
+
+---
+
 ## ADR-XXXX — [Başlık]
 
 **Tarih:** YYYY-MM-DD

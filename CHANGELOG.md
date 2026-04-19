@@ -4,6 +4,21 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### Mutabakat Modülü Önkoşul 00b — Contract + PriceBook (2026-04-19)
+
+ADR-0015 kapsamında Mutabakat modülünün ikinci önkoşulu: sözleşme bazlı versiyonlu fiyat listesi altyapısı. Faz 1 mutabakat import parser'ının eşleme algoritmasına girdi üretir.
+
+#### Eklendi
+
+- **Contract entity genişletme:** `ContractName`, `CurrencyCode` (default "TRY"), `Status` (Draft/Active/Expired/Terminated) 4-state lifecycle, `TerminationReason`, türetilmiş `Flow` property (SalesType'tan Insurance|Automotive). Mevcut `IsActive` backward-compat; `Activate()`, `Terminate()`, `Expire()` domain metodları.
+- **PriceBook + PriceBookItem entity + migration** (`20260419104729_ContractPriceBookV1`): `price_books`, `price_book_items` tablolari; `btree_gist` extension + `EXCLUDE USING gist` constraint (tek-Active-per-contract garantisi daterange overlap ile).
+- **REST endpoint'leri:** `POST /contracts/{id}/activate`, `POST /contracts/{id}/terminate`, Contract listesine `flow`/`status` filtreleri; PriceBook CRUD (`GET /contracts/{id}/price-books`, `POST /contracts/{id}/price-books`, `GET /price-books/{id}`, `POST /price-books/{id}/items/bulk`, `POST /price-books/{id}/items/import` CSV, `POST /price-books/{id}/approve`, `GET /price-books/{id}/items`); `GET /api/v1/pricing/lookup` — import parser'ın fiyat arama servisi (5 match sonucu).
+- **Bulk CSV import parser** (`PriceBookCsvParser`): RFC 4180 temel diyalekt, Türk locale (;) + virgül ayracı otomatik tespit, "1.234,56" / "1,234.56" decimal toleransı. Max 10K satır.
+- **Lookup cache:** IMemoryCache (L1, Redis yasağı), 5-dakika TTL, per-contract `CancellationTokenSource` invalidation — PriceBook approve sonrası otomatik flush.
+- **4 React UI ekranı:** `ContractsPage` genişletildi (flow/status filter + Fiyat Listeleri link'i); `ContractPriceBooksPage` (sürüm listesi + yeni Draft modal); `PriceBookEditorPage` (AG-Grid inline edit + CSV import + approve); `PriceLookupPage` (mutabakat arama aracı). Sidebar'a "Mutabakat" section'ı eklendi (Fiyat Arama link'iyle).
+- **3 audit event:** `PRICEBOOK_VERSION_CREATED`, `PRICEBOOK_APPROVED`, `PRICEBOOK_ITEMS_CHANGED` — entity key PriceBook id, JSON payload sürüm metadata'sı.
+- **Test coverage:** 63 unit test yeni (Contract lifecycle, PriceBook state machine, ContractFlowMapper theory, CsvParser happy+sad path); 4 integration test yeni (Testcontainers Postgres 16 ile migration + EXCLUDE constraint overlapping/non-overlapping/archived senaryoları).
+
 ### Sidebar Bilgi Mimarisi Yeniden Tasarımı (2026-04-19)
 
 Sidebar 20 item'lık düz iki array yapıdan iş akışı odaklı 8-section accordion yapıya geçti. Hedef: kullanıcı zihninin doğal akışını ("Bugün ne yapacağım? → Hangi bütçe? → Veri girişi → Onay/rapor → Tanımlar") karşılayan bilgi mimarisi.
