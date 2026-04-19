@@ -1,0 +1,48 @@
+#!/bin/sh
+
+set -eu
+
+# Git passes:
+#   $1 = previous HEAD
+#   $2 = new HEAD
+#   $3 = 1 when a branch checkout happened, 0 for file checkout
+if [ "${3:-0}" != "1" ]; then
+  exit 0
+fi
+
+current_branch="$(git branch --show-current 2>/dev/null || true)"
+
+# Protected long-running UI branch. Warn loudly when the user leaves it or
+# lands on main while the feature branch still carries unmerged work.
+protected_branch="feat/reconciliation-sprint1-import"
+
+if ! git show-ref --verify --quiet "refs/heads/$protected_branch" \
+  && ! git show-ref --verify --quiet "refs/remotes/origin/$protected_branch"; then
+  exit 0
+fi
+
+if [ "$current_branch" = "$protected_branch" ]; then
+  exit 0
+fi
+
+if [ "$current_branch" = "main" ]; then
+  cat <<EOF
+
+post-checkout: Dikkat — '$protected_branch' branch'indeki UI işi main'de görünmez.
+Şu an main branch'indesiniz.
+Eğer ağaç, dashboard veya Bütçe Planlama düzenleri kaybolmuş görünüyorsa:
+
+  git checkout $protected_branch
+
+EOF
+  exit 0
+fi
+
+cat <<EOF
+
+post-checkout: Bilgi — '$protected_branch' branch'indeki UI işi aktif olarak korunuyor.
+Şu an '$current_branch' branch'indesiniz; feature branch'indeki ekran düzenleri burada görünmeyebilir.
+
+EOF
+
+exit 0
