@@ -8,6 +8,7 @@ import {
   STATUS_LABELS,
   type BudgetVersionStatus,
 } from '../components/budget-planning/types'
+import { RejectModal } from '../components/budget-planning/RejectModal'
 
 interface BudgetYearRow {
   id: number
@@ -104,6 +105,7 @@ export function ApprovalsPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [yearFilter, setYearFilter] = useState<number | 'all'>('all')
   const [onlyMine, setOnlyMine] = useState(false)
+  const [rejectTarget, setRejectTarget] = useState<{ id: number; name: string } | null>(null)
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
   const years = yearsQuery.data ?? []
@@ -276,6 +278,7 @@ export function ApprovalsPage() {
         onAction={(versionId, action, reason) =>
           actionMutation.mutate({ versionId, action, reason })
         }
+        onRejectRequest={(id, name) => setRejectTarget({ id, name })}
         actionPending={actionMutation.isPending}
       />
 
@@ -287,6 +290,7 @@ export function ApprovalsPage() {
         onAction={(versionId, action, reason) =>
           actionMutation.mutate({ versionId, action, reason })
         }
+        onRejectRequest={(id, name) => setRejectTarget({ id, name })}
         actionPending={actionMutation.isPending}
       />
 
@@ -299,10 +303,25 @@ export function ApprovalsPage() {
           onAction={(versionId, action, reason) =>
             actionMutation.mutate({ versionId, action, reason })
           }
+          onRejectRequest={(id, name) => setRejectTarget({ id, name })}
           actionPending={actionMutation.isPending}
           hideHeader
         />
       </CollapsibleSection>
+
+      {rejectTarget ? (
+        <RejectModal
+          versionName={rejectTarget.name}
+          pending={actionMutation.isPending}
+          onClose={() => setRejectTarget(null)}
+          onConfirm={(reason) => {
+            actionMutation.mutate(
+              { versionId: rejectTarget.id, action: 'reject', reason },
+              { onSettled: () => setRejectTarget(null) },
+            )
+          }}
+        />
+      ) : null}
     </section>
   )
 }
@@ -313,6 +332,7 @@ function VersionSection({
   versions,
   canPerform,
   onAction,
+  onRejectRequest,
   actionPending,
   hideHeader = false,
 }: {
@@ -321,6 +341,7 @@ function VersionSection({
   versions: VersionWithYear[]
   canPerform: (action: WorkflowAction) => boolean
   onAction: (versionId: number, action: WorkflowAction, reason?: string) => void
+  onRejectRequest: (versionId: number, versionName: string) => void
   actionPending: boolean
   hideHeader?: boolean
 }) {
@@ -396,9 +417,7 @@ function VersionSection({
                               disabled={actionPending}
                               onClick={() => {
                                 if (isReject) {
-                                  const reason = prompt('Red sebebi giriniz:')
-                                  if (!reason?.trim()) return
-                                  onAction(v.id, action, reason)
+                                  onRejectRequest(v.id, v.name)
                                   return
                                 }
                                 const confirmMsg = isCfoActivate
