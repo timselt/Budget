@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
+import { PageIntro } from '../components/shared/PageIntro'
 
 interface BudgetYearRow {
   id: number
@@ -161,15 +162,10 @@ export function ActualsPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Gerçekleşen</h2>
-          <p className="page-context-hint">
-            Aylık fiili (gerçekleşen) tutarları girin. Bütçe planıyla
-            karşılaştırma <strong>Sapma Analizi</strong> ekranında görünür.
-          </p>
-        </div>
-      </div>
+      <PageIntro
+        title="Gerçekleşen"
+        purpose="Aylık fiili (gerçekleşen) tutarları girin — aktüel gelir/hasar/gider. Bütçe planıyla otomatik karşılaştırma Sapma Analizi ekranında."
+      />
 
       <div className="card mb-4 flex flex-wrap items-center gap-3">
         <label className="label-sm">Yıl</label>

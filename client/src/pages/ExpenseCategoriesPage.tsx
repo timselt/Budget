@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { PageIntro } from '../components/shared/PageIntro'
+import { EmptyState } from '../components/shared/EmptyState'
 
 type Classification = 'Technical' | 'General' | 'Financial' | 'Extraordinary'
 
@@ -39,23 +41,22 @@ export function ExpenseCategoriesPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
-            Gider Kategorileri
-          </h2>
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => setModal({ kind: 'create' })}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            add
-          </span>
-          Yeni Kategori
-        </button>
-      </div>
+      <PageIntro
+        title="Gider Kategorileri"
+        purpose="OPEX kategori sınıflandırması — Gider Girişi ekranında tutarlar bu kategorilere göre kaydedilir; P&L ve sapma raporları sınıflandırma bazında gruplar."
+        actions={
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setModal({ kind: 'create' })}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              add
+            </span>
+            Yeni Kategori
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-12 gap-6 mb-6">
         <KpiCard title="Toplam" value={`${categories.length}`} subtitle={`${activeCount} aktif`} />
@@ -75,9 +76,23 @@ export function ExpenseCategoriesPage() {
         ) : query.isError ? (
           <p className="p-6 text-sm text-error">Kategoriler alınamadı.</p>
         ) : categories.length === 0 ? (
-          <p className="p-6 text-sm text-on-surface-variant">
-            Henüz kategori yok. "Yeni Kategori" ile ekleyin.
-          </p>
+          <EmptyState
+            icon="receipt"
+            title="Henüz kategori yok"
+            description="Yeni kategori ekleyin — Personel, Kira, BT/Altyapı gibi standart OPEX kalemleri sınıflandırılır."
+            cta={
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setModal({ kind: 'create' })}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                  add
+                </span>
+                Yeni Kategori
+              </button>
+            }
+          />
         ) : (
           <table className="tbl">
             <thead>

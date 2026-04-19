@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
+import { PageIntro } from '../components/shared/PageIntro'
 
 interface BudgetYearRow {
   id: number
@@ -125,24 +126,23 @@ export function SpecialItemsPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-end mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">
-            Özel Kalemler
-          </h2>
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          disabled={!versionId}
-          onClick={() => setShowModal(true)}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-            add
-          </span>
-          Yeni Kalem
-        </button>
-      </div>
+      <PageIntro
+        title="Özel Kalemler"
+        purpose="Normal gider veya gelir akışına girmeyen tek-seferlik / olağandışı kalemler (amortisman düzeltmesi, yasal provizyonlar, one-off kazanç/kayıplar). P&L raporunda ayrı bölümde görünür."
+        actions={
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!versionId}
+            onClick={() => setShowModal(true)}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+              add
+            </span>
+            Yeni Kalem
+          </button>
+        }
+      />
 
       <div className="card mb-4 flex gap-3 flex-wrap items-center">
         <label className="label-sm">Yıl</label>
