@@ -1,8 +1,10 @@
 name: Deploy
 
+# TEMP DISABLED 2026-04-20 — railwayapp/railway-cli-action referansı kırık.
+   # Doğru Railway deploy mekanizmasına geçilene kadar manuel dispatch'e indirildi.
+
 on:
   push:
-    branches: [main, develop]
   workflow_dispatch:
     inputs:
       target:
