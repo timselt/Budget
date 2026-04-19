@@ -84,7 +84,7 @@ public sealed class ContractsController : ControllerBase
     }
 
     [HttpPost("{id:int}/activate")]
-    [Authorize(Policy = "RequireFinanceRole")]
+    [Authorize(Policy = "Cfo")]
     public async Task<IActionResult> Activate(int id, CancellationToken cancellationToken)
     {
         var userId = GetUserId();
@@ -93,7 +93,7 @@ public sealed class ContractsController : ControllerBase
     }
 
     [HttpPost("{id:int}/terminate")]
-    [Authorize(Policy = "RequireFinanceRole")]
+    [Authorize(Policy = "Cfo")]
     public async Task<IActionResult> Terminate(
         int id,
         [FromBody] TerminateContractRequest request,
