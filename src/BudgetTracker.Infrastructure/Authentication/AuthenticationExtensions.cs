@@ -118,6 +118,31 @@ public static class AuthenticationExtensions
                 RoleNames.FinanceManager,
                 RoleNames.DepartmentHead,
                 RoleNames.Viewer));
+
+            // Mutabakat önkoşul #3 (00c) — Reconciliation + PriceBook policy'leri.
+            // Spec: docs/Mutabakat_Modulu/docs/specs/00c_prereq_recon_agent_role.md §4.
+            // Muhasebe export/ack yetkisi bilinçli olarak ReconAgent'tan tutulmadı
+            // (segregation of duties — ReconAgent case işler, Finance muhasebeye aktarır).
+            options.AddPolicy("Reconciliation.Import", p => p.RequireRole(
+                RoleNames.Admin, RoleNames.FinanceManager, RoleNames.ReconAgent));
+            options.AddPolicy("Reconciliation.Manage", p => p.RequireRole(
+                RoleNames.Admin, RoleNames.FinanceManager, RoleNames.ReconAgent));
+            options.AddPolicy("Reconciliation.SendToCustomer", p => p.RequireRole(
+                RoleNames.Admin, RoleNames.Cfo, RoleNames.FinanceManager, RoleNames.ReconAgent));
+            options.AddPolicy("Reconciliation.ExportAccounting", p => p.RequireRole(
+                RoleNames.Admin, RoleNames.Cfo, RoleNames.FinanceManager));
+            options.AddPolicy("Reconciliation.AckAccounting", p => p.RequireRole(
+                RoleNames.Admin, RoleNames.Cfo, RoleNames.FinanceManager));
+            options.AddPolicy("Reconciliation.ConfigRisk", p => p.RequireRole(
+                RoleNames.Admin, RoleNames.Cfo));
+            options.AddPolicy("Reconciliation.ViewReports", p => p.RequireAuthenticatedUser());
+
+            // PriceBook policy'leri — 00b PriceBook entity'si merge edildikten sonra
+            // controller'larda kullanılacak. Tanımlar burada hazır bekler.
+            options.AddPolicy("PriceBook.Edit", p => p.RequireRole(
+                RoleNames.Admin, RoleNames.FinanceManager, RoleNames.ReconAgent));
+            options.AddPolicy("PriceBook.Approve", p => p.RequireRole(
+                RoleNames.Admin, RoleNames.Cfo));
         });
 
         return services;

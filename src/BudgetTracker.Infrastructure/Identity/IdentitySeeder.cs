@@ -18,6 +18,7 @@ public static class IdentitySeeder
         (RoleNames.Admin,          "admin@tag.local",   "TAG Admin"),
         (RoleNames.Cfo,             "cfo@tag.local",     "TAG CFO"),
         (RoleNames.FinanceManager,  "finance@tag.local", "Finance Manager"),
+        (RoleNames.ReconAgent,      "recon@tag.local",   "Recon Agent"),
         (RoleNames.DepartmentHead,  "dept@tag.local",    "Department Head"),
         (RoleNames.Viewer,          "viewer@tag.local",  "Read-only User"),
     };
