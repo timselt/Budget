@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 
@@ -560,15 +560,17 @@ function ProductModal({
   const [error, setError] = useState<string | null>(null)
 
   // Her teminat için name + description zorunlu (muhasebe onayı 2026-04-18).
-  const coverageValidation = useMemo(() => {
+  // React 19 compiler manuel useMemo'yu koruyamadığı için inline — compiler
+  // otomatik memoize eder.
+  const coverageValidation = ((): { ok: boolean; message: string } => {
     for (let i = 0; i < form.coverageTerms.length; i++) {
       const term = form.coverageTerms[i]
       if (!term.name.trim()) return { ok: false, message: `Teminat #${i + 1}: ad zorunlu.` }
       if (!term.description.trim())
         return { ok: false, message: `Teminat #${i + 1}: açıklama zorunlu.` }
     }
-    return { ok: true as const, message: '' }
-  }, [form.coverageTerms])
+    return { ok: true, message: '' }
+  })()
 
   const updateCoverage = (index: number, patch: Partial<CoverageTermDraft>) => {
     setForm((prev) => ({

@@ -75,7 +75,6 @@ export function PriceBookEditorPage() {
     if (detailQuery.data) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setRows(detailQuery.data.items)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDirty(false)
     }
   }, [detailQuery.data])
