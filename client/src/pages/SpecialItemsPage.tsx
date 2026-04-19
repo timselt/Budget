@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { formatAmount } from '../lib/number-format'
+import { METRIC_LABELS } from '../lib/metric-labels'
 import { PageIntro } from '../components/shared/PageIntro'
 
 interface BudgetYearRow {
@@ -42,7 +43,7 @@ const ITEM_TYPES: { value: string; label: string; hint: string }[] = [
   },
   {
     value: 'FINANSAL_GELIR',
-    label: 'Finansal Gelir',
+    label: METRIC_LABELS.financialIncome,
     hint: 'Faiz, kur farkı, mevduat gelirleri',
   },
   {

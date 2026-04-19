@@ -109,6 +109,7 @@ public static class DependencyInjection
             client.DefaultRequestHeaders.Add("Accept", "application/xml");
         });
         services.AddScoped<ICustomerService, CustomerService>();
+        services.AddScoped<ICustomerImportService, CustomerImportService>();
         services.AddScoped<ISegmentService, SegmentService>();
         services.AddScoped<IExpenseCategoryService, ExpenseCategoryService>();
         services.AddScoped<IProductCategoryService, ProductCategoryService>();
