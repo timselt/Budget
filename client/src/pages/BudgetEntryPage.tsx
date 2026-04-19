@@ -18,6 +18,7 @@ import {
 import { ExcelImportModal } from '../components/budget-planning/ExcelImportModal'
 import {
   bulkUpsertEntries,
+  createRevision,
   createVersion,
   deleteEntry,
   getCustomerContracts,
@@ -34,12 +35,14 @@ import {
   CURRENCIES,
   getStatusChipClass,
   getStatusLabel,
+  IN_PROGRESS_STATUSES,
   isEditableStatus,
   MONTHS,
 } from '../components/budget-planning/types'
 import type {
   BudgetEntryUpsert,
   BudgetMode,
+  BudgetVersionStatus,
   TreeSelection,
 } from '../components/budget-planning/types'
 import {
@@ -244,6 +247,10 @@ export function BudgetEntryPage() {
     totalCustomerCount > 0 && completedCustomerCount === totalCustomerCount
   const missingCustomerCount = Math.max(0, totalCustomerCount - completedCustomerCount)
 
+  const hasInProgressDraft = versions.some((v) =>
+    IN_PROGRESS_STATUSES.has(v.status as BudgetVersionStatus),
+  )
+
   const margin = revenueTotal - claimTotal
   const lossRatio = lossRatioPercent(revenueTotal, claimTotal)
   const marginPct = marginPercent(revenueTotal, claimTotal)
@@ -319,12 +326,22 @@ export function BudgetEntryPage() {
     },
   })
 
+  // Aktif versiyon varsa "revizyon" — backend Active'in tüm budget_entries'ini
+  // yeni taslağa kopyalar (POST /create-revision). Aktif yoksa boş yeni taslak
+  // (POST /years/{yearId}/versions). Buton metni / banner mesajı bu farkı yansıtır.
   const createDraftMutation = useMutation({
     mutationFn: async () => {
       if (!yearId) throw new Error('Yıl seçilmedi')
+      // Aktif versiyon varsa onun id'siyle revizyon aç, yoksa boş taslak.
+      const activeVersion = versions.find(
+        (v) => (v.status as BudgetVersionStatus) === 'Active',
+      )
+      if (activeVersion) {
+        return createRevision(activeVersion.id)
+      }
       const yearLabel = years.find((y) => y.id === yearId)?.year ?? yearId
       const nextIndex = versions.length + 1
-      const name = `${yearLabel} V${nextIndex} Draft`
+      const name = `${yearLabel} V${nextIndex} Taslak`
       return createVersion(yearId, { name })
     },
     onSuccess: (created) => {
@@ -332,6 +349,8 @@ export function BudgetEntryPage() {
       setVersionId(created.id)
       setSelection(null)
       queryClient.invalidateQueries({ queryKey: ['budget-versions', yearId] })
+      queryClient.invalidateQueries({ queryKey: ['budget-entries', created.id] })
+      queryClient.invalidateQueries({ queryKey: ['budget-tree', created.id] })
     },
     onError: (e: unknown) => {
       setCreateDraftError(
@@ -503,7 +522,7 @@ export function BudgetEntryPage() {
           <option value="">Versiyon —</option>
           {versions.map((v) => (
             <option key={v.id} value={v.id}>
-              {v.name} — {v.status}
+              {v.name} — {getStatusLabel(v.status)}
               {v.isActive ? ' ★' : ''}
             </option>
           ))}
@@ -567,15 +586,22 @@ export function BudgetEntryPage() {
               <span className="text-on-surface-variant">(salt-okunur)</span>
             </p>
             <p className="text-xs text-on-surface-variant mt-0.5">
-              Revize etmek için yeni bir revizyon taslağı açabilirsin. Aktif
-              versiyondaki tüm girişler yeni taslağa kopyalanır.
+              {hasInProgressDraft
+                ? 'Bu yılda zaten çalışılan bir taslak var. Devam etmek için Versiyon dropdown\'undan onu seç.'
+                : 'Revize etmek için yeni bir revizyon taslağı açabilirsin. Aktif versiyondaki tüm girişler yeni taslağa kopyalanır.'}
             </p>
           </div>
           <button
             type="button"
             className="btn-primary"
-            disabled={createDraftMutation.isPending}
+            disabled={createDraftMutation.isPending || hasInProgressDraft}
+            title={
+              hasInProgressDraft
+                ? 'Bu yılda zaten çalışılan bir taslak var (yıl başına tek invariant).'
+                : undefined
+            }
             onClick={() => {
+              if (hasInProgressDraft) return
               setCreateDraftError(null)
               createDraftMutation.mutate()
             }}

@@ -72,7 +72,7 @@ SELECT set_config('app.current_company_id', @cid, false)
 
 ### `EnumToStringConverter` (`Persistence/Configurations/EnumToStringConverter.cs`)
 
-`BudgetVersionStatus.DeptApproved` ↔ `"DEPT_APPROVED"` dönüşümü. PascalCase enum isimleri SCREAMING_SNAKE_CASE DB CHECK constraint değerleriyle tek doğru kaynakta hizalanır. Generic, herhangi bir enum ile çalışır.
+Güncel akışta `BudgetVersionStatus` değerleri `Draft`, `PendingFinance`, `PendingCfo`, `Active`, `Rejected`, `Archived` olarak saklanır. Tarihsel migration'lar eski `DEPT_APPROVED` / `FINANCE_APPROVED` gibi değerleri yeni enum değerlerine mapler. Generic converter, enum string karşılıklarını tek doğru kaynakta hizalar.
 
 ### `Migration: 20260415045722_InitialSchema`
 

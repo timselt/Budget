@@ -197,7 +197,8 @@ budget/
    - Non-superuser `budget_app` rolüyle RLS aktif
 
 2. **Bütçe versiyonlama (Day-1)**
-   - `budget_versions` state machine: DRAFT → SUBMITTED → DEPT_APPROVED → FINANCE_APPROVED → CFO_APPROVED → ACTIVE
+   - `budget_versions` state machine: Draft → PendingFinance → PendingCfo → Active
+   - Yardımcı durumlar: `Rejected`, `Archived`
    - PostgreSQL **EXCLUDE constraint** ile şirket × yıl başına **tek aktif versiyon** DB seviyesinde garanti
 
 3. **Çoklu para birimi (Day-1)**

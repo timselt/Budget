@@ -7,6 +7,7 @@ Tur Assist Grubu için çoklu kiracılı, KVKK uyumlu bütçe planlama ve perfor
 > - `docs/TECH_STACK.md` — teknoloji + mimari genel bakış
 > - `docs/architecture.md` — ADR-0001 → ADR-0011 karar geçmişi
 > - `docs/MIGRATION_PLAN.md` — fazların yol haritası + kabul kriterleri
+> - `docs/BUDGET_WORKFLOW.md` — güncel bütçe yönetim akışı + rol bazlı kullanım
 > - `CHANGELOG.md` — her PR için teslim kaydı
 
 ## Hızlı Başlangıç (< 10 dk)
@@ -115,8 +116,26 @@ pnpm build                                           # TypeScript strict + Vite
 2. **Bütçe versiyonlama Day-1** — `budget_versions` + state machine + `EXCLUDE USING gist`
 3. **Çoklu para birimi Day-1** — 4 FX kolonu (`amount_original` + `amount_try_fixed` + `amount_try_spot` + `currency_code`), TCMB Hangfire job 15:45 TR
 4. **Audit log Day-1** — aylık partition, INSERT-only rol, 7 yıl retention (84 ay)
-5. **Approval workflow Day-1** — DRAFT → SUBMITTED → DEPT_APPROVED → FINANCE_APPROVED → CFO_APPROVED → ACTIVE
+5. **Approval workflow Day-1** — Draft → PendingFinance → PendingCfo → Active
 6. **Clean Architecture** — `Api / Application / Core / Infrastructure` 4 katman
+
+## Bütçe Yönetim Akışı
+
+Sistemde bütçe yönetimi "yıl + versiyon + onay" modeliyle yürür:
+
+1. Finans yeni bütçe yılını açar.
+2. O yıl için bir `Draft` versiyon oluşturur.
+3. Gelir, gider, senaryo ve özel kalem çalışmaları bu taslak üzerinde yapılır.
+4. Taslak tamamlanınca versiyon `PendingFinance` durumuna gönderilir.
+5. Finans kontrolü sonrası versiyon `PendingCfo` durumuna geçer.
+6. CFO onayı ile versiyon `Active` olur.
+7. Aynı yıldaki eski aktif versiyon varsa otomatik `Archived` olur.
+8. Aktif bütçede değişiklik gerekirse `Create Revision` ile yeni bir taslak açılır ve akış tekrar başlar.
+
+Notlar:
+- Sadece `Draft` ve `Rejected` versiyonlar düzenlenebilir.
+- `Rejected` versiyonlar düzeltilip tekrar onaya gönderilebilir.
+- "Geçen yıldan kopyala" işlemi kaynak olarak ilgili yılın `Active` versiyonunu kullanır.
 
 ## Release Akışı
 

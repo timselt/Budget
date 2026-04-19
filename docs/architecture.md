@@ -120,7 +120,7 @@ src/
 Aşağıdaki ilkeler MVP'nin **ilk satırından** itibaren uygulanır. Sonradan eklenmesi mümkün olmayan veya çok pahalı olan kararlar:
 
 1. **Multi-tenant (`company_id`)** — Tek müşteri olsa bile her tabloda `company_id`. EF global query filter + Postgres RLS. Sonradan eklemek tüm sorguları yeniden yazmaktır.
-2. **Bütçe versiyonlama** — `budget_versions` tablosu, state machine (`DRAFT → SUBMITTED → DEPT_APPROVED → FINANCE_APPROVED → CFO_APPROVED → ACTIVE`), `EXCLUDE` constraint ile aktif versiyon tekilliği.
+2. **Bütçe versiyonlama** — `budget_versions` tablosu, state machine (`Draft → PendingFinance → PendingCfo → Active`; yardımcı durumlar: `Rejected`, `Archived`), `EXCLUDE` constraint ile aktif versiyon tekilliği.
 3. **Onay workflow** — Bütçe versiyonu state machine'i + onay kayıtları. Excel'den gelmeyen, UI üzerinden disiplinli giriş.
 4. **Çift para birimi raporlama** — Her tutar tablosunda 4 alan: `amount_original`, `currency_code`, `amount_try_fixed` (yıl başı TCMB), `amount_try_spot` (ay sonu TCMB). TCMB FX job (Hangfire, her gün 15:45 TR). Bkz. Karar #2.
 5. **Audit log** — Aylık partition, append-only DB role, 7 yıl retention. Tüm CUD operasyonları otomatik kaydedilir (EF Core SaveChanges interceptor).
@@ -481,13 +481,12 @@ S4'te oluşturulan domain entity'leri, servis katmanı ve KPI motoru için REST 
 
 #### 2.3. Onay Akışı Endpoint'leri
 
-- Submit: `POST /versions/{id}/submit` (Draft → Submitted)
-- Dept Approve: `POST /versions/{id}/approve/dept`
-- Finance Approve: `POST /versions/{id}/approve/finance`
-- CFO Approve: `POST /versions/{id}/approve/cfo`
-- Activate: `POST /versions/{id}/activate`
-- Reject: `POST /versions/{id}/reject` (body: reason zorunlu)
-- Archive: `POST /versions/{id}/archive`
+- Submit: `POST /versions/{id}/submit` (`Draft` veya `Rejected` → `PendingFinance`)
+- Finance Approve: `POST /versions/{id}/approve-finance` (`PendingFinance` → `PendingCfo`)
+- CFO Approve + Activate: `POST /versions/{id}/approve-cfo-activate` (`PendingCfo` → `Active`)
+- Reject: `POST /versions/{id}/reject` (`PendingFinance` veya `PendingCfo` → `Rejected`, body: reason zorunlu)
+- Archive: `POST /versions/{id}/archive` (`Active` → `Archived`)
+- Create Revision: `POST /versions/{id}/create-revision` (`Active` → yeni `Draft`)
 
 Her adım ilgili role policy ile korunur. State machine doğrulaması domain entity'de yapılır.
 

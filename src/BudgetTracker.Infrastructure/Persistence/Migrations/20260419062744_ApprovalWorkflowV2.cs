@@ -20,8 +20,9 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // ============================================================
-            // 1) Eski CHECK constraint'i düş (UPPER_SNAKE_CASE değerlerle
-            //    yazılmıştı, yeni PascalCase enum'a uymuyor).
+            // 1) Eski CHECK constraint'i düş — eski 8-değer setini içeriyor
+            //    (DRAFT, SUBMITTED, DEPT_APPROVED, ...) — yeni 6-değer
+            //    SCREAMING_SNAKE_CASE constraint Step 5'te eklenir.
             // ============================================================
             migrationBuilder.Sql(@"
                 ALTER TABLE budget_versions
@@ -76,31 +77,31 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
             ");
 
             // ============================================================
-            // 4) Eski enum string'lerini yeni PascalCase değerlere normalize.
-            //    Hem PascalCase (EF EnumToStringConverter çıktısı) hem
-            //    UPPER_SNAKE_CASE (önceki manuel normalizasyon) hem de
-            //    flat UPPER (xxx) varyasyonlarını destekler.
+            // 4) Eski enum string'lerini SCREAMING_SNAKE_CASE'e normalize.
+            //    BudgetTracker custom EnumToStringConverter PascalCase enum'ı
+            //    SCREAMING_SNAKE_CASE'e çevirir (Draft → DRAFT, PendingFinance
+            //    → PENDING_FINANCE). DB hep bu format kullanır.
             // ============================================================
             migrationBuilder.Sql(@"
                 UPDATE budget_versions
                    SET status = CASE
-                          WHEN UPPER(status) = 'DRAFT'                                          THEN 'Draft'
-                          WHEN UPPER(status) IN ('SUBMITTED','DEPT_APPROVED','DEPTAPPROVED','PENDINGFINANCE')   THEN 'PendingFinance'
-                          WHEN UPPER(status) IN ('FINANCE_APPROVED','CFO_APPROVED','FINANCEAPPROVED','CFOAPPROVED','PENDINGCFO') THEN 'PendingCfo'
-                          WHEN UPPER(status) = 'ACTIVE'                                        THEN 'Active'
-                          WHEN UPPER(status) = 'REJECTED'                                      THEN 'Rejected'
-                          WHEN UPPER(status) = 'ARCHIVED'                                      THEN 'Archived'
+                          WHEN UPPER(status) = 'DRAFT'                                          THEN 'DRAFT'
+                          WHEN UPPER(status) IN ('SUBMITTED','DEPT_APPROVED','DEPTAPPROVED','PENDINGFINANCE','PENDING_FINANCE')   THEN 'PENDING_FINANCE'
+                          WHEN UPPER(status) IN ('FINANCE_APPROVED','CFO_APPROVED','FINANCEAPPROVED','CFOAPPROVED','PENDINGCFO','PENDING_CFO') THEN 'PENDING_CFO'
+                          WHEN UPPER(status) = 'ACTIVE'                                        THEN 'ACTIVE'
+                          WHEN UPPER(status) = 'REJECTED'                                      THEN 'REJECTED'
+                          WHEN UPPER(status) = 'ARCHIVED'                                      THEN 'ARCHIVED'
                           ELSE status
                         END;
             ");
 
             // ============================================================
-            // 5) Yeni CHECK constraint (PascalCase 6 değer)
+            // 5) Yeni CHECK constraint (SCREAMING_SNAKE_CASE 6 değer)
             // ============================================================
             migrationBuilder.Sql(@"
                 ALTER TABLE budget_versions
                     ADD CONSTRAINT ck_budget_versions_status
-                    CHECK (status IN ('Draft','PendingFinance','PendingCfo','Active','Rejected','Archived'));
+                    CHECK (status IN ('DRAFT','PENDING_FINANCE','PENDING_CFO','ACTIVE','REJECTED','ARCHIVED'));
             ");
 
             // ============================================================
@@ -110,7 +111,7 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
             migrationBuilder.Sql(@"
                 CREATE UNIQUE INDEX IF NOT EXISTS ux_budget_versions_single_in_progress
                     ON budget_versions (company_id, budget_year_id)
-                 WHERE status IN ('Draft','PendingFinance','PendingCfo','Rejected')
+                 WHERE status IN ('DRAFT','PENDING_FINANCE','PENDING_CFO','REJECTED')
                    AND deleted_at IS NULL;
             ");
 
@@ -149,11 +150,11 @@ namespace BudgetTracker.Infrastructure.Persistence.Migrations
             migrationBuilder.Sql(@"
                 UPDATE budget_versions
                    SET status = CASE status
-                                  WHEN 'PendingFinance' THEN 'Submitted'
-                                  WHEN 'PendingCfo'     THEN 'FinanceApproved'
+                                  WHEN 'PENDING_FINANCE' THEN 'SUBMITTED'
+                                  WHEN 'PENDING_CFO'     THEN 'FINANCE_APPROVED'
                                   ELSE status
                                 END
-                 WHERE status IN ('PendingFinance','PendingCfo');
+                 WHERE status IN ('PENDING_FINANCE','PENDING_CFO');
             ");
         }
     }
