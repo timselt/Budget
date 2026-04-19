@@ -1,0 +1,8 @@
+product_code,product_name,item_type,unit,unit_price,currency_code,tax_rate,notes
+CEKICI,Çekici Hizmeti,AutomotiveService,USE,625.00,TRY,20.00,Doğuş Oto bayi ağı
+CEKICI-UZ,Çekici Uzun Mesafe,AutomotiveService,USE,1195.00,TRY,20.00,Şehirler arası
+IKAME-1G,İkame Araç 1 Gün,AutomotiveService,USE,395.00,TRY,20.00,VW/Audi/Skoda ikame
+IKAME-3G,İkame Araç 3 Gün Paketi,AutomotiveService,PCS,1095.00,TRY,20.00,Paket
+MINI-ONR,Mini Onarım Yerinde,AutomotiveService,USE,340.00,TRY,20.00,Mobil servis
+LASTIK-YRD,Lastik Yardımı,AutomotiveService,USE,265.00,TRY,20.00,Stepne + tamir
+GARANTI-EXT,Uzatılmış Garanti Yönetimi,AutomotiveService,PCS,2450.00,TRY,20.00,Yıllık ek garanti yönetim ücreti

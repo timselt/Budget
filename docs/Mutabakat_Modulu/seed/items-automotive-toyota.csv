@@ -1,0 +1,9 @@
+product_code,product_name,item_type,unit,unit_price,currency_code,tax_rate,notes
+CEKICI,Çekici Hizmeti,AutomotiveService,USE,650.00,TRY,20.00,Şehir içi + 50 km dahil
+CEKICI-UZ,Çekici Uzun Mesafe,AutomotiveService,USE,1250.00,TRY,20.00,50+ km per-use
+IKAME-1G,İkame Araç 1 Gün,AutomotiveService,USE,425.00,TRY,20.00,B sınıfı ikame araç
+IKAME-3G,İkame Araç 3 Gün Paketi,AutomotiveService,PCS,1150.00,TRY,20.00,B sınıfı 3 gün paket
+MINI-ONR,Mini Onarım Yerinde,AutomotiveService,USE,350.00,TRY,20.00,Lastik patlak + aküsüz
+LASTIK-YRD,Lastik Yardımı,AutomotiveService,USE,275.00,TRY,20.00,Stepne değişim / patlak tamiri
+YOL-YRD-BASIC,Yol Yardım Temel,AutomotiveService,USE,185.00,TRY,20.00,Akü takviyesi / yakıt ikmali
+EKSPER,Ekspertiz Hizmeti,AutomotiveService,USE,450.00,TRY,20.00,Hasar tespit raporu

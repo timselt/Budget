@@ -1,0 +1,7 @@
+product_code,product_name,item_type,unit,unit_price,currency_code,tax_rate,notes
+CEKICI,Çekici Hizmeti,AutomotiveService,USE,675.00,TRY,20.00,Renault fleet özel fiyat
+CEKICI-UZ,Çekici Uzun Mesafe,AutomotiveService,USE,1325.00,TRY,20.00,50+ km
+IKAME-1G,İkame Araç 1 Gün,AutomotiveService,USE,450.00,TRY,20.00,Clio/Megane sınıfı
+IKAME-3G,İkame Araç 3 Gün Paketi,AutomotiveService,PCS,1225.00,TRY,20.00,Paket fiyat
+MINI-ONR,Mini Onarım Yerinde,AutomotiveService,USE,365.00,TRY,20.00,Yerinde müdahale
+YOL-YRD-BASIC,Yol Yardım Temel,AutomotiveService,USE,195.00,TRY,20.00,Akü/yakıt
