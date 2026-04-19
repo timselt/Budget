@@ -128,6 +128,155 @@ public sealed class ContractTests
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
+    // ----- 00b Mutabakat lifecycle testleri -----
+
+    [Fact]
+    public void Create_DefaultsCurrencyToTryAndStatusActive()
+    {
+        var contract = MinimalContract();
+
+        contract.CurrencyCode.Should().Be("TRY");
+        contract.Status.Should().Be(ContractStatus.Active);
+        contract.IsActive.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Create_AsDraft_DoesNotSetIsActive()
+    {
+        var contract = Contract.Create(
+            companyId: 1, customerId: 1, customerShortId: 1, productId: 1,
+            businessLine: BusinessLine.RoadSideAssistance,
+            salesType: SalesType.Insurance,
+            productType: BudgetTracker.Core.Enums.Contracts.ProductType.Kasko,
+            vehicleType: VehicleType.Binek,
+            contractForm: ContractForm.Risky,
+            contractType: BudgetTracker.Core.Enums.Contracts.ContractType.PerPolicy,
+            paymentFrequency: PaymentFrequency.Daily,
+            adjustmentClause: AdjustmentClause.WithoutClause,
+            contractKind: ContractKind.CleanCut,
+            serviceArea: ServiceArea.Domestic,
+            createdAt: DateTimeOffset.UtcNow,
+            initialStatus: ContractStatus.Draft);
+
+        contract.Status.Should().Be(ContractStatus.Draft);
+        contract.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Activate_RequiresStartDate()
+    {
+        var contract = MinimalContract();
+        // Fabrikadan çıkan default Active — bunu Draft'a indirmek için yeni örnek.
+        var draft = Contract.Create(
+            companyId: 1, customerId: 1, customerShortId: 1, productId: 1,
+            businessLine: BusinessLine.RoadSideAssistance, salesType: SalesType.Insurance,
+            productType: BudgetTracker.Core.Enums.Contracts.ProductType.Kasko,
+            vehicleType: VehicleType.Binek, contractForm: ContractForm.Risky,
+            contractType: BudgetTracker.Core.Enums.Contracts.ContractType.PerPolicy,
+            paymentFrequency: PaymentFrequency.Daily,
+            adjustmentClause: AdjustmentClause.WithoutClause,
+            contractKind: ContractKind.CleanCut, serviceArea: ServiceArea.Domestic,
+            createdAt: DateTimeOffset.UtcNow, initialStatus: ContractStatus.Draft);
+
+        var act = () => draft.Activate(actorUserId: 1, updatedAt: DateTimeOffset.UtcNow);
+        act.Should().Throw<InvalidOperationException>().WithMessage("*StartDate*");
+    }
+
+    [Fact]
+    public void Activate_DraftToActive_WithStartDate_Succeeds()
+    {
+        var draft = Contract.Create(
+            companyId: 1, customerId: 1, customerShortId: 1, productId: 1,
+            businessLine: BusinessLine.RoadSideAssistance, salesType: SalesType.Insurance,
+            productType: BudgetTracker.Core.Enums.Contracts.ProductType.Kasko,
+            vehicleType: VehicleType.Binek, contractForm: ContractForm.Risky,
+            contractType: BudgetTracker.Core.Enums.Contracts.ContractType.PerPolicy,
+            paymentFrequency: PaymentFrequency.Daily,
+            adjustmentClause: AdjustmentClause.WithoutClause,
+            contractKind: ContractKind.CleanCut, serviceArea: ServiceArea.Domestic,
+            createdAt: DateTimeOffset.UtcNow, initialStatus: ContractStatus.Draft,
+            startDate: new DateOnly(2026, 1, 1));
+
+        draft.Activate(actorUserId: 1, updatedAt: DateTimeOffset.UtcNow);
+
+        draft.Status.Should().Be(ContractStatus.Active);
+        draft.IsActive.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Terminate_Active_SetsStatusAndReason()
+    {
+        var contract = MinimalContract(startDate: new DateOnly(2026, 1, 1));
+
+        contract.Terminate(
+            reason: "customer request",
+            effectiveDate: new DateOnly(2026, 3, 31),
+            actorUserId: 1,
+            updatedAt: DateTimeOffset.UtcNow);
+
+        contract.Status.Should().Be(ContractStatus.Terminated);
+        contract.IsActive.Should().BeFalse();
+        contract.TerminationReason.Should().Be("customer request");
+        contract.EndDate.Should().Be(new DateOnly(2026, 3, 31));
+    }
+
+    [Fact]
+    public void Terminate_RejectsBeforeStartDate()
+    {
+        var contract = MinimalContract(startDate: new DateOnly(2026, 6, 1));
+
+        var act = () => contract.Terminate(
+            reason: "invalid",
+            effectiveDate: new DateOnly(2026, 5, 1),
+            actorUserId: 1,
+            updatedAt: DateTimeOffset.UtcNow);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Terminate_AlreadyTerminated_Throws()
+    {
+        var contract = MinimalContract(startDate: new DateOnly(2026, 1, 1));
+        contract.Terminate(
+            reason: "first",
+            effectiveDate: new DateOnly(2026, 3, 1),
+            actorUserId: 1,
+            updatedAt: DateTimeOffset.UtcNow);
+
+        var act = () => contract.Terminate(
+            reason: "second",
+            effectiveDate: new DateOnly(2026, 4, 1),
+            actorUserId: 1,
+            updatedAt: DateTimeOffset.UtcNow);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Expire_TransitionsActiveToExpired()
+    {
+        var contract = MinimalContract(startDate: new DateOnly(2026, 1, 1));
+
+        contract.Expire(actorUserId: 1, updatedAt: DateTimeOffset.UtcNow);
+
+        contract.Status.Should().Be(ContractStatus.Expired);
+        contract.IsActive.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(SalesType.Insurance, ContractFlow.Insurance)]
+    [InlineData(SalesType.DirectChannel, ContractFlow.Insurance)]
+    [InlineData(SalesType.Medical, ContractFlow.Insurance)]
+    [InlineData(SalesType.Automotive, ContractFlow.Automotive)]
+    [InlineData(SalesType.Fleet, ContractFlow.Automotive)]
+    public void Flow_IsDerivedFromSalesType(SalesType salesType, ContractFlow expected)
+    {
+        var mapped = ContractFlowMapper.FromSalesType(salesType);
+
+        mapped.Should().Be(expected);
+    }
+
     private static Contract MinimalContract(
         int customerShortId = 1,
         decimal? unitPriceTry = null,

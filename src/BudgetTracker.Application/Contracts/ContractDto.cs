@@ -2,7 +2,9 @@ namespace BudgetTracker.Application.Contracts;
 
 /// <summary>
 /// Müşteri-ürün kontratı görünüm modeli. 14-segment kontrat kodu + metadata +
-/// Contract.UnitPriceTry + tarihler. ADR-0014.
+/// Contract.UnitPriceTry + tarihler (ADR-0014). Mutabakat önkoşul 00b ile
+/// genişletildi: <see cref="ContractName"/>, <see cref="CurrencyCode"/>,
+/// <see cref="Status"/>, türetilmiş <see cref="Flow"/>.
 /// </summary>
 public sealed record ContractDto(
     int Id,
@@ -30,4 +32,9 @@ public sealed record ContractDto(
     DateOnly? StartDate,
     DateOnly? EndDate,
     string? Notes,
-    bool IsActive);
+    bool IsActive,
+    string? ContractDisplayName,
+    string CurrencyCode,
+    string Status,
+    string Flow,
+    string? TerminationReason);

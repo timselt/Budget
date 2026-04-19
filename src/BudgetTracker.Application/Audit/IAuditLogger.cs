@@ -36,6 +36,11 @@ public static class AuditActions
 
     // Mutabakat önkoşul #1 (00a) — Customer.external_customer_ref bağlama.
     public const string CustomerExternalRefLinked = "CUSTOMER_EXTERNAL_REF_LINKED";
+
+    // Mutabakat önkoşul #2 (00b) — PriceBook lifecycle.
+    public const string PriceBookVersionCreated = "PRICEBOOK_VERSION_CREATED";
+    public const string PriceBookApproved = "PRICEBOOK_APPROVED";
+    public const string PriceBookItemsChanged = "PRICEBOOK_ITEMS_CHANGED";
 }
 
 public static class AuditEntityNames
@@ -43,4 +48,5 @@ public static class AuditEntityNames
     public const string UserAccount = "UserAccount";
     public const string BudgetVersion = "BudgetVersion";
     public const string Customer = "Customer";
+    public const string PriceBook = "PriceBook";
 }

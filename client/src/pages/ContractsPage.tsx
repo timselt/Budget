@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import api from '../lib/api'
 
 /**
@@ -34,6 +35,11 @@ interface ContractDto {
   endDate: string | null
   notes: string | null
   isActive: boolean
+  contractDisplayName: string | null
+  currencyCode: string
+  status: string
+  flow: string
+  terminationReason: string | null
 }
 
 interface CustomerOption {
@@ -133,10 +139,17 @@ const CHANGE_TYPES = [
   { code: 'PeriodRenewal', label: 'Dönem Yenileme (versiyon atlar)' },
 ]
 
-async function getContracts(params: { customerId?: number; productId?: number }): Promise<ContractDto[]> {
+async function getContracts(params: {
+  customerId?: number
+  productId?: number
+  flow?: string
+  status?: string
+}): Promise<ContractDto[]> {
   const q = new URLSearchParams()
   if (params.customerId) q.set('customerId', String(params.customerId))
   if (params.productId) q.set('productId', String(params.productId))
+  if (params.flow) q.set('flow', params.flow)
+  if (params.status) q.set('status', params.status)
   const { data } = await api.get<ContractDto[]>(`/contracts${q.size > 0 ? '?' + q : ''}`)
   return data
 }
@@ -161,11 +174,18 @@ type Modal =
 export function ContractsPage() {
   const queryClient = useQueryClient()
   const [customerFilter, setCustomerFilter] = useState<number | ''>('')
+  const [flowFilter, setFlowFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string>('')
   const [modal, setModal] = useState<Modal>({ kind: 'none' })
 
   const contractsQuery = useQuery({
-    queryKey: ['contracts', customerFilter],
-    queryFn: () => getContracts({ customerId: customerFilter || undefined }),
+    queryKey: ['contracts', customerFilter, flowFilter, statusFilter],
+    queryFn: () =>
+      getContracts({
+        customerId: customerFilter || undefined,
+        flow: flowFilter || undefined,
+        status: statusFilter || undefined,
+      }),
   })
   const customersQuery = useQuery({ queryKey: ['customers-all'], queryFn: getCustomers })
   const productsQuery = useQuery({ queryKey: ['products-active'], queryFn: getProducts })
@@ -243,6 +263,28 @@ export function ContractsPage() {
             </option>
           ))}
         </select>
+        <span className="label-sm">Akış</span>
+        <select
+          className="select"
+          value={flowFilter}
+          onChange={(e) => setFlowFilter(e.target.value)}
+        >
+          <option value="">— Tümü —</option>
+          <option value="Insurance">Sigorta</option>
+          <option value="Automotive">Otomotiv</option>
+        </select>
+        <span className="label-sm">Durum</span>
+        <select
+          className="select"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="">— Tümü —</option>
+          <option value="Draft">Taslak</option>
+          <option value="Active">Aktif</option>
+          <option value="Expired">Süresi Dolmuş</option>
+          <option value="Terminated">Sonlandırılmış</option>
+        </select>
       </div>
 
       <div className="card p-0 overflow-hidden">
@@ -300,6 +342,15 @@ export function ContractsPage() {
                     </span>
                   </td>
                   <td className="text-right">
+                    <Link
+                      to={`/contracts/${c.id}/price-books`}
+                      className="p-1 text-on-surface-variant hover:text-primary inline-block"
+                      title="Fiyat Listeleri"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                        price_change
+                      </span>
+                    </Link>
                     <button
                       type="button"
                       className="p-1 text-on-surface-variant hover:text-primary"

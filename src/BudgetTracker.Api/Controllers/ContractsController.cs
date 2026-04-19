@@ -24,9 +24,11 @@ public sealed class ContractsController : ControllerBase
     public async Task<IActionResult> GetAll(
         [FromQuery] int? customerId,
         [FromQuery] int? productId,
+        [FromQuery] string? flow,
+        [FromQuery] string? status,
         CancellationToken cancellationToken)
     {
-        var result = await _service.GetAllAsync(customerId, productId, cancellationToken);
+        var result = await _service.GetAllAsync(customerId, productId, flow, status, cancellationToken);
         return Ok(result);
     }
 
@@ -79,6 +81,27 @@ public sealed class ContractsController : ControllerBase
         var userId = GetUserId();
         await _service.DeleteAsync(id, userId, cancellationToken);
         return NoContent();
+    }
+
+    [HttpPost("{id:int}/activate")]
+    [Authorize(Policy = "RequireFinanceRole")]
+    public async Task<IActionResult> Activate(int id, CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        var result = await _service.ActivateAsync(id, userId, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:int}/terminate")]
+    [Authorize(Policy = "RequireFinanceRole")]
+    public async Task<IActionResult> Terminate(
+        int id,
+        [FromBody] TerminateContractRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetUserId();
+        var result = await _service.TerminateAsync(id, request, userId, cancellationToken);
+        return Ok(result);
     }
 
     [HttpPost("preview-code")]

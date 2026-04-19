@@ -36,6 +36,13 @@ public sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
         b.Property(x => x.Notes);
         b.Property(x => x.IsActive).IsRequired();
 
+        // 00b Mutabakat genişletmeleri
+        b.Property(x => x.ContractName).HasMaxLength(255);
+        b.Property(x => x.CurrencyCode).IsRequired().HasMaxLength(3).IsFixedLength();
+        b.Property(x => x.Status).IsRequired().HasConversion<string>().HasMaxLength(20);
+        b.Property(x => x.TerminationReason).HasMaxLength(500);
+        b.Ignore(x => x.Flow); // SalesType'tan türetilir, DB'de yok
+
         // ADR-0014 enum kolonları (string-persisted)
         b.Property(x => x.BusinessLine).IsRequired().HasConversion<string>().HasMaxLength(30);
         b.Property(x => x.SalesType).IsRequired().HasConversion<string>().HasMaxLength(30);
@@ -59,6 +66,7 @@ public sealed class ContractConfiguration : IEntityTypeConfiguration<Contract>
             .IsUnique();
         b.HasIndex(x => new { x.CustomerId, x.IsActive });
         b.HasIndex(x => new { x.ProductId, x.IsActive });
+        b.HasIndex(x => new { x.CompanyId, x.Status, x.CustomerId });
         b.HasQueryFilter(x => x.DeletedAt == null);
     }
 }

@@ -3,7 +3,11 @@ namespace BudgetTracker.Application.Contracts;
 public interface IContractService
 {
     Task<IReadOnlyList<ContractDto>> GetAllAsync(
-        int? customerId, int? productId, CancellationToken cancellationToken);
+        int? customerId,
+        int? productId,
+        string? flow,
+        string? status,
+        CancellationToken cancellationToken);
 
     Task<ContractDto?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
@@ -17,6 +21,13 @@ public interface IContractService
         int id, ReviseContractRequest request, int actorUserId, CancellationToken cancellationToken);
 
     Task DeleteAsync(int id, int actorUserId, CancellationToken cancellationToken);
+
+    /// <summary>Draft → Active geçişi (00b §3.1).</summary>
+    Task<ContractDto> ActivateAsync(int id, int actorUserId, CancellationToken cancellationToken);
+
+    /// <summary>Active/Draft → Terminated (00b §3.1).</summary>
+    Task<ContractDto> TerminateAsync(
+        int id, TerminateContractRequest request, int actorUserId, CancellationToken cancellationToken);
 
     /// <summary>Operatör önizleme — kayıt etmeden kontrat kodu üretir.</summary>
     Task<string> PreviewCodeAsync(

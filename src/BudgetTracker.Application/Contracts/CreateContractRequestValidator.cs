@@ -20,6 +20,10 @@ public sealed class CreateContractRequestValidator : AbstractValidator<CreateCon
         RuleFor(x => x.ServiceArea).NotEmpty();
         RuleFor(x => x.UnitPriceTry).GreaterThanOrEqualTo(0m).When(x => x.UnitPriceTry.HasValue);
         RuleFor(x => x.Notes).MaximumLength(1000);
+        RuleFor(x => x.ContractName).MaximumLength(255);
+        RuleFor(x => x.CurrencyCode)
+            .Length(3).WithMessage("currency code must be ISO 4217 (3 letters)")
+            .When(x => !string.IsNullOrEmpty(x.CurrencyCode));
         When(x => x.StartDate.HasValue && x.EndDate.HasValue, () =>
         {
             RuleFor(x => x.EndDate!.Value)
