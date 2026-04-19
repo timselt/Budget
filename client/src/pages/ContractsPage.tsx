@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../lib/api'
+import { PageIntro } from '../components/shared/PageIntro'
 
 /**
  * Sözleşme (Contract) yönetimi — ADR-0014.
@@ -206,25 +207,26 @@ export function ContractsPage() {
 
   return (
     <section>
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-on-surface">Sözleşmeler</h2>
-        </div>
-        <div className="flex gap-3">
-          <button type="button" className="btn-secondary" onClick={() => setModal({ kind: 'parse' })}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              qr_code_2
-            </span>
-            Kod Çöz
-          </button>
-          <button type="button" className="btn-primary" onClick={() => setModal({ kind: 'create' })}>
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-              add
-            </span>
-            Yeni Sözleşme
-          </button>
-        </div>
-      </div>
+      <PageIntro
+        title="Sözleşmeler"
+        purpose="Müşteri × ürün sözleşme yönetimi (ADR-0014: 14-segment kontrat kodu). Yeni sözleşmede temel alanlar varsayılan; teknik detaylar 'Gelişmiş seçenekler' altında. 'Kod Çöz' mevcut bir koddan parametreleri geri okumak için."
+        actions={
+          <>
+            <button type="button" className="btn-secondary" onClick={() => setModal({ kind: 'parse' })}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                qr_code_2
+              </span>
+              Kod Çöz
+            </button>
+            <button type="button" className="btn-primary" onClick={() => setModal({ kind: 'create' })}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                add
+              </span>
+              Yeni Sözleşme
+            </button>
+          </>
+        }
+      />
 
       <div className="grid grid-cols-12 gap-6 mb-6">
         <div className="col-span-12 md:col-span-3 card">
@@ -488,6 +490,11 @@ function ContractModal({
   const [form, setForm] = useState<FormState>(() => initialFromContract(contract))
   const [preview, setPreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // Audit Sprint 3: basit/gelişmiş mod — yeni sözleşmede ilk açılışta sadece
+  // temel 3 alan görünür (İş Kolu / Satış Tipi / Ürün Tipi). Diğer 7 enum
+  // alan accordion altında. Edit modunda accordion yok (zaten ilgili alanlar
+  // gösterilmiyor).
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => {
@@ -617,6 +624,7 @@ function ContractModal({
 
         {mode === 'create' ? (
           <>
+            {/* Temel 3 alan — her zaman görünür */}
             <EnumField
               label="İş Kolu"
               options={BUSINESS_LINES}
@@ -635,48 +643,73 @@ function ContractModal({
               value={form.productType}
               onChange={(v) => setForm({ ...form, productType: v })}
             />
-            <EnumField
-              label="Araç Tipi"
-              options={VEHICLE_TYPES}
-              value={form.vehicleType}
-              onChange={(v) => setForm({ ...form, vehicleType: v })}
-            />
-            <EnumField
-              label="Sözleşme Şekli"
-              options={CONTRACT_FORMS}
-              value={form.contractForm}
-              onChange={(v) => setForm({ ...form, contractForm: v })}
-            />
-            <EnumField
-              label="Sözleşme Tipi"
-              options={CONTRACT_TYPES}
-              value={form.contractType}
-              onChange={(v) => setForm({ ...form, contractType: v })}
-            />
-            <EnumField
-              label="Ödeme Şekli"
-              options={PAYMENT_FREQUENCIES}
-              value={form.paymentFrequency}
-              onChange={(v) => setForm({ ...form, paymentFrequency: v })}
-            />
-            <EnumField
-              label="Ayarlama Klozu"
-              options={ADJUSTMENT_CLAUSES}
-              value={form.adjustmentClause}
-              onChange={(v) => setForm({ ...form, adjustmentClause: v })}
-            />
-            <EnumField
-              label="Sözleşme Türü"
-              options={CONTRACT_KINDS}
-              value={form.contractKind}
-              onChange={(v) => setForm({ ...form, contractKind: v })}
-            />
-            <EnumField
-              label="Hizmet Alanı"
-              options={SERVICE_AREAS}
-              value={form.serviceArea}
-              onChange={(v) => setForm({ ...form, serviceArea: v })}
-            />
+
+            {/* Gelişmiş 7 alan — accordion altında. Sözleşme kodu doğru
+                üretilmesi için backend defaults'ları kullanır; kullanıcı
+                özelleştirmek isterse açar. */}
+            <div className="col-span-2">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced((v) => !v)}
+                className="text-sm font-semibold text-primary inline-flex items-center gap-1 hover:underline"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                  {showAdvanced ? 'expand_less' : 'expand_more'}
+                </span>
+                {showAdvanced ? 'Gelişmiş seçenekleri gizle' : 'Gelişmiş seçenekleri göster (7 alan)'}
+              </button>
+              <p className="text-xs text-on-surface-variant mt-1">
+                Araç tipi, sözleşme şekli/tipi/türü, ödeme şekli, ayarlama klozu,
+                hizmet alanı — varsayılanlar çoğu sözleşme için yeterlidir.
+              </p>
+            </div>
+
+            {showAdvanced && (
+              <>
+                <EnumField
+                  label="Araç Tipi"
+                  options={VEHICLE_TYPES}
+                  value={form.vehicleType}
+                  onChange={(v) => setForm({ ...form, vehicleType: v })}
+                />
+                <EnumField
+                  label="Sözleşme Şekli"
+                  options={CONTRACT_FORMS}
+                  value={form.contractForm}
+                  onChange={(v) => setForm({ ...form, contractForm: v })}
+                />
+                <EnumField
+                  label="Sözleşme Tipi"
+                  options={CONTRACT_TYPES}
+                  value={form.contractType}
+                  onChange={(v) => setForm({ ...form, contractType: v })}
+                />
+                <EnumField
+                  label="Ödeme Şekli"
+                  options={PAYMENT_FREQUENCIES}
+                  value={form.paymentFrequency}
+                  onChange={(v) => setForm({ ...form, paymentFrequency: v })}
+                />
+                <EnumField
+                  label="Ayarlama Klozu"
+                  options={ADJUSTMENT_CLAUSES}
+                  value={form.adjustmentClause}
+                  onChange={(v) => setForm({ ...form, adjustmentClause: v })}
+                />
+                <EnumField
+                  label="Sözleşme Türü"
+                  options={CONTRACT_KINDS}
+                  value={form.contractKind}
+                  onChange={(v) => setForm({ ...form, contractKind: v })}
+                />
+                <EnumField
+                  label="Hizmet Alanı"
+                  options={SERVICE_AREAS}
+                  value={form.serviceArea}
+                  onChange={(v) => setForm({ ...form, serviceArea: v })}
+                />
+              </>
+            )}
           </>
         ) : null}
 
