@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { BudgetTree, TreeSelection } from './types'
 import { formatCompact } from './utils'
 
@@ -24,21 +24,24 @@ export function BudgetTreePanel({
   loading,
 }: Props) {
   const [query, setQuery] = useState('')
-  const [expandedSegments, setExpandedSegments] = useState<Set<number>>(new Set())
-
-  useEffect(() => {
-    if (!tree) return
-    setExpandedSegments((prev) => {
-      if (prev.size === 0) {
-        return new Set(tree.segments.map((segment) => segment.segmentId))
-      }
-      return new Set(
-        [...prev].filter((segmentId) =>
-          tree.segments.some((segment) => segment.segmentId === segmentId),
-        ),
-      )
-    })
-  }, [tree])
+  const [expandedState, setExpandedState] = useState<{
+    treeKey: string
+    ids: Set<number>
+  }>({ treeKey: '', ids: new Set() })
+  const treeKey = useMemo(
+    () => (tree ? tree.segments.map((segment) => segment.segmentId).join(',') : ''),
+    [tree],
+  )
+  const expandedSegments =
+    tree && expandedState.treeKey !== treeKey
+      ? expandedState.treeKey === ''
+        ? new Set(tree.segments.map((segment) => segment.segmentId))
+        : new Set(
+            [...expandedState.ids].filter((segmentId) =>
+              tree.segments.some((segment) => segment.segmentId === segmentId),
+            ),
+          )
+      : expandedState.ids
 
   const filtered = useMemo(() => {
     if (!tree) return { segments: [], opex: [] }
@@ -124,14 +127,15 @@ export function BudgetTreePanel({
                     aria-label={isExpanded ? 'Kategoriyi daralt' : 'Kategoriyi genişlet'}
                     onClick={() => {
                       if (!query.trim()) {
-                        setExpandedSegments((prev) => {
-                          const next = new Set(prev)
-                          if (next.has(segment.segmentId)) {
-                            next.delete(segment.segmentId)
-                          } else {
-                            next.add(segment.segmentId)
-                          }
-                          return next
+                        const next = new Set(expandedSegments)
+                        if (next.has(segment.segmentId)) {
+                          next.delete(segment.segmentId)
+                        } else {
+                          next.add(segment.segmentId)
+                        }
+                        setExpandedState({
+                          treeKey,
+                          ids: next,
                         })
                       }
                     }}
