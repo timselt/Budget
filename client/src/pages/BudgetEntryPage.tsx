@@ -17,6 +17,10 @@ import { ExcelImportModal } from '../components/budget-planning/ExcelImportModal
 import { WorkContextBar } from '../components/budget-planning/WorkContextBar'
 import { SubmissionChecklist } from '../components/budget-planning/SubmissionChecklist'
 import { useSubmissionChecklist } from '../components/budget-planning/useSubmissionChecklist'
+import {
+  useNextStepNavigator,
+  type NextStepAction,
+} from '../components/budget-planning/useNextStepNavigator'
 import { BudgetPeriodsPage } from './BudgetPeriodsPage'
 import { translateApiError } from '../lib/api-error'
 import { HelpHint } from '../components/shared/Tooltip'
@@ -299,6 +303,21 @@ export function BudgetEntryPage() {
     scenarioId,
   })
 
+  // WorkContextBar smart navigator — checklist priority'sinden tek
+  // navigation hedefi türetir (jump-to-customer/opex/highlight-scenario).
+  const opexLite = useMemo(
+    () =>
+      (tree?.opexCategories ?? []).map((o) => ({
+        expenseCategoryId: o.expenseCategoryId,
+      })),
+    [tree],
+  )
+  const nextStep = useNextStepNavigator(checklist, {
+    customers,
+    entries,
+    opexCategories: opexLite,
+  })
+
   const margin = revenueTotal - claimTotal
   const lossRatio = lossRatioPercent(revenueTotal, claimTotal)
   const marginPct = marginPercent(revenueTotal, claimTotal)
@@ -410,6 +429,34 @@ export function BudgetEntryPage() {
       setCreateDraftError(translateApiError(e))
     },
   })
+
+  // Smart navigator "Düzelt →" CTA → mode/selection güncelle, gerekirse
+  // senaryo dropdown'unu pulse ile vurgula. Pulse: 1.5s sonra attribute kaldır.
+  const handleJumpToNextStep = (action: NextStepAction) => {
+    if (action.kind === 'jump-to-customer' && action.customerId) {
+      const cust = customers.find((c) => c.id === action.customerId)
+      if (cust) {
+        setMode('customer')
+        setSelection({
+          kind: 'customer',
+          customerId: cust.id,
+          segmentId: cust.segmentId,
+        })
+      }
+    } else if (action.kind === 'jump-to-opex' && action.expenseCategoryId) {
+      setMode('tree')
+      setSelection({
+        kind: 'opex',
+        expenseCategoryId: action.expenseCategoryId,
+      })
+    } else if (action.kind === 'highlight-scenario') {
+      const select = document.querySelector('select[data-scenario-select]')
+      if (select instanceof HTMLElement) {
+        select.setAttribute('data-attention', 'scenario')
+        setTimeout(() => select.removeAttribute('data-attention'), 1500)
+      }
+    }
+  }
 
   const updateCell = (cell: CellId, amount: string) => {
     setValues((prev) => {
@@ -609,6 +656,7 @@ export function BudgetEntryPage() {
         </select>
         <select
           className="select"
+          data-scenario-select
           value={scenarioId ?? ''}
           onChange={(e) =>
             setScenarioId(e.target.value === '' ? null : Number(e.target.value))
@@ -669,6 +717,12 @@ export function BudgetEntryPage() {
                 }
           }
           createRevisionPending={createDraftMutation.isPending}
+          nextStep={nextStep}
+          onJumpToNextStep={
+            nextStep && nextStep.action.kind !== 'none'
+              ? () => handleJumpToNextStep(nextStep.action)
+              : undefined
+          }
         />
       ) : null}
 
