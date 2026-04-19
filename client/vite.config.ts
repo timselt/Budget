@@ -6,6 +6,10 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 3000,
+    // strictPort: port doluysa otomatik 3001/3002... fallback yapma — fail et.
+    // Aksi halde paralel duran eski Vite süreçleri sessizce yeni porta kayar
+    // ve geliştirici hangi sürümü gördüğünü bilemez.
+    strictPort: true,
     // host: true binds to 0.0.0.0 so the dev server is reachable from Docker +
     // LAN peers. F4 Part 1 security-reviewer LOW: on a shared office Wi-Fi or
     // VPN this also exposes /api and /connect through the proxy. Kept `true`
