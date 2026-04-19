@@ -136,8 +136,9 @@ export function computeChecklist(input: Input): ChecklistResult {
 }
 
 export function useSubmissionChecklist(input: Input): ChecklistResult {
+  const { customers, entries, expenseEntries, scenarioId } = input
   return useMemo(
-    () => computeChecklist(input),
-    [input.customers, input.entries, input.expenseEntries, input.scenarioId],
+    () => computeChecklist({ customers, entries, expenseEntries, scenarioId }),
+    [customers, entries, expenseEntries, scenarioId],
   )
 }

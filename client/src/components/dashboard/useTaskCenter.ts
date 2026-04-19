@@ -26,7 +26,7 @@ interface CustomerRow { id: number; isActive: boolean }
  */
 export function useTaskCenter(): { tasks: Task[]; isLoading: boolean } {
   const { user } = useAuthStore()
-  const roles = user?.roles ?? []
+  const roles = useMemo(() => user?.roles ?? [], [user?.roles])
 
   const yearsQuery = useQuery({
     queryKey: ['budget-years'],
@@ -50,7 +50,7 @@ export function useTaskCenter(): { tasks: Task[]; isLoading: boolean } {
     queryFn: async () => (await api.get<CustomerRow[]>('/customers')).data,
   })
 
-  const versions = versionsQuery.data ?? []
+  const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data])
   const draftLikeIds = versions
     .filter((v) =>
       IN_PROGRESS_STATES.includes(v.status as BudgetVersionStatus),

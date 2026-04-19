@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 
@@ -79,35 +79,45 @@ async function getItems(yearId: number, versionId: number): Promise<SpecialItemR
 }
 
 export function SpecialItemsPage() {
-  const [yearId, setYearId] = useState<number | null>(null)
-  const [versionId, setVersionId] = useState<number | null>(null)
+  const [yearOverride, setYearOverride] = useState<number | null>(null)
+  const [versionOverride, setVersionOverride] = useState<number | null>(null)
   const [showModal, setShowModal] = useState(false)
   const queryClient = useQueryClient()
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
+
+  const years = useMemo(() => yearsQuery.data ?? [], [yearsQuery.data])
+  const yearId = useMemo(() => {
+    if (yearOverride !== null && years.some((y) => y.id === yearOverride)) {
+      return yearOverride
+    }
+    return years[0]?.id ?? null
+  }, [yearOverride, years])
+
   const versionsQuery = useQuery({
     queryKey: ['budget-versions', yearId],
     queryFn: () => (yearId ? getVersions(yearId) : Promise.resolve([])),
     enabled: yearId !== null,
   })
+
+  const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data])
+  const versionId = useMemo(() => {
+    if (versionOverride !== null && versions.some((v) => v.id === versionOverride)) {
+      return versionOverride
+    }
+    return versions[0]?.id ?? null
+  }, [versionOverride, versions])
+
   const itemsQuery = useQuery({
     queryKey: ['special-items', yearId, versionId],
     queryFn: () => (yearId && versionId ? getItems(yearId, versionId) : Promise.resolve([])),
     enabled: yearId !== null && versionId !== null,
   })
 
-  const years = yearsQuery.data ?? []
-  const versions = versionsQuery.data ?? []
   const items = itemsQuery.data ?? []
 
-  useEffect(() => {
-    if (yearId === null && years.length > 0) setYearId(years[0].id)
-  }, [years, yearId])
-
-  useEffect(() => {
-    if (versionId === null && versions.length > 0) setVersionId(versions[0].id)
-    if (versions.length === 0) setVersionId(null)
-  }, [versions, versionId])
+  const setYearId = setYearOverride
+  const setVersionId = setVersionOverride
 
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: ['special-items', yearId, versionId] })

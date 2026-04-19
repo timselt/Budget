@@ -62,24 +62,20 @@ type Modal = 'copy' | 'grow' | 'excel' | null
 export function BudgetEntryPage() {
   const queryClient = useQueryClient()
   const [mode, setMode] = useState<BudgetMode>('tree')
-  const [yearId, setYearId] = useState<number | null>(null)
+  const [yearOverride, setYearOverride] = useState<number | null>(null)
   const versionId = useAppContextStore((s) => s.selectedVersionId)
   const setVersion = useAppContextStore((s) => s.setVersion)
-  const [scenarioId, setScenarioId] = useState<number | null>(null)
+  const [scenarioOverride, setScenarioOverride] = useState<number | null>(null)
   const [currency, setCurrency] = useState<string>('TRY')
-  const [selection, setSelection] = useState<TreeSelection | null>(null)
+  const [selectionOverride, setSelectionOverride] = useState<TreeSelection | null>(null)
   const [values, setValues] = useState<GridValues>({})
   const [saveError, setSaveError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [createDraftError, setCreateDraftError] = useState<string | null>(null)
   const [modal, setModal] = useState<Modal>(null)
 
+  // Bağımsız sorgular (türetilmiş değerlere bağlı değil).
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
-  const versionsQuery = useQuery({
-    queryKey: ['budget-versions', yearId],
-    queryFn: () => (yearId ? getVersions(yearId) : Promise.resolve([])),
-    enabled: yearId !== null,
-  })
   const scenariosQuery = useQuery({ queryKey: ['scenarios'], queryFn: getScenarios })
   const customersQuery = useQuery({ queryKey: ['customers'], queryFn: getCustomers })
   const treeQuery = useQuery({
@@ -93,9 +89,74 @@ export function BudgetEntryPage() {
     enabled: versionId !== null,
   })
 
+  const years = useMemo(() => yearsQuery.data ?? [], [yearsQuery.data])
+  const scenarios = useMemo(() => scenariosQuery.data ?? [], [scenariosQuery.data])
+  const customers = useMemo(
+    () => (customersQuery.data ?? []).filter((c) => c.isActive),
+    [customersQuery.data],
+  )
+  const tree = treeQuery.data ?? null
+  const entries = useMemo(() => entriesQuery.data ?? [], [entriesQuery.data])
+
+  // Varsayılan yıl: bugünün yılı (fallback: kilitli olmayan ilk yıl, o da
+  // yoksa listedeki ilk yıl). Kullanıcı her gelişte güncel FY'ye düşer.
+  const yearId = useMemo<number | null>(() => {
+    if (yearOverride !== null && years.some((y) => y.id === yearOverride)) {
+      return yearOverride
+    }
+    if (years.length === 0) return null
+    const now = new Date().getFullYear()
+    const current = years.find((y) => y.year === now)
+    const firstOpen = years.find((y) => !y.isLocked)
+    return (current ?? firstOpen ?? years[0]).id
+  }, [yearOverride, years])
+  const setYearId = setYearOverride
+
+  const scenarioId = useMemo<number | null>(() => {
+    if (scenarioOverride !== null && scenarios.some((s) => s.id === scenarioOverride)) {
+      return scenarioOverride
+    }
+    return scenarios[0]?.id ?? null
+  }, [scenarioOverride, scenarios])
+  const setScenarioId = setScenarioOverride
+
+  // Mode'a göre default selection:
+  //  - A (tree) → ilk segment
+  //  - C (customer) → ilk müşteri
+  const selection = useMemo<TreeSelection | null>(() => {
+    if (!tree) return selectionOverride
+    if (mode === 'tree') {
+      if (selectionOverride?.kind === 'segment') return selectionOverride
+      const firstSegment = tree.segments[0]
+      if (firstSegment) {
+        return { kind: 'segment', segmentId: firstSegment.segmentId }
+      }
+      return selectionOverride
+    }
+    if (selectionOverride?.kind === 'customer') return selectionOverride
+    const firstCustomer = tree.segments.find((s) => s.customers.length > 0)?.customers[0]
+    if (firstCustomer) {
+      return {
+        kind: 'customer',
+        customerId: firstCustomer.customerId,
+        segmentId: firstCustomer.segmentId,
+      }
+    }
+    return selectionOverride
+  }, [tree, mode, selectionOverride])
+  const setSelection = setSelectionOverride
+
+  // yearId'ye bağımlı versiyon sorgusu.
+  const versionsQuery = useQuery({
+    queryKey: ['budget-versions', yearId],
+    queryFn: () => (yearId ? getVersions(yearId) : Promise.resolve([])),
+    enabled: yearId !== null,
+  })
+  const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data])
+
+  // selection'a bağımlı kontrat sorgusu.
   const selectedCustomerId =
     selection?.kind === 'customer' ? selection.customerId : null
-
   const contractsQuery = useQuery({
     queryKey: ['customer-contracts', selectedCustomerId],
     queryFn: () =>
@@ -104,16 +165,6 @@ export function BudgetEntryPage() {
         : Promise.resolve([]),
     enabled: selectedCustomerId !== null,
   })
-
-  const years = useMemo(() => yearsQuery.data ?? [], [yearsQuery.data])
-  const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data])
-  const scenarios = useMemo(() => scenariosQuery.data ?? [], [scenariosQuery.data])
-  const customers = useMemo(
-    () => (customersQuery.data ?? []).filter((c) => c.isActive),
-    [customersQuery.data],
-  )
-  const tree = treeQuery.data ?? null
-  const entries = useMemo(() => entriesQuery.data ?? [], [entriesQuery.data])
   const contracts = useMemo(
     () => (contractsQuery.data ?? []).filter((c) => c.isActive),
     [contractsQuery.data],
@@ -139,19 +190,9 @@ export function BudgetEntryPage() {
     return m
   }, [contracts])
 
-  // Varsayılan yıl: bugünün yılı (fallback: kilitli olmayan ilk yıl, o da
-  // yoksa listedeki ilk yıl). Kullanıcı her gelişte güncel FY'ye düşer.
-  useEffect(() => {
-    if (yearId !== null || years.length === 0) return
-    const now = new Date().getFullYear()
-    const current = years.find((y) => y.year === now)
-    const firstOpen = years.find((y) => !y.isLocked)
-    setYearId((current ?? firstOpen ?? years[0]).id)
-  }, [years, yearId])
-
   // Varsayılan versiyon: düzenlenebilir (DRAFT/REJECTED) varsa onu, yoksa
   // aktif olanı, o da yoksa listedeki ilkini seç. Kullanıcının girişe hazır
-  // bir versiyona düşmesi için.
+  // bir versiyona düşmesi için. (setVersion = zustand store action, rule dışı.)
   useEffect(() => {
     if (versions.length === 0) {
       setVersion(null)
@@ -167,64 +208,44 @@ export function BudgetEntryPage() {
     setVersion({ id: fallback.id, label: fallback.name, status: fallback.status })
   }, [versions, versionId, setVersion])
 
-  useEffect(() => {
-    if (scenarioId === null && scenarios.length > 0) setScenarioId(scenarios[0].id)
-  }, [scenarios, scenarioId])
-
-  // Mode'a göre default selection:
-  //  - A (tree) → ilk segment
-  //  - C (customer) → ilk müşteri
-  useEffect(() => {
-    if (!tree) return
-    if (mode === 'tree') {
-      if (selection?.kind === 'segment') return
-      const firstSegment = tree.segments[0]
-      if (firstSegment) {
-        setSelection({ kind: 'segment', segmentId: firstSegment.segmentId })
-      }
-    } else {
-      if (selection?.kind === 'customer') return
-      const firstCustomer = tree.segments.find((s) => s.customers.length > 0)?.customers[0]
-      if (firstCustomer) {
-        setSelection({
-          kind: 'customer',
-          customerId: firstCustomer.customerId,
-          segmentId: firstCustomer.segmentId,
-        })
-      }
-    }
-  }, [tree, selection, mode])
-
   // Müşteri + entries + contracts değiştikçe grid value'ları yeniden kur.
-  useEffect(() => {
+  // React 19: "Storing information from previous renders" — useEffect yerine
+  // render sırasında setState (guarded) ile server verisini form'a sync et.
+  const [valuesSyncKey, setValuesSyncKey] = useState<{
+    selection: TreeSelection | null
+    entries: typeof entries
+    contractByProductId: typeof contractByProductId
+  }>({ selection, entries, contractByProductId })
+  if (
+    valuesSyncKey.selection !== selection ||
+    valuesSyncKey.entries !== entries ||
+    valuesSyncKey.contractByProductId !== contractByProductId
+  ) {
+    setValuesSyncKey({ selection, entries, contractByProductId })
     if (selection?.kind !== 'customer') {
       setValues({})
-      return
-    }
-
-    const next: GridValues = {}
-    const customerEntries = entries.filter((e) => e.customerId === selection.customerId)
-
-    for (const e of customerEntries) {
-      let contractId: number | null = null
-      if (e.contractId) {
-        contractId = e.contractId
-      } else if (e.productId && contractByProductId.has(e.productId)) {
-        contractId = contractByProductId.get(e.productId)!.id
+    } else {
+      const next: GridValues = {}
+      const customerEntries = entries.filter((e) => e.customerId === selection.customerId)
+      for (const e of customerEntries) {
+        let contractId: number | null = null
+        if (e.contractId) {
+          contractId = e.contractId
+        } else if (e.productId && contractByProductId.has(e.productId)) {
+          contractId = contractByProductId.get(e.productId)!.id
+        }
+        const key = cellKey({
+          contractId,
+          kind: e.entryType,
+          month: e.month,
+        })
+        next[key] = { id: e.id, amount: e.amountOriginal.toString() }
       }
-      const key = cellKey({
-        contractId,
-        kind: e.entryType,
-        month: e.month,
-      })
-      next[key] = { id: e.id, amount: e.amountOriginal.toString() }
+      setValues(next)
+      const firstCurrency = customerEntries.find((e) => e.currencyCode)?.currencyCode
+      if (firstCurrency) setCurrency(firstCurrency)
     }
-
-    setValues(next)
-
-    const firstCurrency = customerEntries.find((e) => e.currencyCode)?.currencyCode
-    if (firstCurrency) setCurrency(firstCurrency)
-  }, [selection, entries, contractByProductId])
+  }
 
   const { revenueTotal, claimTotal } = useMemo(() => {
     let rev = 0

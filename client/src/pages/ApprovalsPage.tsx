@@ -126,7 +126,7 @@ export function ApprovalsPage() {
     enabled: years.length > 0,
   })
 
-  const versions = versionsQueries.data ?? []
+  const versions = useMemo(() => versionsQueries.data ?? [], [versionsQueries.data])
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['all-budget-versions'] })
     queryClient.invalidateQueries({ queryKey: ['budget-versions'] })

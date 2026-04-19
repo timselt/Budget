@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { translateApiError } from '../lib/api-error'
@@ -73,18 +73,41 @@ async function getEntries(yearId: number, versionId: number): Promise<ExpenseEnt
 }
 
 export function ExpenseEntriesPage() {
-  const [yearId, setYearId] = useState<number | null>(null)
-  const [versionId, setVersionId] = useState<number | null>(null)
+  const [yearOverride, setYearOverride] = useState<number | null>(null)
+  const [versionOverride, setVersionOverride] = useState<number | null>(null)
   const [entryType, setEntryType] = useState<EntryType>('BUDGET')
   const [showModal, setShowModal] = useState(false)
   const queryClient = useQueryClient()
 
   const yearsQuery = useQuery({ queryKey: ['budget-years'], queryFn: getYears })
+  const years = useMemo(() => yearsQuery.data ?? [], [yearsQuery.data])
+  const yearId = useMemo<number | null>(() => {
+    if (yearOverride !== null && years.some((y) => y.id === yearOverride)) {
+      return yearOverride
+    }
+    if (years.length === 0) return null
+    const now = new Date().getFullYear()
+    return (years.find((y) => y.year === now) ?? years[0]).id
+  }, [yearOverride, years])
+
   const versionsQuery = useQuery({
     queryKey: ['budget-versions', yearId],
     queryFn: () => (yearId ? getVersions(yearId) : Promise.resolve([])),
     enabled: yearId !== null,
   })
+  const versions = useMemo(() => versionsQuery.data ?? [], [versionsQuery.data])
+  // Önce düzenlenebilir versiyon (Draft/Rejected), yoksa Active, yoksa ilk
+  const versionId = useMemo<number | null>(() => {
+    if (versions.length === 0) return null
+    if (versionOverride !== null && versions.some((v) => v.id === versionOverride)) {
+      return versionOverride
+    }
+    const editable = versions.find((v) => isEditableStatus(v.status))
+    if (editable) return editable.id
+    const active = versions.find((v) => v.isActive)
+    return (active ?? versions[0]).id
+  }, [versionOverride, versions])
+
   const categoriesQuery = useQuery({ queryKey: ['expense-categories'], queryFn: getCategories })
   const entriesQuery = useQuery({
     queryKey: ['expense-entries', yearId, versionId],
@@ -93,34 +116,12 @@ export function ExpenseEntriesPage() {
     enabled: yearId !== null && versionId !== null,
   })
 
-  const years = yearsQuery.data ?? []
-  const versions = versionsQuery.data ?? []
   const categories = (categoriesQuery.data ?? []).filter((c) => c.isActive)
   const allEntries = entriesQuery.data ?? []
   const entries = allEntries.filter((e) => e.entryType === entryType)
 
-  useEffect(() => {
-    if (yearId !== null || years.length === 0) return
-    const now = new Date().getFullYear()
-    const current = years.find((y) => y.year === now)
-    setYearId((current ?? years[0]).id)
-  }, [years, yearId])
-
-  // Önce düzenlenebilir versiyon (Draft/Rejected), yoksa Active, yoksa ilk
-  useEffect(() => {
-    if (versions.length === 0) {
-      setVersionId(null)
-      return
-    }
-    if (versionId !== null && versions.some((v) => v.id === versionId)) return
-    const editable = versions.find((v) => isEditableStatus(v.status))
-    if (editable) {
-      setVersionId(editable.id)
-      return
-    }
-    const active = versions.find((v) => v.isActive)
-    setVersionId((active ?? versions[0]).id)
-  }, [versions, versionId])
+  const setYearId = setYearOverride
+  const setVersionId = setVersionOverride
 
   const currentVersion = versions.find((v) => v.id === versionId) ?? null
   const isEditable = isEditableStatus(currentVersion?.status)
