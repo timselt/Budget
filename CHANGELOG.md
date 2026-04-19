@@ -4,6 +4,53 @@ Bu dosya, BudgetTracker projesindeki tüm dikkate değer değişiklikleri kayıt
 
 ## [Unreleased]
 
+### Sidebar Bilgi Mimarisi Yeniden Tasarımı (2026-04-19)
+
+Sidebar 20 item'lık düz iki array yapıdan iş akışı odaklı 8-section accordion yapıya geçti. Hedef: kullanıcı zihninin doğal akışını ("Bugün ne yapacağım? → Hangi bütçe? → Veri girişi → Onay/rapor → Tanımlar") karşılayan bilgi mimarisi.
+
+#### Eklendi
+
+- **`SIDEBAR_SECTIONS` config** (`client/src/components/layout/sidebar-config.ts`) — 8 section (Ana Sayfa, Bütçe Çalışması, Gerçekleşenler, Onay ve Yayın, Analizler, Raporlar, Tanımlar, Sistem) + alt item'lar. `readSectionOpen`/`writeSectionOpen` localStorage helpers.
+- **`SidebarSection.tsx`** — accordion bileşeni; aria-expanded toggle, localStorage persist (`sidebar-section-open:<id>`), section.id bazlı `data-section-id` attribute. NavLink className callback formatında — query param ayrımı (`?tab=versions`) doğru çalışsın diye React Router 7'nin default active behavior'u override edildi.
+- **`SidebarContextBar.tsx`** — sidebar üstünde aktif yıl + versiyon + status rozeti gösterimi. `useActiveVersion` hook'u ile `useAppContextStore`'u hydrate eder; status Türkçe etiketlerle (Taslak/Aktif/Onaylı/vb.) ve renk koduyla render edilir.
+- **`useAppContextStore` versiyon alanları** (`client/src/stores/appContext.ts`) — `selectedVersionId`, `selectedVersionLabel`, `selectedVersionStatus` + `setVersion` action. BudgetEntryPage'in local versiyon state'i bu store'a taşındı; sidebar bağlam satırı versiyon dropdown değişince anında güncellenir.
+- **`/revisions` placeholder route** + **`RevisionsPage.tsx`** ("Yakında" kartı). Revizyon yönetimi P3'e kadar placeholder olarak görünür; kullanıcı Bütçe Planlama → Versiyonlar sekmesine yönlendirilir.
+- **Vitest test suite** — `appContext.test.ts` (3 test) + `SidebarSection.test.tsx` (4 test). Proje ilk Vitest test dosyaları; jsdom 25 + Vitest 2 ortamında localStorage Storage metodları için Map tabanlı bellek polyfill'i `client/src/test/setup.ts`'e eklendi.
+- **Playwright E2E** (`client/e2e/sidebar.spec.ts`, 8 test) — section sırası, eski isim absansı, accordion toggle + persist, Revizyonlar placeholder, bağlam satırı, Versiyonlar tab matcher. `e2e/auth.setup.ts` storageState cache (E2E_TEST_EMAIL/E2E_TEST_PASSWORD env vars).
+
+#### Değişti — Menü İsim Dönüşümleri
+
+| Eski | Yeni | Gerekçe |
+|------|------|---------|
+| `Dashboard` | `Ana Sayfa` | Kullanıcı dili |
+| `Forecast` | `Tahmin` | Türkçe |
+| `Onay Akışı` | `Onaylar` | Sadeleştirme |
+| `Audit Log` | `İşlem Geçmişi` | Türkçe |
+| `Yönetim` | `Sistem Yönetimi` | Kapsam netliği |
+| `Kategori Yönetimi` | `Segmentler` | Route zaten `/segments` |
+| `Müşteri Yönetimi` | `Müşteriler` | Sadeleştirme |
+| `Ürün Yönetimi` | `Ürünler` | Sadeleştirme |
+
+#### Kaldırıldı
+
+- `Sidebar.tsx`'teki bağlamsız "Rapor İndir" global butonu — rapor ekranı içine taşınması P2'ye bırakıldı.
+- `mainNav` ve `mgmtNav` düz array tanımları — `SIDEBAR_SECTIONS` config'i ile değiştirildi.
+
+#### Düzeltildi
+
+- **NavLink default active behavior** (`SidebarSection.tsx`): `className` string olarak verildiğinde React Router 7 kendi `active` class'ını da ekliyordu. Sonuç: `?tab=versions` query param'ı sadece pathname'i match'leyen NavLink default davranışı tarafından göz ardı ediliyor, "Versiyonlar" ve "Bütçe Planlama" linkleri aynı anda active görünüyordu. `className` callback formatına geçildi; `matchItem` tek otorite.
+
+#### Tasarım Dokümanları
+
+- `docs/plans/2026-04-19-sidebar-information-architecture-redesign-design.md`
+- `docs/plans/2026-04-19-sidebar-information-architecture-redesign-plan.md`
+
+#### P2'ye Ertelendi
+
+Rol bazlı menü görünürlüğü, "Onaylar" badge'i (`Bekleyen N`), tooltip / kısa açıklama, accordion smooth animation iyileştirmesi.
+
+---
+
 ### FAZ 8 Shadow Run Başlangıcı — Hafta 1 raporu açıldı (2026-04-17)
 
 F7 staging deploy altyapısı main'de (PR #13). Muhasebe seansı kararları (PR #12) uygulandı. F8 Shadow Run aşaması resmi olarak başladı — muhasebe ekibi ilk haftalık rapor dosyasını (`docs/shadow-run-report-2026-16.md`) doldurmaya başlayabilir.
