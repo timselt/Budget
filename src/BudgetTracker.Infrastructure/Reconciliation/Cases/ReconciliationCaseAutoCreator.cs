@@ -1,6 +1,7 @@
 using System.Text.Json;
 using BudgetTracker.Application.Common.Abstractions;
 using BudgetTracker.Application.Reconciliation.Cases;
+using BudgetTracker.Application.Reconciliation.Lines;
 using BudgetTracker.Core.Entities.Reconciliation;
 using BudgetTracker.Core.Enums.Reconciliation;
 using Microsoft.EntityFrameworkCore;
@@ -30,11 +31,16 @@ public sealed class ReconciliationCaseAutoCreator : IReconciliationCaseAutoCreat
 {
     private readonly IApplicationDbContext _db;
     private readonly TimeProvider _time;
+    private readonly ILinePricingResolver _pricingResolver;
 
-    public ReconciliationCaseAutoCreator(IApplicationDbContext db, TimeProvider time)
+    public ReconciliationCaseAutoCreator(
+        IApplicationDbContext db,
+        TimeProvider time,
+        ILinePricingResolver pricingResolver)
     {
         _db = db;
         _time = time;
+        _pricingResolver = pricingResolver;
     }
 
     public async Task<CaseAutoCreateResult> CreateCasesForBatchAsync(
@@ -158,7 +164,7 @@ public sealed class ReconciliationCaseAutoCreator : IReconciliationCaseAutoCreat
 
             foreach (var sourceRow in rows)
             {
-                var (productCode, productName, quantity) = ExtractLineFields(
+                var (productCode, productName, quantity, expectedPrice) = ExtractLineFields(
                     sourceRow.RawPayload, batch.Flow);
                 if (quantity <= 0)
                 {
@@ -172,10 +178,22 @@ public sealed class ReconciliationCaseAutoCreator : IReconciliationCaseAutoCreat
                     productCode: productCode,
                     productName: productName,
                     quantity: quantity,
-                    unitPrice: 0m,                // Task 5: PriceBook lookup ile doldurulur
+                    unitPrice: 0m,
                     currencyCode: kase.CurrencyCode,
-                    priceSourceRef: string.Empty, // Task 5 günceller
+                    priceSourceRef: "UNRESOLVED",
                     createdAt: now);
+
+                // Sprint 2 Task 5 — PriceBook lookup ile Line status atanır.
+                // Domain metotlari: ResolveAsReady / ResolveAsPricingMismatch /
+                // ResolveAsRejected (Line.cs içinde).
+                await _pricingResolver.ResolveAsync(
+                    line: line,
+                    customerId: customerId,
+                    flow: batch.Flow,
+                    periodCode: batch.PeriodCode,
+                    expectedUnitPrice: expectedPrice,
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
+
                 _db.ReconciliationLines.Add(line);
                 totalLines++;
             }
@@ -191,11 +209,11 @@ public sealed class ReconciliationCaseAutoCreator : IReconciliationCaseAutoCreat
     }
 
     /// <summary>
-    /// Flow'a göre RawPayload JSON'ından Line için gereken 3 alanı çıkarır.
-    /// Insurance: product_code + product_name + quantity.
-    /// Automotive: service_code + service_name + usage_count.
+    /// Flow'a göre RawPayload JSON'ından Line için gereken alanları çıkarır.
+    /// Insurance: product_code + product_name + quantity + unit_price_expected.
+    /// Automotive: service_code + service_name + usage_count (expected_price yok).
     /// </summary>
-    private static (string productCode, string productName, decimal quantity) ExtractLineFields(
+    private static (string productCode, string productName, decimal quantity, decimal? expectedPrice) ExtractLineFields(
         string rawPayload, ReconciliationFlow flow)
     {
         using var doc = JsonDocument.Parse(rawPayload);
@@ -206,12 +224,28 @@ public sealed class ReconciliationCaseAutoCreator : IReconciliationCaseAutoCreat
             ReconciliationFlow.Insurance => (
                 productCode: root.TryGetProperty("product_code", out var pc) ? pc.GetString() ?? string.Empty : string.Empty,
                 productName: root.TryGetProperty("product_name", out var pn) ? pn.GetString() ?? string.Empty : string.Empty,
-                quantity: ReadDecimal(root, "quantity")),
+                quantity: ReadDecimal(root, "quantity"),
+                expectedPrice: ReadNullableDecimal(root, "unit_price_expected")),
             ReconciliationFlow.Automotive => (
                 productCode: root.TryGetProperty("service_code", out var sc) ? sc.GetString() ?? string.Empty : string.Empty,
                 productName: root.TryGetProperty("service_name", out var sn) ? sn.GetString() ?? string.Empty : string.Empty,
-                quantity: ReadDecimal(root, "usage_count")),
+                quantity: ReadDecimal(root, "usage_count"),
+                expectedPrice: (decimal?)null),
             _ => throw new InvalidOperationException($"unsupported flow: {flow}"),
+        };
+    }
+
+    private static decimal? ReadNullableDecimal(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty(propertyName, out var p)) return null;
+        return p.ValueKind switch
+        {
+            JsonValueKind.Null => null,
+            JsonValueKind.Number when p.TryGetDecimal(out var d) => d,
+            JsonValueKind.String when decimal.TryParse(p.GetString(),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var d) => d,
+            _ => null,
         };
     }
 

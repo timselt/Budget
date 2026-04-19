@@ -193,8 +193,12 @@ public sealed class ReconciliationBatchServiceTests : IAsyncLifetime
         var time = TimeProvider.System;
         // Sprint 2 Task 4 — real autoCreator; case/line side effect'leri ayrı
         // integration test'lerde doğrulanır (ReconciliationCaseAutoCreatorTests).
+        // ILinePricingResolver no-op mock: bu test batch + SourceRow'lara odaklı,
+        // PriceBook lookup Task 5 testlerinde ayrıca doğrulanır.
+        var resolver = NSubstitute.Substitute.For<
+            BudgetTracker.Application.Reconciliation.Lines.ILinePricingResolver>();
         var autoCreator = new BudgetTracker.Infrastructure.Reconciliation.Cases
-            .ReconciliationCaseAutoCreator(ctx, time);
+            .ReconciliationCaseAutoCreator(ctx, time, resolver);
         return (new ReconciliationBatchService(ctx, parser, audit, time, autoCreator), audit);
     }
 

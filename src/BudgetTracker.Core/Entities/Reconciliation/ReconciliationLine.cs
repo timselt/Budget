@@ -29,7 +29,7 @@ public sealed class ReconciliationLine : BaseEntity
 
     private ReconciliationLine() { }
 
-    /// <summary>Sprint 1 iskelet factory — fixture amaçlı.</summary>
+    /// <summary>Sprint 1 iskelet factory — fixture amaçlı + Sprint 2 PendingReview lines.</summary>
     public static ReconciliationLine Create(
         int caseId,
         int sourceRowId,
@@ -60,5 +60,74 @@ public sealed class ReconciliationLine : BaseEntity
             Status = ReconciliationLineStatus.PendingReview,
             CreatedAt = createdAt,
         };
+    }
+
+    /// <summary>
+    /// Sprint 2 Task 5 — PriceBook lookup sonrası Line'ı Ready'e geçirir.
+    /// unit_price sözleşmedeki değer, price_source_ref "PB#{id}-V{ver}-Item#{itemId}"
+    /// formatında.
+    /// </summary>
+    public void ResolveAsReady(decimal unitPrice, string priceSourceRef, DateTimeOffset resolvedAt)
+    {
+        if (Status != ReconciliationLineStatus.PendingReview)
+        {
+            throw new InvalidOperationException(
+                $"only PendingReview line can be resolved (current: {Status}).");
+        }
+        if (unitPrice < 0) throw new ArgumentOutOfRangeException(nameof(unitPrice));
+        ArgumentException.ThrowIfNullOrWhiteSpace(priceSourceRef);
+
+        UnitPrice = unitPrice;
+        Amount = decimal.Round(Quantity * unitPrice, 2, MidpointRounding.ToEven);
+        PriceSourceRef = priceSourceRef;
+        Status = ReconciliationLineStatus.Ready;
+        UpdatedAt = resolvedAt;
+    }
+
+    /// <summary>
+    /// Sprint 2 Task 5 — PriceBook'ta ürün var ama beyan edilen fiyat uyuşmuyor.
+    /// Line sözleşme fiyatına atlanır; agent UI'da karar verir.
+    /// </summary>
+    public void ResolveAsPricingMismatch(
+        decimal contractUnitPrice,
+        string priceSourceRef,
+        DateTimeOffset resolvedAt)
+    {
+        if (Status != ReconciliationLineStatus.PendingReview)
+        {
+            throw new InvalidOperationException(
+                $"only PendingReview line can be resolved (current: {Status}).");
+        }
+        if (contractUnitPrice < 0) throw new ArgumentOutOfRangeException(nameof(contractUnitPrice));
+        ArgumentException.ThrowIfNullOrWhiteSpace(priceSourceRef);
+
+        UnitPrice = contractUnitPrice;
+        Amount = decimal.Round(Quantity * contractUnitPrice, 2, MidpointRounding.ToEven);
+        PriceSourceRef = priceSourceRef;
+        Status = ReconciliationLineStatus.PricingMismatch;
+        DisputeReasonCode = Core.Enums.Reconciliation.DisputeReasonCode.PriceMismatch;
+        UpdatedAt = resolvedAt;
+    }
+
+    /// <summary>
+    /// Sprint 2 Task 5 — Contract bulunamadı / ürün sözleşmede yok / birden fazla
+    /// contract: Line reddedilir; agent manuel müdahale yapabilir.
+    /// </summary>
+    public void ResolveAsRejected(
+        DisputeReasonCode reason,
+        string note,
+        DateTimeOffset resolvedAt)
+    {
+        if (Status != ReconciliationLineStatus.PendingReview)
+        {
+            throw new InvalidOperationException(
+                $"only PendingReview line can be resolved (current: {Status}).");
+        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(note);
+
+        Status = ReconciliationLineStatus.Rejected;
+        DisputeReasonCode = reason;
+        DisputeNote = note;
+        UpdatedAt = resolvedAt;
     }
 }

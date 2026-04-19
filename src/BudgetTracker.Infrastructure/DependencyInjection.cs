@@ -13,9 +13,11 @@ using BudgetTracker.Application.PriceBooks;
 using BudgetTracker.Application.Reconciliation.Batches;
 using BudgetTracker.Application.Reconciliation.Cases;
 using BudgetTracker.Application.Reconciliation.Import;
+using BudgetTracker.Application.Reconciliation.Lines;
 using BudgetTracker.Infrastructure.Reconciliation.Batches;
 using BudgetTracker.Infrastructure.Reconciliation.Cases;
 using BudgetTracker.Infrastructure.Reconciliation.Import;
+using BudgetTracker.Infrastructure.Reconciliation.Lines;
 using BudgetTracker.Application.Pricing;
 using BudgetTracker.Application.Products;
 using BudgetTracker.Application.FxRates;
@@ -131,7 +133,8 @@ public static class DependencyInjection
         services.AddScoped<IReconciliationImportParser, ReconciliationImportParser>();
         services.AddScoped<IReconciliationBatchService, ReconciliationBatchService>();
 
-        // Mutabakat Sprint 2 — Case/Line auto-creation (Task 4).
+        // Mutabakat Sprint 2 — Case/Line auto-creation (Task 4) + pricing resolver (Task 5).
+        services.AddScoped<ILinePricingResolver, LinePricingResolver>();
         services.AddScoped<IReconciliationCaseAutoCreator, ReconciliationCaseAutoCreator>();
         services.AddScoped<IBudgetEntryService, BudgetEntryService>();
         services.AddScoped<IBudgetTreeService, BudgetTreeService>();

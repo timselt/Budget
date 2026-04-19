@@ -1,6 +1,7 @@
 using System.Text;
 using BudgetTracker.Application.Audit;
 using BudgetTracker.Application.Reconciliation.Import;
+using BudgetTracker.Application.Reconciliation.Lines;
 using BudgetTracker.Core.Common;
 using BudgetTracker.Core.Entities;
 using BudgetTracker.Core.Enums.Reconciliation;
@@ -141,7 +142,8 @@ public sealed class ReconciliationCaseAutoCreatorTests : IAsyncLifetime
         // Idempotent re-run simülasyonu: aynı case customer+period+flow için
         // autoCreator tekrar çağrılırsa yeni Case yaratmamalı.
         await using var ctx = _fixture.CreateSuperuserContext();
-        var autoCreator = new ReconciliationCaseAutoCreator(ctx, TimeProvider.System);
+        var noopResolver = Substitute.For<ILinePricingResolver>();
+        var autoCreator = new ReconciliationCaseAutoCreator(ctx, TimeProvider.System, noopResolver);
         var rerun = await autoCreator.CreateCasesForBatchAsync(
             firstDetail.Id, companyId, userId, CancellationToken.None);
 
@@ -187,7 +189,11 @@ public sealed class ReconciliationCaseAutoCreatorTests : IAsyncLifetime
         var parser = new ReconciliationImportParser(xlsxReader, csvReader);
         var audit = Substitute.For<IAuditLogger>();
         var time = TimeProvider.System;
-        var autoCreator = new ReconciliationCaseAutoCreator(ctx, time);
+        // No-op pricing resolver — Task 4 testleri Line status/unit_price default'larına
+        // dayanır (PendingReview + 0). Task 5 testleri ayrı fixture ile gerçek
+        // PricingLookupService kullanır.
+        var resolver = Substitute.For<ILinePricingResolver>();
+        var autoCreator = new ReconciliationCaseAutoCreator(ctx, time, resolver);
         return (new ReconciliationBatchService(ctx, parser, audit, time, autoCreator), audit);
     }
 
