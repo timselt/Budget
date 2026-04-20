@@ -298,7 +298,8 @@ function LinkCustomerButton({
   )
 }
 
-function ErrorsTab(_: { batchId: number }) {
+function ErrorsTab({ batchId }: { batchId: number }) {
+  void batchId;
   const { t } = useTranslation()
   // Parse error satırları için ayrı endpoint yok — source rows'dan filtrelemek gerekir.
   // Sprint 2 MVP: placeholder — Task 13 full E2E'de genişletilebilir.
