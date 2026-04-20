@@ -54,7 +54,7 @@ export function ReconciliationBatchDetailPage() {
       showToast(t('reconciliation.batchDetail.deleteSuccess'), 'success')
       queryClient.invalidateQueries({ queryKey: ['reconciliation-batches'] })
       navigate('/mutabakat/batches')
-    } catch (e) {
+    } catch {
       showToast(t('errors.unexpected'), 'error')
     }
   }
@@ -254,7 +254,7 @@ function LinkCustomerButton({
       setOpen(false)
       setCustomerId('')
       onLinked()
-    } catch (e) {
+    } catch {
       showToast(t('errors.unexpected'), 'error')
     } finally {
       setLinking(false)
@@ -298,7 +298,7 @@ function LinkCustomerButton({
   )
 }
 
-function ErrorsTab({ batchId: _batchId }: { batchId: number }) {
+function ErrorsTab(_: { batchId: number }) {
   const { t } = useTranslation()
   // Parse error satırları için ayrı endpoint yok — source rows'dan filtrelemek gerekir.
   // Sprint 2 MVP: placeholder — Task 13 full E2E'de genişletilebilir.
