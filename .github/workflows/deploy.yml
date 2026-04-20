@@ -1,9 +1,10 @@
-# TEMP DISABLED 2026-04-20 — railwayapp/railway-cli-action reference broken.
-   # Re-enable with correct Railway deploy action when needed.
-
 name: Deploy
 
 on:
+  push:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
     inputs:
       target:
@@ -26,16 +27,21 @@ concurrency:
 
 jobs:
   deploy-dev:
-    if: github.ref == 'refs/heads/develop'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     environment:
       name: dev
       url: https://dev.finopstur.com
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - uses: railwayapp/railway-cli-action@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.RAILWAY_TOKEN }}
+          node-version: '20'
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       - name: Deploy API
         run: railway up --service api --environment dev --detach
       - name: Deploy Web
@@ -44,16 +50,21 @@ jobs:
         run: ./infra/release/prod-smoke.sh https://dev.finopstur.com
 
   deploy-staging:
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: staging
       url: https://staging.finopstur.com
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - uses: railwayapp/railway-cli-action@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.RAILWAY_TOKEN }}
+          node-version: '20'
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       - name: Apply EF migrations
         env:
           ConnectionStrings__Default: ${{ secrets.STAGING_CONN_STRING_SUPERUSER }}
@@ -78,16 +89,21 @@ jobs:
     # Staging must complete; GitHub environment `production` enforces
     # the manual-approval reviewer gate (configured in repo settings).
     needs: deploy-staging
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: production
       url: https://app.finopstur.com
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - uses: railwayapp/railway-cli-action@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.RAILWAY_TOKEN }}
+          node-version: '20'
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       - name: Apply EF migrations
         env:
           ConnectionStrings__Default: ${{ secrets.PROD_CONN_STRING_SUPERUSER }}
@@ -123,11 +139,16 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: ${{ inputs.target }}
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - uses: railwayapp/railway-cli-action@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          token: ${{ secrets.RAILWAY_TOKEN }}
+          node-version: '20'
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
       - name: Deploy ${{ inputs.target }}
         run: |
           railway up --service api --environment ${{ inputs.target }} --detach
