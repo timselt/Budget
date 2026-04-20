@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { useMemo } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { AgGridReact } from 'ag-grid-react'
@@ -24,7 +24,6 @@ export function ReconciliationCaseDetailPage() {
   const { id } = useParams<{ id: string }>()
   const caseId = id ? Number(id) : 0
   const { t, i18n } = useTranslation()
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const caseQuery = useQuery({
@@ -123,16 +122,16 @@ export function ReconciliationCaseDetailPage() {
 }
 
 function LinesGrid({
-  caseId,
-  lines,
-  currencyCode,
-  onMutated,
-}: {
-  caseId: number
-  lines: CaseLine[]
-  currencyCode: string
-  onMutated: () => void
-}) {
+    _caseId,
+    lines,
+    currencyCode,
+    onMutated,
+  }: {
+    _caseId: number;
+    lines: CaseLine[];
+    currencyCode: string;
+    onMutated: () => void
+  }) {
   const { t } = useTranslation()
 
   const markReadyMutation = useMutation({
