@@ -108,12 +108,11 @@ export function ReconciliationCaseDetailPage() {
           </div>
 
           <div className="card p-0 overflow-hidden" style={{ height: 480 }}>
-            <LinesGrid
-              caseId={caseId}
-              lines={kase.lines}
-              currencyCode={kase.currencyCode}
-              onMutated={() => queryClient.invalidateQueries({ queryKey: ['reconciliation-case', caseId] })}
-            />
+          <LinesGrid
+  lines={kase.lines}
+  currencyCode={kase.currencyCode}
+  onMutated={() => queryClient.invalidateQueries({ queryKey: ['reconciliation-case', caseId] })}
+/>
           </div>
         </>
       )}
@@ -122,16 +121,14 @@ export function ReconciliationCaseDetailPage() {
 }
 
 function LinesGrid({
-    _caseId,
-    lines,
-    currencyCode,
-    onMutated,
-  }: {
-    _caseId: number;
-    lines: CaseLine[];
-    currencyCode: string;
-    onMutated: () => void
-  }) {
+  lines,
+  currencyCode,
+  onMutated,
+}: {
+  lines: CaseLine[];
+  currencyCode: string;
+  onMutated: () => void
+}) {
   const { t } = useTranslation()
 
   const markReadyMutation = useMutation({
