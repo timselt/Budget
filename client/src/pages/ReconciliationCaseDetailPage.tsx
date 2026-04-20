@@ -150,7 +150,7 @@ function LinesGrid({
     try {
       await updateLine(event.data.id, payload)
       onMutated()
-    } catch (e) {
+    } catch {
       showToast(t('errors.unexpected'), 'error')
       onMutated() // revert
     }
