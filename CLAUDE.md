@@ -194,8 +194,10 @@ _Kapandı — artık açık olmayan:_
 - ~~ProductsPage ↔ gerçek API bağlantısı~~ → **Zaten API'ye bağlı** (2026-04-18 itibarıyla). `/product-categories`, `/products`, `/segments` endpoint'leri kullanılıyor, mock yok. Eski "Müşteri × Ürün Matrisi" tasarımı ADR-0014 `Contract` modeliyle yerine geçti; `customer_products` tablosu migration `20260418203730_AddContractDomain` ile drop edildi. "Müşteri başına ürün listesi" görünümü artık `ContractsPage` üzerinden sağlanır.
 
 **Implementation tamamlandı, muhasebe doğrulaması bekleyen:**
-- **`BudgetEntry.ProductId` NOT NULL geçişi** (ADR-0013 follow-up c) — tüm aktif bütçe satırlarına ürün ataması tamamlandıktan sonra migration ile zorunlu yapılır.
 - **Pilot fiyat listesi (placeholder)** — 89 müşteri × 11 SKU varyantı × placeholder fiyat seed yüklenecek. Muhasebe gerçek fiyatları sonra girecek. Rehber: `docs/Mutabakat_Modulu/seed/README.md`.
+
+**Mimari geçiş (yeni ADR gerekir, kısa vadeli değil):**
+- **`BudgetEntry.ContractId` NOT NULL geçişi** — ADR-0014 §2.6 uyarınca mevcut `BudgetEntry.ProductId` alanı **geçiş amaçlı nullable**; uzun vadede drop edilip `ContractId` zorunlu alana yükseltilecek. Ön koşul: (a) tüm entry kayıt yolları (ExcelImportService dahil) ContractId atayabilmeli, (b) aktif bütçelerde her satıra sözleşme ataması tamamlanmış olmalı. Tetikleyici: yeni ADR karar alındığında migration açılır.
 
 ---
 
