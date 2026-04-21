@@ -105,6 +105,31 @@ public sealed class ReconAgentRolePolicyTests
     }
 
     [Fact]
+    public async Task PriceBookEdit_WithReconAgentRole_IsAllowed()
+    {
+        // Spec 00c §4: ReconAgent PriceBook Draft/kalem girebilir.
+        // D.2 cleanup sonrası PriceBooksController.CreateDraft/BulkAddItems/ImportCsv
+        // bu policy'ye geçer — ReconAgent ilk kez draft PriceBook üretebilir.
+        var user = UserWithRole(RoleNames.ReconAgent);
+
+        var result = await _authService.AuthorizeAsync(user, resource: null, "PriceBook.Edit");
+
+        result.Succeeded.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task PriceBookEdit_WithCfoRole_IsDenied()
+    {
+        // Spec 00c §4: PriceBook.Edit üyeliği Admin + FM + ReconAgent — Cfo YOK.
+        // Cfo sadece Approve yapabilir (görev ayrılığı: draft üreten ≠ onaylayan).
+        var user = UserWithRole(RoleNames.Cfo);
+
+        var result = await _authService.AuthorizeAsync(user, resource: null, "PriceBook.Edit");
+
+        result.Succeeded.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task PriceBookApprove_WithCfoRole_IsAllowed()
     {
         var user = UserWithRole(RoleNames.Cfo);
