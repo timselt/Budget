@@ -1,6 +1,8 @@
 # Muhasebe Seansı Kararları — 2026-04-17
 
-> **Bu doküman `docs/accounting-session-prep.md` şablonunun doldurulmuş halidir.** CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #1–#4'ün resmi kapanış kaydı. Shadow run (F8) karşılaştırmalarında baseline referansı olarak kullanılır.
+> **2026-04-21 notu:** Bu doküman içinde geçen Shadow Run (F8) + F9 Excel Emekliliği referansları artık geçerli değil; **shadow run planı 2026-04-21'de iptal edildi**. Belgenin iş kararları (GENERAL/TECHNICAL sınıflandırmaları, SGK Teşvik, konsantrasyon eşikleri) hâlâ geçerli; sadece "shadow run'da doğrulanacak" cümleleri uygulanmayacak.
+
+> **Bu doküman `docs/accounting-session-prep.md` şablonunun doldurulmuş halidir.** CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #1–#4'ün resmi kapanış kaydıdır.
 
 **Katılımcılar:** Timur Selçuk Turan (proje sahibi), muhasebe ekibi  
 **Süre:** ~1 saat  

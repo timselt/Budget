@@ -1,5 +1,7 @@
 # Muhasebe Seansı Hazırlık Dokümanı
 
+> **2026-04-21 notu:** Bu şablon içindeki Shadow Run (F8) + F9 Excel Emekliliği atıfları iptal edildi — shadow run planı 2026-04-21'de tamamen kaldırıldı. Şablon iş soru setleri hâlâ kullanılabilir; sadece "shadow run öncesi" / "shadow run raporu" cümleleri geçerli değil.
+
 > **Zamanlama:** F6 ile F7 arasında, 1 saat. FinOps Tur prod deploy öncesi son karar fırsatı.
 > **Katılımcılar:** Timur (proje sahibi), CFO / muhasebe müdürü, opsiyonel: mali müşavir.
 > **Çıktı:** CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #1–#4 kapanır, teknik karşılıkları F7 başlangıcında migration'a girer.

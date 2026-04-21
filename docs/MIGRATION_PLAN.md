@@ -273,7 +273,7 @@
 
 ### Muhasebe Seansı — F6 ile F7 arasında (1 saatlik toplantı, 2026-04-18+)
 
-**Amaç:** CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #1–#4'ü kapatmak. F7 deploy öncesinde bu kararların prod'a akması için son fırsat — shadow run sırasında değişmemeli.
+**Amaç:** CLAUDE.md §Açık Doğrulama Bekleyen Maddeler #1–#4'ü kapatmak. F7 deploy öncesinde bu kararların prod'a akması için son fırsat.
 
 **Hazırlık dokümanı:** `docs/accounting-session-prep.md` (sorular + beklenen karar formatı + her madde için varsayılan yedek).
 
@@ -310,41 +310,11 @@
 
 ---
 
-### FAZ 8 — Shadow Run (2 hafta paralel çalışma)
-
-**Amaç:** Prod sistem + mevcut Excel akışı aynı bütçe dönemini paralel üretir. Çıktılar karşılaştırılır. Fark bulunursa **Excel otorite**; sistem fark bulunduğunda blocker.
-
-**İşler:**
-1. Her hafta muhasebe ekibi Excel + sistem çıktılarını karşılaştırır (P&L + Varyans + Cash Flow).
-2. Fark > tolerans → issue açılır, root cause → patch → yeni deploy.
-3. Shadow run haftalık raporu `docs/shadow-run-report-YYYY-WW.md`.
-4. 2 hafta **sıfır fark** hedefi (toplam 8-10 karşılaştırma noktası).
-
-**Kabul:**
-- 2 hafta consecutive zero-variance window.
-- Audit log'da shadow kullanıcı activity'si tam.
-- Performance: p95 API latency < 500ms.
-
-**Ajan:** `silent-failure-hunter`, `performance-optimizer`
-
----
-
-### FAZ 9 — Excel Emekliliği (1 gün)
-
-**Amaç:** Mevcut manuel Excel akışını sonlandır. FinOps Tur tek otorite.
-
-**İşler:**
-1. Son Excel cycle'ı arşivle (read-only SharePoint klasörü).
-2. Muhasebe ekibi eğitim oturumu — sistem full-flow demo (import → onay → rapor).
-3. Excel şablonu `docs/archive/finopstur_excel_legacy/`'ye taşınır + `DEPRECATED.md` notu.
-4. Final CHANGELOG girdisi: "**Excel akışı emekli edildi.** Tüm bütçe operasyonu FinOps Tur prod üzerinden."
-5. `README.md` + `docs/user-guide.md` "Excel'den sistem akışına" notu.
-
-**Kabul:**
-- Muhasebe ekibi sistem üzerinden 1 tam cycle (aylık kapanış) bağımsız tamamlar.
-- Excel şablonu arşivde, canlı kullanımda değil.
-
-**Ajan:** `doc-updater`
+> **Faz 8 (Shadow Run) ve Faz 9 (Excel Emekliliği) 2026-04-21'de iptal edildi.**
+> Excel + yeni sistem paralel çalışma dönemi (shadow run) planı uygulanmayacak;
+> canlıya geçiş cutover olarak yapılacak. Muhasebe ekibi aktif bütçe satırlarına
+> ürün ataması tamamladıktan sonra `BudgetEntry.ProductId` NOT NULL migration'ı
+> ile geçiş kapanır.
 
 ---
 
