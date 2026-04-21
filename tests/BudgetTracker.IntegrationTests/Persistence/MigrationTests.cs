@@ -70,7 +70,9 @@ public sealed class MigrationTests : IAsyncLifetime
         segments.Should().BeEquivalentTo(new[] { "SIGORTA", "OTOMOTIV", "FILO", "ALTERNATIF", "SGK_TESVIK" });
 
         var categoryCount = await ctx.ExpenseCategories.AsNoTracking().CountAsync();
-        categoryCount.Should().Be(9);
+        // InitialSchema: 9 kategori + 20260421_02 eksik kategori seed: 8 yeni = 17 toplam.
+        // Muhasebe 2026-04-21 kararıyla ADR-0012 kapandı.
+        categoryCount.Should().Be(17);
     }
 
     [Fact]
