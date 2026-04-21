@@ -6,18 +6,19 @@ on:
   pull_request:
     branches: [main]
 
+# Concurrency: aynı PR/branch için yeni push gelirse eski koşuyu iptal et — gereksiz CPU yok.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     name: Backend (build + test + coverage)
     runs-on: ubuntu-latest
     services:
-      # Testcontainers.PostgreSQL still starts its own Postgres during tests
-      # via Docker; this service block is kept as a documentation hook for
-      # future direct-Npgsql integration tests that skip Testcontainers.
       docker:
         image: docker:27-dind
         options: --privileged
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -50,7 +51,6 @@ jobs:
     name: Golden scenario (release gate)
     runs-on: ubuntu-latest
     needs: backend
-    # Only run on main — the regression gate should not block feature PRs.
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
@@ -89,16 +89,34 @@ jobs:
         run: pnpm lint
       - name: Vitest
         run: pnpm test
+      # ─── Playwright smoke — secrets guard ──────────────────────────────────
+      # Defense in depth: playwright.config.ts da secrets yokken chromium
+      # projesini hiç oluşturmaz, ama ekstra olarak step seviyesinde
+      # "skipped" görünürlüğü için açıkça koşullu yapıyoruz.
+      # Secrets eklendikten sonra bu step her zaman koşar.
+      - name: Check E2E secrets availability
+        id: e2e_secrets
+        run: |
+          if [ -n "${{ secrets.E2E_TEST_EMAIL }}" ] && [ -n "${{ secrets.E2E_TEST_PASSWORD }}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "✅ E2E secrets bulundu — Playwright smoke tam zincirle koşacak."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️  E2E secrets eksik — Playwright smoke atlandı."
+            echo "    docs/compliance/ci-baseline-2026-04-19.md §Secrets bölümüne bak."
+          fi
       - name: Playwright install
+        if: steps.e2e_secrets.outputs.available == 'true'
         run: pnpm exec playwright install --with-deps chromium
       - name: Playwright smoke
+        if: steps.e2e_secrets.outputs.available == 'true'
         run: pnpm e2e
         env:
           CI: 'true'
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() && steps.e2e_secrets.outputs.available == 'true'
         with:
           name: playwright-report
           path: client/playwright-report/
