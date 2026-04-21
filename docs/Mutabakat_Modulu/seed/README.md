@@ -36,8 +36,11 @@ Tüm 89 müşteri için **aynı** fiyat listesi. 11 ürün varyantı × placehol
 ### Ön koşul
 - PR #40 merge edilmiş (Filo + Alternatif akışları aktif)
 - PR #41 merge edilmiş (89 müşteri seed)
+- **Migration `20260421_03_seed_pilot_products` akmış** → 4 ana ürün (YOL_YARDIM, IKAME_ARAC, KONUT_ASISTANS, WARRANTY) veritabanında hazır
 - Local dev DB veya Supabase prod DB migration'ları son sürümde
 - Admin kullanıcısı mevcut (dev: `admin@tag.local` / `Devpass!2026`)
+
+**Not:** Ürün master seed'i otomatik yürür; bu rehber sadece Contract + PriceBook setup'ını kapsar (89 × 1 sözleşme + 89 × 1 fiyat listesi + 89 × 11 fiyat kalemi).
 
 ### 1. Token al
 
