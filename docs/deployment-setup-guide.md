@@ -177,20 +177,12 @@ Manuel tetikleme:
 gh workflow run deploy.yml -f target=staging
 ```
 
-## Adım 11 — Deploy Sonrası Ön-Koşul §0 Doğrulama
+## Adım 11 — Deploy Sonrası Master Data Doğrulama
 
-Deploy yeşil olduktan sonra shadow run raporunun §0 bölümü için otomasyon script'i:
-
-```bash
-./infra/release/check-prerequisites.sh https://staging.finopstur.com
-```
-
-Script her ön-koşul için pass/fail döner; 6 maddeden hepsi pass olduğunda shadow run §1 karşılaştırmasına geçilir.
-
-**Manuel kontrol edilmesi gereken 2 madde** (script otomasyonu dışında):
+Deploy yeşil olduktan sonra muhasebe ekibinin manuel doğrulayacağı maddeler:
 
 - **SGK Teşvik müşteri kaydı:** Muhasebe ekibi prod SPA'sında `/master-data` → Customers → "Yeni Müşteri" → `code=SGK-TESVIK`, `name=SGK Teşvik (Şirket Geneli)`, `segment=SGK_TESVIK`.
-- **Master data init:** Müşteri + segment + expense kategori tamamlanmış mı? (ilk deploy beri eklenmemiş master data varsa shadow run anlamsız — Excel'de 500 müşteri, sistemde 3 müşteri → her karşılaştırma satırı tolerans dışı çıkar.)
+- **Master data init:** Müşteri + segment + expense kategori tamamlanmış mı? (seed migration `20260421_01_seed_pilot_customers` ile 89 müşteri otomatik gelir; ek müşteri varsa muhasebe ekler.)
 
 ---
 
@@ -216,6 +208,6 @@ Railway dashboard → service → Deployments → önceki stable revision → "R
 
 ---
 
-## Sonraki: Shadow Run Hafta 1
+## Sonraki: Canlıya Geçiş
 
-Ön-koşul §0'ın 6 maddesi yeşil olduğunda `docs/shadow-run-report-2026-16.md` §1 karşılaştırma tablosunu muhasebe ekibi doldurmaya başlayabilir. 2 consecutive zero-variance hafta → F9 Excel Emekliliği.
+Deploy yeşil + master data doğrulaması tamamlandıktan sonra muhasebe ekibi sistem üzerinde çalışmaya başlayabilir. Cutover modeli: eski Excel akışından yeni sisteme doğrudan geçiş (shadow run paralel dönemi iptal edildi, 2026-04-21).
