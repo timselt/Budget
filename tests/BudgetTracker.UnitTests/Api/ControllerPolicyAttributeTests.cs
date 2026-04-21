@@ -60,22 +60,22 @@ public sealed class ControllerPolicyAttributeTests
                 because: "spec 00c §4 — onay yalnızca Admin+Cfo, ReconAgent hariç (SoD)");
     }
 
-    // --- ContractsController (spec 00c §3 matrix — Contract onayı Admin+Cfo) ---
+    // --- ContractsController (iş kararı 2026-04-21 — Activate/Terminate: Admin+Cfo+FinanceManager) ---
 
     [Fact]
-    public void ContractsController_Activate_RequiresCfoPolicy()
+    public void ContractsController_Activate_RequiresContractManagePolicy()
     {
         PolicyFor(typeof(ContractsController), nameof(ContractsController.Activate))
-            .Should().Be("Cfo",
-                because: "spec 00c §3 matrix — 'Contract / PriceBook onayı' sadece Admin+Cfo; " +
-                         "mevcut 'Cfo' policy'si (Admin+Cfo) semantik olarak tam uyumlu");
+            .Should().Be("Contract.Manage",
+                because: "iş kararı 2026-04-21 — finans müdürü de sözleşme aktivasyonu yapabilmeli; " +
+                         "'Contract.Manage' policy'si Admin+Cfo+FinanceManager kapsar");
     }
 
     [Fact]
-    public void ContractsController_Terminate_RequiresCfoPolicy()
+    public void ContractsController_Terminate_RequiresContractManagePolicy()
     {
         PolicyFor(typeof(ContractsController), nameof(ContractsController.Terminate))
-            .Should().Be("Cfo");
+            .Should().Be("Contract.Manage");
     }
 
     // --- ContractsController diğer CRUD action'lar (RequireFinanceRole alias hâlâ geçerli) ---
