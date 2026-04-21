@@ -11,7 +11,7 @@ import {
   type ReconciliationFlow,
 } from '../components/reconciliation/api'
 
-type FlowTab = 'Insurance' | 'Automotive'
+type FlowTab = 'Insurance' | 'Automotive' | 'Filo' | 'Alternatif'
 
 /**
  * Sprint 2 Task 10 — Case Listesi (S4 Sigorta + S5 Otomotiv).
@@ -48,7 +48,7 @@ export function ReconciliationCasesPage() {
       />
 
       <div className="flex gap-1 mb-4 bg-surface-container-low rounded-lg p-1 w-fit">
-        {(['Insurance', 'Automotive'] as FlowTab[]).map((id) => (
+        {(['Insurance', 'Automotive', 'Filo', 'Alternatif'] as FlowTab[]).map((id) => (
           <button
             key={id}
             type="button"

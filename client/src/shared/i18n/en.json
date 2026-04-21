@@ -145,10 +145,12 @@
     },
     "cases": {
       "title": "Reconciliation Cases",
-      "subtitle": "Insurance and automotive flows, customer × period reconciliation files.",
+      "subtitle": "Insurance, automotive, fleet, and alternative channel flows — customer × period reconciliation files.",
       "tabs": {
         "insurance": "Insurance",
-        "automotive": "Automotive"
+        "automotive": "Automotive",
+        "filo": "Fleet",
+        "alternatif": "Alternative"
       },
       "columns": {
         "customer": "Customer",

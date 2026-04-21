@@ -145,10 +145,12 @@
     },
     "cases": {
       "title": "Mutabakat Case'leri",
-      "subtitle": "Sigorta ve otomotiv akışlarında müşteri × dönem bazlı mutabakat dosyaları.",
+      "subtitle": "Sigorta, otomotiv, filo ve alternatif kanal akışlarında müşteri × dönem bazlı mutabakat dosyaları.",
       "tabs": {
         "insurance": "Sigorta",
-        "automotive": "Otomotiv"
+        "automotive": "Otomotiv",
+        "filo": "Filo",
+        "alternatif": "Alternatif"
       },
       "columns": {
         "customer": "Müşteri",

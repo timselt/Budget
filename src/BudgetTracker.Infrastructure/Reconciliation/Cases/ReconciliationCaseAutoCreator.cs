@@ -248,8 +248,9 @@ public sealed class ReconciliationCaseAutoCreator : IReconciliationCaseAutoCreat
 
     /// <summary>
     /// Flow'a göre RawPayload JSON'ından Line için gereken alanları çıkarır.
-    /// Insurance: product_code + product_name + quantity + unit_price_expected.
-    /// Automotive: service_code + service_name + usage_count (expected_price yok).
+    /// Insurance + Alternatif: product_code + product_name + quantity + unit_price_expected.
+    /// Automotive + Filo: service_code + service_name + usage_count (expected_price yok).
+    /// ADR-0017 bkz. — Filo/Alternatif pilot şablonları.
     /// </summary>
     private static (string productCode, string productName, decimal quantity, decimal? expectedPrice) ExtractLineFields(
         string rawPayload, ReconciliationFlow flow)
@@ -259,12 +260,12 @@ public sealed class ReconciliationCaseAutoCreator : IReconciliationCaseAutoCreat
 
         return flow switch
         {
-            ReconciliationFlow.Insurance => (
+            ReconciliationFlow.Insurance or ReconciliationFlow.Alternatif => (
                 productCode: root.TryGetProperty("product_code", out var pc) ? pc.GetString() ?? string.Empty : string.Empty,
                 productName: root.TryGetProperty("product_name", out var pn) ? pn.GetString() ?? string.Empty : string.Empty,
                 quantity: ReadDecimal(root, "quantity"),
                 expectedPrice: ReadNullableDecimal(root, "unit_price_expected")),
-            ReconciliationFlow.Automotive => (
+            ReconciliationFlow.Automotive or ReconciliationFlow.Filo => (
                 productCode: root.TryGetProperty("service_code", out var sc) ? sc.GetString() ?? string.Empty : string.Empty,
                 productName: root.TryGetProperty("service_name", out var sn) ? sn.GetString() ?? string.Empty : string.Empty,
                 quantity: ReadDecimal(root, "usage_count"),
