@@ -1,0 +1,12 @@
+product_code,product_name,item_type,unit,unit_price,currency_code,tax_rate,notes
+YOLYARD-30,Yol Yardım 30 km,Other,PCS,100.00,TRY,20.00,Pilot placeholder — Yol Yardım kısa mesafe
+YOLYARD-60,Yol Yardım 60 km,Other,PCS,150.00,TRY,20.00,Pilot placeholder — Yol Yardım orta mesafe
+YOLYARD-UNLTD,Yol Yardım Sınırsız,Other,PCS,250.00,TRY,20.00,Pilot placeholder — Yol Yardım mesafe sınırsız
+IKAMARAC-1G,İkame Araç 1 Gün,Other,PCS,300.00,TRY,20.00,Pilot placeholder — İkame araç 1 gün kullanım
+IKAMARAC-3G,İkame Araç 3 Gün,Other,PCS,800.00,TRY,20.00,Pilot placeholder — İkame araç 3 gün kullanım
+IKAMARAC-7G,İkame Araç 7 Gün,Other,PCS,1500.00,TRY,20.00,Pilot placeholder — İkame araç 7 gün kullanım
+KONUT-STD,Konut Asistans Standart,Other,PCS,200.00,TRY,20.00,Pilot placeholder — Konut temel asistans
+KONUT-KAPS,Konut Asistans Kapsamlı,Other,PCS,400.00,TRY,20.00,Pilot placeholder — Konut kapsamlı asistans
+WARRANTY-1Y,Warranty 1 Yıl,Other,PCS,500.00,TRY,20.00,Pilot placeholder — Uzatılmış garanti 1 yıl
+WARRANTY-2Y,Warranty 2 Yıl,Other,PCS,900.00,TRY,20.00,Pilot placeholder — Uzatılmış garanti 2 yıl
+WARRANTY-3Y,Warranty 3 Yıl,Other,PCS,1200.00,TRY,20.00,Pilot placeholder — Uzatılmış garanti 3 yıl
