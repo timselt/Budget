@@ -191,9 +191,9 @@ _Kapandı — artık açık olmayan:_
 - ~~Ürün master listesi (ADR-0013 follow-up a)~~ → **4 ürün onaylandı**: Yol Yardım, İkame Araç, Konut, Warranty. Eksper/Sağlık/Mini Onarım kapsamda değil. SGK Teşvik zaten ayrı (şirket geneli tek kalem).
 - ~~`CustomerProduct.CommissionRate` veri kaynağı stratejisi (ADR-0013 follow-up b)~~ → **İptal edildi**. İş modelinde komisyon yok; alan `20260418104134_RemoveCustomerProductCommissionRate` migration'ı ile zaten kaldırılmış durumda.
 - ~~Mutabakat akış modeli (2 vs 4 akış)~~ → **4 akış onaylandı**: Sigorta + Otomotiv + Filo + Alternatif. Detay: ADR-0017 + 89 müşteri seed (`20260421_01_seed_pilot_customers`).
+- ~~ProductsPage ↔ gerçek API bağlantısı~~ → **Zaten API'ye bağlı** (2026-04-18 itibarıyla). `/product-categories`, `/products`, `/segments` endpoint'leri kullanılıyor, mock yok. Eski "Müşteri × Ürün Matrisi" tasarımı ADR-0014 `Contract` modeliyle yerine geçti; `customer_products` tablosu migration `20260418203730_AddContractDomain` ile drop edildi. "Müşteri başına ürün listesi" görünümü artık `ContractsPage` üzerinden sağlanır.
 
 **Implementation tamamlandı, muhasebe doğrulaması bekleyen:**
-- **ProductsPage ↔ gerçek API bağlantısı** — `CustomersPage` "Müşteri × Ürün Matrisi" + `BudgetEntryPage` mock `CUSTOMER_PRODUCTS` gerçek API'ye bağlanacak (ürün master listesi netleştiğine göre).
 - **`BudgetEntry.ProductId` NOT NULL geçişi** (ADR-0013 follow-up c) — Shadow Run F8 bittikten sonra cutover olarak planlanacak.
 - **Pilot fiyat listesi (placeholder)** — 89 müşteri × 11 SKU varyantı × placeholder fiyat seed yüklenecek. Muhasebe gerçek fiyatları sonra girecek. Rehber: `docs/Mutabakat_Modulu/seed/README.md`.
 
