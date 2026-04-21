@@ -143,6 +143,13 @@ public static class AuthenticationExtensions
                 RoleNames.Admin, RoleNames.FinanceManager, RoleNames.ReconAgent));
             options.AddPolicy("PriceBook.Approve", p => p.RequireRole(
                 RoleNames.Admin, RoleNames.Cfo));
+
+            // Contract yaşam döngüsü (Activate / Terminate) — iş kararı 2026-04-21:
+            // Finans müdürü de sözleşme aktivasyon/sonlandırma yapabilmeli.
+            // Spec 00c §3 matrix'teki "onay Admin+Cfo" yorumu daraltılmış;
+            // gerçekte FinanceManager da yetkili.
+            options.AddPolicy("Contract.Manage", p => p.RequireRole(
+                RoleNames.Admin, RoleNames.Cfo, RoleNames.FinanceManager));
         });
 
         return services;

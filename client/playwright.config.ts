@@ -1,43 +1,70 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * F4 Part 2c Playwright harness.
+ * Playwright smoke — kalıcı config (2026-04-19).
  *
- * Scope (intentionally narrow): static SPA smoke tests that exercise the
- * browser-only pieces of ADR-0009 (AG-Grid render, toast mount, route
- * wiring). Cross-process E2E that need the .NET API + Postgres running
- * belong to F5 (Golden Scenario + E2E).
+ * Tasarım:
+ *   1. Secrets mevcut (E2E_TEST_EMAIL + E2E_TEST_PASSWORD):
+ *      setup projesi login yapar → chromium projesi storageState ile
+ *      tam test zincirini koşturur. Üretimdeki doğrulama seviyesi.
+ *
+ *   2. Secrets YOK (local dev, fork PR, rotation boşluğu):
+ *      chromium projesi `projects[]` listesine HİÇ eklenmez → dependent
+ *      test'ler yaratılmaz → ENOENT yok. CI adım seviyesinde zaten
+ *      ayrıca guard'lanır (`.github/workflows/ci.yml`), böylece
+ *      "sessiz skip" görünürlüğü kaybolmaz.
+ *
+ * Bu config kalıcı olarak "defense in depth" sağlar: config seviyesinde
+ * çökme olmaz, workflow seviyesinde ise skip durumu step adında açıkça
+ * raporlanır.
+ *
+ * Secrets ekleme talimatı: `docs/compliance/ci-baseline-2026-04-19.md`
  */
+
+const hasE2ECredentials = Boolean(
+  process.env.E2E_TEST_EMAIL && process.env.E2E_TEST_PASSWORD,
+)
+
 export default defineConfig({
   testDir: './e2e',
-  timeout: 30_000,
-  expect: { timeout: 5_000 },
-  fullyParallel: false, // single dev server, avoid port contention
-  retries: 0,
-  reporter: [['list']],
+  fullyParallel: false,
+  forbidOnly: Boolean(process.env.CI),
+  retries: process.env.CI ? 1 : 0,
+  workers: 1,
+  reporter: [['html', { open: 'never' }], ['list']],
+
   use: {
-    baseURL: 'http://localhost:3000',
-    trace: 'retain-on-failure',
+    baseURL: process.env.E2E_BASE_URL ?? 'http://127.0.0.1:5173',
+    trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
+
   projects: [
-    // Bir kez login olup storageState'i diske yazan setup projesi.
-    // Diğer projeler bu dosyadan token okuyup AuthGuard'ı geçer; her test
-    // başında login etmeyiz. Token süresi dolarsa setup tekrar çalışır.
-    { name: 'setup', testMatch: /.*\.setup\.ts/ },
     {
-      name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        storageState: 'e2e/.auth/user.json',
-      },
-      dependencies: ['setup'],
+      name: 'setup',
+      testMatch: /.*\.setup\.ts/,
     },
+    ...(hasE2ECredentials
+      ? [
+          {
+            name: 'chromium',
+            use: {
+              ...devices['Desktop Chrome'],
+              storageState: 'e2e/.auth/user.json',
+            },
+            dependencies: ['setup'],
+          },
+        ]
+      : []),
   ],
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: true,
-    timeout: 60_000,
-  },
+
+  webServer: process.env.CI
+    ? undefined
+    : {
+        command: 'pnpm dev',
+        url: 'http://127.0.0.1:5173',
+        reuseExistingServer: !process.env.CI,
+        timeout: 60_000,
+      },
 })
