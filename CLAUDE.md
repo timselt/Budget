@@ -176,11 +176,10 @@ dotnet test --filter Category=GoldenScenario
 
 ## Açık Doğrulama Bekleyen Maddeler
 
-_2026-04-17 muhasebe seansındakiler kapandı — detay: `docs/accounting-session-decisions-2026-04-17.md`._
+_2026-04-17 + 2026-04-21 muhasebe/iş seansı kararları kapandı._
 
 **Yeni açık (sonraki muhasebe seansı için):**
-- **Expense kategori seed + adjustment domain bucket uyumlama** — `docs/reference/butce_schema_v1.sql` (Excel türevi) ile mevcut backend arasında 8 eksik kategori + SpecialItem semantik çakışması. Karar metni: `docs/architecture.md` ADR-0012. Detay: `docs/schema-mapping.md`.
-- **ADR-0013 ürün domain'i seed + follow-up** — backend katmanları (entity + migration + API + 26 unit test) ve frontend `ProductsPage` **inşa edildi ve canlıda**. Muhasebe ekibinin onayını bekleyen açık maddeler: (a) ürün kategori + ürün master listesi (Yol Yardım/İkame Araç/Konut/Eksper/Sağlık/Mini Onarım/Warranty/SGK Teşvik ve teminat varyasyonları), (b) mevcut sözleşmelerden `CustomerProduct.CommissionRate` veri kaynağı stratejisi, (c) `BudgetEntry.ProductId` NOT NULL'a geçiş zamanlaması. Seed yüklendikten sonra `CustomersPage` "Müşteri × Ürün Matrisi" + `BudgetEntryPage` mock `CUSTOMER_PRODUCTS` gerçek API'ye bağlanacak.
+- _Yok — tüm bekleyen maddeler 2026-04-21 iş seansında kapatıldı._
 
 _Kapandı — artık açık olmayan:_
 - ~~Excel şablon başlık dili~~ → **Türkçe sabit başlıklar** (`Müşteri`, `Segment`, `Ocak`…`Aralık`, `Toplam`). Detay: ADR-0008 §2.4.
@@ -188,6 +187,15 @@ _Kapandı — artık açık olmayan:_
 - ~~Amortisman sınıflandırması~~ → **TECHNICAL** (mevcut seed teyidi).
 - ~~SGK Teşvik operasyonel detayı~~ → **Şirket geneli tek satır, tahakkuk bazlı**; prod deploy sonrası muhasebe manuel müşteri tanımlar (`customer_code = 'SGK-TESVIK'`).
 - ~~Müşteri Konsantrasyon eşikleri~~ → **%30 uyarı / %50 kritik**. `src/BudgetTracker.Application/Calculations/ConcentrationThresholds.cs` sabit sınıfı.
+- ~~Expense kategori seed (ADR-0012)~~ → **8 eksik kategori eklendi** (SEYAHAT, PAZARLAMA, DANISMANLIK, AGIRLAMA, ARAC_TURFILO, KONUT_KONFOR, T_KATILIM, YATIRIM). Migration: `20260421_02_seed_missing_expense_categories`. Not: Şemanın `DIGER_OLAGAN` kodu backend'in mevcut `DIGER`/EXTRAORDINARY koduyla eşdeğer kabul edildi.
+- ~~Ürün master listesi (ADR-0013 follow-up a)~~ → **4 ürün onaylandı**: Yol Yardım, İkame Araç, Konut, Warranty. Eksper/Sağlık/Mini Onarım kapsamda değil. SGK Teşvik zaten ayrı (şirket geneli tek kalem).
+- ~~`CustomerProduct.CommissionRate` veri kaynağı stratejisi (ADR-0013 follow-up b)~~ → **İptal edildi**. İş modelinde komisyon yok; alan `20260418104134_RemoveCustomerProductCommissionRate` migration'ı ile zaten kaldırılmış durumda.
+- ~~Mutabakat akış modeli (2 vs 4 akış)~~ → **4 akış onaylandı**: Sigorta + Otomotiv + Filo + Alternatif. Detay: ADR-0017 + 89 müşteri seed (`20260421_01_seed_pilot_customers`).
+
+**Implementation tamamlandı, muhasebe doğrulaması bekleyen:**
+- **ProductsPage ↔ gerçek API bağlantısı** — `CustomersPage` "Müşteri × Ürün Matrisi" + `BudgetEntryPage` mock `CUSTOMER_PRODUCTS` gerçek API'ye bağlanacak (ürün master listesi netleştiğine göre).
+- **`BudgetEntry.ProductId` NOT NULL geçişi** (ADR-0013 follow-up c) — Shadow Run F8 bittikten sonra cutover olarak planlanacak.
+- **Pilot fiyat listesi (placeholder)** — 89 müşteri × 11 SKU varyantı × placeholder fiyat seed yüklenecek. Muhasebe gerçek fiyatları sonra girecek. Rehber: `docs/Mutabakat_Modulu/seed/README.md`.
 
 ---
 
