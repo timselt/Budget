@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { PageIntro } from '../components/shared/PageIntro'
@@ -23,6 +24,7 @@ type FlowTab = 'all' | 'Insurance' | 'Automotive' | 'Filo' | 'Alternatif'
  */
 export function ReconciliationBatchesPage() {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const [tab, setTab] = useState<FlowTab>('all')
   const [periodCode, setPeriodCode] = useState<string>('')
   const [status, setStatus] = useState<ReconciliationBatchStatus | ''>('')
@@ -143,7 +145,12 @@ export function ReconciliationBatchesPage() {
             }
           />
         ) : (
-          <BatchTable batches={batches} t={t} locale={i18n.language} />
+          <BatchTable
+            batches={batches}
+            t={t}
+            locale={i18n.language}
+            onRowClick={(id) => navigate(`/mutabakat/batches/${id}`)}
+          />
         )}
       </div>
 
@@ -162,10 +169,12 @@ function BatchTable({
   batches,
   t,
   locale,
+  onRowClick,
 }: {
   batches: BatchSummary[]
   t: (key: string) => string
   locale: string
+  onRowClick: (id: number) => void
 }) {
   return (
     <table className="tbl">
@@ -183,7 +192,9 @@ function BatchTable({
       </thead>
       <tbody>
         {batches.map((b) => (
-          <tr key={b.id}>
+          <tr key={b.id}
+              className="cursor-pointer hover:bg-surface-container-low"
+              onClick={() => onRowClick(b.id)}>
             <td>
               <span
                 className={`chip ${flowChipClass(b.flow)}`}

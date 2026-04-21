@@ -52,4 +52,26 @@ public interface IReconciliationBatchService
         int companyId,
         int actorUserId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sprint 2 Task 8 — bir batch içindeki Customer eşleşmeyen unique
+    /// external_customer_ref listesini döner. Sample döküman ref'leri
+    /// UI'da "bu müşterini kaç satırı var" göstermek için.
+    /// </summary>
+    Task<IReadOnlyList<UnmatchedCustomerRefDto>> GetUnmatchedCustomersAsync(
+        int batchId,
+        int companyId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sprint 2 Task 8 — verilen Customer'ı external_ref'e bağla + autoCreator
+    /// idempotent re-invoke et (yeni eşleşme varsa Case/Line üretir).
+    /// </summary>
+    Task<LinkUnmatchedCustomerResult> LinkUnmatchedCustomerAsync(
+        int batchId,
+        string externalCustomerRef,
+        int targetCustomerId,
+        int companyId,
+        int actorUserId,
+        CancellationToken cancellationToken = default);
 }

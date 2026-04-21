@@ -52,6 +52,11 @@ public static class AuditActions
     public const string AccountingInstructionExported = "ACCOUNTING_INSTRUCTION_EXPORTED";
     public const string AccountingInstructionAcked = "ACCOUNTING_INSTRUCTION_ACKED";
     public const string RiskRuleChanged = "RISK_RULE_CHANGED";
+
+    // Sprint 2 Task 6 — Case auto-creation + Line pricing resolution lifecycle.
+    public const string ReconciliationCaseOpened = "RECONCILIATION_CASE_OPENED";
+    public const string ReconciliationLineResolved = "RECONCILIATION_LINE_RESOLVED";
+    public const string ReconciliationUnmatchedCustomerDetected = "RECONCILIATION_UNMATCHED_CUSTOMER_DETECTED";
 }
 
 public static class AuditEntityNames
@@ -61,4 +66,6 @@ public static class AuditEntityNames
     public const string Customer = "Customer";
     public const string PriceBook = "PriceBook";
     public const string ReconciliationBatch = "ReconciliationBatch";
+    public const string ReconciliationCase = "ReconciliationCase";
+    public const string ReconciliationLine = "ReconciliationLine";
 }

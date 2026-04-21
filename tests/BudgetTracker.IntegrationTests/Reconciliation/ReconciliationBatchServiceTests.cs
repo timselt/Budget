@@ -191,7 +191,15 @@ public sealed class ReconciliationBatchServiceTests : IAsyncLifetime
         var parser = new ReconciliationImportParser(xlsxReader, csvReader);
         var audit = Substitute.For<IAuditLogger>();
         var time = TimeProvider.System;
-        return (new ReconciliationBatchService(ctx, parser, audit, time), audit);
+        // Sprint 2 Task 4 — real autoCreator; case/line side effect'leri ayrı
+        // integration test'lerde doğrulanır (ReconciliationCaseAutoCreatorTests).
+        // ILinePricingResolver no-op mock: bu test batch + SourceRow'lara odaklı,
+        // PriceBook lookup Task 5 testlerinde ayrıca doğrulanır.
+        var resolver = NSubstitute.Substitute.For<
+            BudgetTracker.Application.Reconciliation.Lines.ILinePricingResolver>();
+        var autoCreator = new BudgetTracker.Infrastructure.Reconciliation.Cases
+            .ReconciliationCaseAutoCreator(ctx, time, resolver, audit);
+        return (new ReconciliationBatchService(ctx, parser, audit, time, autoCreator), audit);
     }
 
     private sealed class TestTenantContext(int companyId) : ITenantContext

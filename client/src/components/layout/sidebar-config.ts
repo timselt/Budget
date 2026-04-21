@@ -128,6 +128,7 @@ export const SIDEBAR_SECTIONS: readonly SidebarSection[] = [
     defaultOpen: false,
     items: [
       { label: 'Batch Listesi', to: '/mutabakat/batches', icon: 'cloud_upload' },
+      { label: 'Case Listesi', to: '/mutabakat/cases', icon: 'folder_shared' },
       { label: 'Fiyat Arama', to: '/pricing/lookup', icon: 'search' },
     ],
   },

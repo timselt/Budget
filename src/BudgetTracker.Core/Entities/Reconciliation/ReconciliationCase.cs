@@ -66,4 +66,73 @@ public sealed class ReconciliationCase : TenantEntity
         c.CompanyId = companyId;
         return c;
     }
+
+    /// <summary>
+    /// Sprint 2 Task 7/12 — Case sahipliği atama + Draft ise UnderControl'e geçir.
+    /// Idempotent: mevcut owner ile aynı user atanırsa durum değişmez.
+    /// </summary>
+    public void AssignOwner(int newOwnerUserId, DateTimeOffset updatedAt)
+    {
+        if (newOwnerUserId <= 0) throw new ArgumentOutOfRangeException(nameof(newOwnerUserId));
+        OwnerUserId = newOwnerUserId;
+        UpdatedAt = updatedAt;
+        UpdatedByUserId = newOwnerUserId;
+
+        // Task 12 state machine: Draft → UnderControl yalnızca owner atandığında.
+        if (Status == ReconciliationCaseStatus.Draft)
+        {
+            Status = ReconciliationCaseStatus.UnderControl;
+        }
+    }
+
+    /// <summary>
+    /// Sprint 2 Task 12 — Case UnderControl iken tüm line'lar Ready ise PricingMatched.
+    /// <paramref name="allLinesReady"/> validasyonu çağrıcıda yapılır (domain Line
+    /// koleksiyonunu tutmaz; servis Line query'sini geçirir).
+    /// </summary>
+    public void MarkPricingMatched(bool allLinesReady, DateTimeOffset updatedAt)
+    {
+        if (Status != ReconciliationCaseStatus.UnderControl)
+        {
+            throw new InvalidCaseTransitionException(Status, ReconciliationCaseStatus.PricingMatched,
+                "only UnderControl case can transition to PricingMatched");
+        }
+        if (!allLinesReady)
+        {
+            throw new InvalidCaseTransitionException(Status, ReconciliationCaseStatus.PricingMatched,
+                "all lines must be Ready before PricingMatched transition");
+        }
+        Status = ReconciliationCaseStatus.PricingMatched;
+        UpdatedAt = updatedAt;
+    }
+
+    /// <summary>
+    /// Sprint 2 Task 7 — Case TotalAmount'u Line toplamından recompute eder.
+    /// Line update/add/remove sonrası servis çağırır.
+    /// </summary>
+    public void RecomputeTotalAmount(decimal newTotal, DateTimeOffset updatedAt)
+    {
+        TotalAmount = decimal.Round(newTotal, 2, MidpointRounding.ToEven);
+        UpdatedAt = updatedAt;
+    }
+}
+
+/// <summary>
+/// Sprint 2 Task 12 — Case state machine geçişi reddedildi.
+/// Controller katmanı 409 Conflict ile yanıtlar.
+/// </summary>
+public sealed class InvalidCaseTransitionException : InvalidOperationException
+{
+    public ReconciliationCaseStatus From { get; }
+    public ReconciliationCaseStatus To { get; }
+
+    public InvalidCaseTransitionException(
+        ReconciliationCaseStatus from,
+        ReconciliationCaseStatus to,
+        string reason)
+        : base($"cannot transition {from} → {to}: {reason}")
+    {
+        From = from;
+        To = to;
+    }
 }
