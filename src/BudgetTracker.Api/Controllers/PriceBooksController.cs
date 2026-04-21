@@ -31,7 +31,7 @@ public sealed class PriceBooksController : ControllerBase
     }
 
     [HttpPost("api/v1/contracts/{contractId:int}/price-books")]
-    [Authorize(Policy = "RequireFinanceRole")]
+    [Authorize(Policy = "PriceBook.Edit")]
     public async Task<IActionResult> CreateDraft(
         int contractId,
         [FromBody] CreatePriceBookRequest request,
@@ -51,7 +51,7 @@ public sealed class PriceBooksController : ControllerBase
     }
 
     [HttpPost("api/v1/price-books/{id:int}/items/bulk")]
-    [Authorize(Policy = "RequireFinanceRole")]
+    [Authorize(Policy = "PriceBook.Edit")]
     public async Task<IActionResult> BulkAddItems(
         int id,
         [FromBody] BulkAddItemsRequest request,
@@ -63,7 +63,7 @@ public sealed class PriceBooksController : ControllerBase
     }
 
     [HttpPost("api/v1/price-books/{id:int}/approve")]
-    [Authorize(Policy = "Cfo")]
+    [Authorize(Policy = "PriceBook.Approve")]
     public async Task<IActionResult> Approve(int id, CancellationToken cancellationToken)
     {
         var userId = this.GetRequiredUserId();
@@ -87,7 +87,7 @@ public sealed class PriceBooksController : ControllerBase
     /// ReplaceExisting=true olarak Draft içindeki önceki kalemleri değiştirir.
     /// </summary>
     [HttpPost("api/v1/price-books/{id:int}/items/import")]
-    [Authorize(Policy = "RequireFinanceRole")]
+    [Authorize(Policy = "PriceBook.Edit")]
     public async Task<IActionResult> ImportCsv(
         int id,
         [FromForm] IFormFile file,

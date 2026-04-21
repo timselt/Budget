@@ -25,7 +25,15 @@ interface FormErrors {
 const PERIOD_REGEX = /^(20\d{2})-(0[1-9]|1[0-2])$/
 
 function defaultSourceFor(flow: ReconciliationFlow): ReconciliationSourceType {
-  return flow === 'Insurance' ? 'InsurerList' : 'TarsPowerBi'
+  switch (flow) {
+    case 'Insurance':
+      return 'InsurerList'
+    case 'Automotive':
+      return 'TarsPowerBi'
+    case 'Filo':
+    case 'Alternatif':
+      return 'ManualCsv'
+  }
 }
 
 /**

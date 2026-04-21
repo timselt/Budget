@@ -60,7 +60,7 @@ public sealed class ReconciliationBatchServiceTests : IAsyncLifetime
             notes: "Test import",
             cancellationToken: CancellationToken.None);
 
-        detail.Status.Should().Be(ReconciliationBatchStatus.Parsed);
+        detail.Status.Should().Be(nameof(ReconciliationBatchStatus.Parsed));
         detail.RowCount.Should().Be(3);
         detail.OkCount.Should().Be(3);
         detail.ErrorCount.Should().Be(0);
@@ -136,7 +136,7 @@ public sealed class ReconciliationBatchServiceTests : IAsyncLifetime
             ReconciliationSourceType.InsurerList, companyId, userId, null,
             CancellationToken.None);
 
-        detail.Status.Should().Be(ReconciliationBatchStatus.Parsed);
+        detail.Status.Should().Be(nameof(ReconciliationBatchStatus.Parsed));
         detail.RowCount.Should().Be(3);
         detail.OkCount.Should().Be(2);
         detail.ErrorCount.Should().Be(1);
@@ -158,7 +158,7 @@ public sealed class ReconciliationBatchServiceTests : IAsyncLifetime
             new Application.Reconciliation.Batches.BatchListQuery(), companyId,
             CancellationToken.None);
         all.Should().HaveCountGreaterThanOrEqualTo(1);
-        all.Should().AllSatisfy(b => b.Flow.Should().Be(ReconciliationFlow.Insurance));
+        all.Should().AllSatisfy(b => b.Flow.Should().Be(nameof(ReconciliationFlow.Insurance)));
 
         // Yanlış flow filtresi → boş
         var auto = await service.ListAsync(

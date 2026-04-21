@@ -171,12 +171,12 @@ public sealed class ReconciliationBatchService : IReconciliationBatchService
 
         return rows.Select(b => new BatchSummaryDto(
             Id: b.Id,
-            Flow: b.Flow,
+            Flow: b.Flow.ToString(),
             PeriodCode: b.PeriodCode,
-            SourceType: b.SourceType,
+            SourceType: b.SourceType.ToString(),
             SourceFileName: b.SourceFileName,
             RowCount: b.RowCount,
-            Status: b.Status,
+            Status: b.Status.ToString(),
             ImportedAt: b.ImportedAt,
             ImportedByUserId: b.ImportedByUserId,
             Notes: b.Notes)).ToList();
@@ -311,9 +311,9 @@ public sealed class ReconciliationBatchService : IReconciliationBatchService
         int okCount, int warningCount, int errorCount, bool Truncated)
         => new(
             Id: batch.Id,
-            Flow: batch.Flow,
+            Flow: batch.Flow.ToString(),
             PeriodCode: batch.PeriodCode,
-            SourceType: batch.SourceType,
+            SourceType: batch.SourceType.ToString(),
             SourceFileName: batch.SourceFileName,
             SourceFileHash: batch.SourceFileHash,
             RowCount: batch.RowCount,
@@ -321,7 +321,7 @@ public sealed class ReconciliationBatchService : IReconciliationBatchService
             WarningCount: warningCount,
             ErrorCount: errorCount,
             Truncated: Truncated,
-            Status: batch.Status,
+            Status: batch.Status.ToString(),
             ImportedAt: batch.ImportedAt,
             ImportedByUserId: batch.ImportedByUserId,
             Notes: batch.Notes);
