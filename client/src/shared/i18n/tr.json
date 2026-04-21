@@ -61,7 +61,9 @@
       "tabs": {
         "all": "Tümü",
         "insurance": "Sigorta",
-        "automotive": "Otomotiv"
+        "automotive": "Otomotiv",
+        "filo": "Filo",
+        "alternatif": "Alternatif"
       },
       "filters": {
         "period": "Dönem",
@@ -87,7 +89,9 @@
       },
       "flow": {
         "insurance": "Sigorta",
-        "automotive": "Otomotiv"
+        "automotive": "Otomotiv",
+        "filo": "Filo",
+        "alternatif": "Alternatif"
       },
       "sourceType": {
         "insurerList": "Sigorta Listesi",

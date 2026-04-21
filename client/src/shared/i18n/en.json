@@ -61,7 +61,9 @@
       "tabs": {
         "all": "All",
         "insurance": "Insurance",
-        "automotive": "Automotive"
+        "automotive": "Automotive",
+        "filo": "Fleet",
+        "alternatif": "Alternative"
       },
       "filters": {
         "period": "Period",
@@ -87,7 +89,9 @@
       },
       "flow": {
         "insurance": "Insurance",
-        "automotive": "Automotive"
+        "automotive": "Automotive",
+        "filo": "Fleet",
+        "alternatif": "Alternative"
       },
       "sourceType": {
         "insurerList": "Insurer List",
