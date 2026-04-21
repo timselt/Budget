@@ -1548,6 +1548,74 @@ Etkilenen entity'ler (Sprint 1 ve Sprint 2):
 
 ---
 
+## ADR-0017 — Mutabakat Modülü Akışları: 2 → 4 (Filo + Alternatif eklendi)
+
+**Tarih:** 2026-04-21
+**Statü:** Kabul edildi
+**Karar Sahibi:** Timur Selçuk Turan
+**Bağlı Spec:** `docs/Mutabakat_Modulu/docs/specs/01_phase1_domain_model.md` §3.1, `docs/reference/butce_schema_v1.sql`
+**Bağlı Veri:** ButceMusteriler.xlsx (2026-04-21) — müşteri kategori listesi
+
+### 1. Bağlam
+
+Sprint 1 + Sprint 2 mutabakat akış modeli sadece iki değer içeriyordu: `Insurance` + `Automotive`. Bu yapı spec §3.1'de "MVP kapsamında iki değer; ileride Corporate/Dealer eklenebilir" olarak tanımlanmıştı.
+
+2026-04-21 muhasebe ekibinin Excel müşteri rehberi (89 kayıt) incelenince gerçek iş modelinin **4 kategoriden** oluştuğu net oldu:
+
+| Kategori | Firma Sayısı | Yıllık Bütçe Payı (2026) |
+|---|---|---|
+| Sigorta | 22 | ~1.26 milyar TL |
+| Otomotiv | 24 | ~647 milyon TL |
+| **Filo** | 24 | ~113 milyon TL |
+| **Alternatif** | 19 | ~18 milyon TL |
+
+Filo ve Alternatif kanalların mevcut 2-akış modeliyle temsil edilmesi mümkün değil — kullanıcı sekme seçiminde göremez, import şablonu eşleşmez, pricing lookup farklı iş kurallarına gidemez.
+
+### 2. Karar
+
+`ReconciliationFlow` enum'una iki yeni değer eklenir: `Filo = 2`, `Alternatif = 3`.
+
+**Kapsam (pilot — minimum viable):**
+- Enum değerleri + `ReconciliationTemplates.ForFlow` için 4-yönlü switch
+- Pilot import şablonları: Filo ≈ Automotive (kullanım bazlı: `case_ref`, `service_code`, `usage_count`, `fleet_code`), Alternatif ≈ Insurance (referans bazlı: `reference_no`, `product_code`, `quantity`)
+- Frontend sekme + filtre + chip sınıfı
+- i18n TR + EN etiketleri
+- Unit test kapsamı: `ForFlow` 4 değer için temel doğrulama
+
+**Kapsam dışı (sonraki iş paketleri):**
+- `ContractFlow` enum'una Filo + Alternatif eklenmedi (pilot: `PricingLookupService` içinde `Filo → Automotive`, `Alternatif → Insurance` eşlemesi yapılır — `ContractFlow`/`SalesType` genişletmesi gerektiğinde ayrı ADR)
+- `PriceBookItemType` enum'una yeni değer eklenmedi (`InsurancePackage`, `AutomotiveService`, `Other` — genel kalan tipler yeterli)
+- Filo/Alternatif için gerçek şablon kolonları — mock veriyle başlanır, muhasebe ekibi gerçek dosya örnekleri gönderdiğinde `ReconciliationTemplates.Filo`/`Alternatif` güncellenir
+
+### 3. Reddedilen Alternatifler
+
+- **Filo'yu SalesType.Fleet üzerinden Automotive altında tutmak.** Red: Mutabakat ekranında kullanıcı filo müşterilerini ayrı listelemek istiyor; UX'i iki-akış modeliyle zorlamak iş tarafında yanlış temsil. Backend'de `ContractFlow` eşlemesi yapılır, arayüzde ayrı akış görünür.
+- **Sadece Filo eklemek, Alternatif'i ertelemek.** Red: 19 müşteri = 18 milyon TL/yıl, göz ardı edilemez.
+- **Enum yerine string alan.** Red: tip güvenliği, switch exhaustiveness, existing EF mapping ile uyumsuz.
+
+### 4. Sonuçlar
+
+**Olumlu:**
+- Mutabakat ekranlarında 4 akış ayrı sekme olarak görünür — kullanıcı filo/alternatif batch'lerini karıştırmaz.
+- Import parser yeni akışlar için özel şablon kullanır (farklı kolon semantiği — `fleet_code` vs `dealer_code`, `reference_no` vs `policy_no`).
+- Customer seed (89 kayıt) eklendiğinde doğru kategori-akış eşleşmesi sağlanır.
+
+**Olumsuz / Takip:**
+- `ContractFlow` + `SalesType` + `PriceBookItemType` henüz genişletilmedi — pilot eşleme geçici. Production'da Filo/Alternatif müşterilerine ait Contract oluşturulduğunda SalesType seçimi netleştirilmeli.
+- Filo/Alternatif şablon kolonları mock — gerçek Excel örnekleri beklenir. `docs/reconciliation/parser-fixtures.md` bu iki akış için fixture eklenene kadar eksik.
+
+### 5. Kabul Kriterleri
+
+- [x] `ReconciliationFlow` enum'a `Filo = 2` ve `Alternatif = 3` eklendi
+- [x] `ReconciliationTemplates.ForFlow` 4 akış için çalışır
+- [x] `ReconciliationCaseAutoCreator.ExtractLineFields` 4 akış için mapping yapar (Filo=Automotive-like, Alternatif=Insurance-like)
+- [x] Frontend sekme + chip + i18n TR/EN 4 akış için tam
+- [x] Unit test: `ReconciliationTemplatesTests` 4 flow için pass
+- [ ] Filo + Alternatif müşterilerden gerçek veri örnekleri alındığında şablon kolonları iyileştirilecek
+- [ ] `ContractFlow` + `SalesType` genişletmesi (gerekirse) yeni ADR ile yapılacak
+
+---
+
 ## ADR-XXXX — [Başlık]
 
 **Tarih:** YYYY-MM-DD

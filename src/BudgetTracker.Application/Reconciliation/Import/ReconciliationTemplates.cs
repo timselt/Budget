@@ -94,10 +94,101 @@ public static class ReconciliationTemplates
                 "Kaynak Power BI query kimliği"),
         });
 
+    /// <summary>
+    /// Filo şablonu (pilot — ADR-0017). Filo şirketleri (Otokoç-AVIS, Ziraat Filo, vb.)
+    /// kullanım bazlı veri gönderir; Otomotiv şablonuyla aynı kolonlar + <c>fleet_code</c>
+    /// alias (dealer_code yerine semantik).
+    /// Gerçek veri örnekleri geldiğinde bu şablon iyileştirilecek.
+    /// </summary>
+    public static TemplateDefinition Filo { get; } = new(
+        ReconciliationFlow.Filo,
+        new List<ColumnDefinition>
+        {
+            new("case_ref",
+                new[] { "case_ref", "operasyon_no", "dosya_no", "filo_case", "operation_no" },
+                ColumnValueType.String, IsRequired: true,
+                "Filo operasyon / dosya no"),
+            new("service_code",
+                new[] { "service_code", "hizmet_kodu", "hizmet kodu" },
+                ColumnValueType.String, IsRequired: true,
+                "Hizmet kodu (yol yardımı, çekici, ikame araç, vb.)"),
+            new("service_name",
+                new[] { "service_name", "hizmet_adi", "hizmet adı" },
+                ColumnValueType.String, IsRequired: true,
+                "Hizmet gösterim adı"),
+            new("usage_count",
+                new[] { "usage_count", "adet", "kullanim_adedi", "kullanım adedi", "qty" },
+                ColumnValueType.Integer, IsRequired: true,
+                "Kullanım adedi"),
+            new("service_date",
+                new[] { "service_date", "hizmet_tarihi", "tarih" },
+                ColumnValueType.Date, IsRequired: true,
+                "Hizmetin verildiği tarih"),
+            new("fleet_code",
+                new[] { "fleet_code", "filo_kodu", "filo kodu", "dealer_code", "bayi_kodu" },
+                ColumnValueType.String, IsRequired: true,
+                "Filo firma kodu"),
+            new("period_code",
+                new[] { "period_code", "donem", "dönem", "period" },
+                ColumnValueType.PeriodCode, IsRequired: true,
+                "YYYY-MM formatı"),
+            new("external_customer_ref",
+                new[] { "external_customer_ref", "musteri_kodu", "müşteri kodu", "logo_kodu" },
+                ColumnValueType.String, IsRequired: true,
+                "Müşteri / filo kodu"),
+            new("notes",
+                new[] { "notes", "notlar", "aciklama", "açıklama" },
+                ColumnValueType.String, IsRequired: false),
+        });
+
+    /// <summary>
+    /// Alternatif kanallar şablonu (pilot — ADR-0017). Europ Assistance, Ümran,
+    /// İş Bankası, vb. farklı kaynaklardan gelen veriler için genel amaçlı kolonlar.
+    /// Gerçek veri örnekleri geldiğinde bu şablon iyileştirilecek.
+    /// </summary>
+    public static TemplateDefinition Alternatif { get; } = new(
+        ReconciliationFlow.Alternatif,
+        new List<ColumnDefinition>
+        {
+            new("reference_no",
+                new[] { "reference_no", "referans_no", "dosya_no", "ref_no" },
+                ColumnValueType.String, IsRequired: true,
+                "Referans numarası (dosya, ödeme, operasyon)"),
+            new("product_code",
+                new[] { "product_code", "urun_kodu", "ürün kodu", "hizmet_kodu" },
+                ColumnValueType.String, IsRequired: true,
+                "Ürün / hizmet kodu"),
+            new("product_name",
+                new[] { "product_name", "urun_adi", "ürün adı", "hizmet_adi" },
+                ColumnValueType.String, IsRequired: true,
+                "Ürün gösterim adı"),
+            new("quantity",
+                new[] { "quantity", "qty", "adet", "miktar" },
+                ColumnValueType.Integer, IsRequired: true,
+                "Adet"),
+            new("unit_price_expected",
+                new[] { "unit_price_expected", "expected_price", "beklenen_fiyat", "birim_fiyat" },
+                ColumnValueType.Decimal, IsRequired: false,
+                "Karşı tarafın beyan ettiği fiyat (kontrol için)"),
+            new("period_code",
+                new[] { "period_code", "donem", "dönem", "period" },
+                ColumnValueType.PeriodCode, IsRequired: true,
+                "YYYY-MM formatı"),
+            new("external_customer_ref",
+                new[] { "external_customer_ref", "musteri_kodu", "müşteri kodu", "logo_kodu" },
+                ColumnValueType.String, IsRequired: true,
+                "Müşteri kodu"),
+            new("notes",
+                new[] { "notes", "notlar", "aciklama", "açıklama" },
+                ColumnValueType.String, IsRequired: false),
+        });
+
     public static TemplateDefinition ForFlow(ReconciliationFlow flow) => flow switch
     {
         ReconciliationFlow.Insurance => Insurance,
         ReconciliationFlow.Automotive => Automotive,
+        ReconciliationFlow.Filo => Filo,
+        ReconciliationFlow.Alternatif => Alternatif,
         _ => throw new ArgumentOutOfRangeException(nameof(flow),
             $"unknown reconciliation flow: {flow}"),
     };

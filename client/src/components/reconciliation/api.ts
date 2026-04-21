@@ -5,7 +5,7 @@ import api from '../../lib/api'
  * Backend: src/BudgetTracker.Api/Controllers/ReconciliationBatchesController.cs
  */
 
-export type ReconciliationFlow = 'Insurance' | 'Automotive'
+export type ReconciliationFlow = 'Insurance' | 'Automotive' | 'Filo' | 'Alternatif'
 
 export type ReconciliationBatchStatus = 'Draft' | 'Parsed' | 'Mapped' | 'Archived'
 

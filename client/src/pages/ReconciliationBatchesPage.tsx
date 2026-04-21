@@ -13,7 +13,7 @@ import {
   type BatchDetail,
 } from '../components/reconciliation/api'
 
-type FlowTab = 'all' | 'Insurance' | 'Automotive'
+type FlowTab = 'all' | 'Insurance' | 'Automotive' | 'Filo' | 'Alternatif'
 
 /**
  * Sprint 1 Madde 5 — Mutabakat Batch Listesi sayfası.
@@ -77,12 +77,8 @@ export function ReconciliationBatchesPage() {
       />
 
       <div className="flex gap-1 mb-4 bg-surface-container-low rounded-lg p-1 w-fit">
-        {(['all', 'Insurance', 'Automotive'] as FlowTab[]).map((id) => {
-          const labelKey = id === 'all'
-            ? 'reconciliation.batchList.tabs.all'
-            : id === 'Insurance'
-              ? 'reconciliation.batchList.tabs.insurance'
-              : 'reconciliation.batchList.tabs.automotive'
+        {(['all', 'Insurance', 'Automotive', 'Filo', 'Alternatif'] as FlowTab[]).map((id) => {
+          const labelKey = `reconciliation.batchList.tabs.${id.toLowerCase()}`
           return (
             <button
               key={id}
@@ -190,7 +186,7 @@ function BatchTable({
           <tr key={b.id}>
             <td>
               <span
-                className={`chip ${b.flow === 'Insurance' ? 'chip-info' : 'chip-warning'}`}
+                className={`chip ${flowChipClass(b.flow)}`}
               >
                 {t(`reconciliation.batchList.flow.${b.flow.toLowerCase()}`)}
               </span>
@@ -219,6 +215,15 @@ function BatchTable({
       </tbody>
     </table>
   )
+}
+
+function flowChipClass(flow: ReconciliationFlow): string {
+  switch (flow) {
+    case 'Insurance': return 'chip-info'
+    case 'Automotive': return 'chip-warning'
+    case 'Filo': return 'chip-success'
+    case 'Alternatif': return 'chip-neutral'
+  }
 }
 
 function statusChipClass(status: ReconciliationBatchStatus): string {

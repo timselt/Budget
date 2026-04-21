@@ -44,9 +44,20 @@ public sealed class PricingLookupService : IPricingLookupService
         ArgumentException.ThrowIfNullOrWhiteSpace(flow);
         ArgumentException.ThrowIfNullOrWhiteSpace(periodCode);
         ArgumentException.ThrowIfNullOrWhiteSpace(productCode);
-        if (!Enum.TryParse<ContractFlow>(flow, ignoreCase: true, out var parsedFlow))
+        // ADR-0017: Filo + Alternatif mutabakat akışları pilot amaçlı mevcut
+        // ContractFlow değerlerine eşlenir. Filo → Automotive (SalesType.Fleet
+        // zaten Automotive flow'una mapping'li), Alternatif → Insurance
+        // (DirectChannel/Medical Insurance flow'una mapping'li). Gerçek
+        // SalesType genişletmesi sonraki fazda.
+        var normalizedFlow = flow.Trim() switch
         {
-            throw new ArgumentException($"invalid flow: '{flow}' (Insurance|Automotive)", nameof(flow));
+            var f when string.Equals(f, "Filo", StringComparison.OrdinalIgnoreCase) => "Automotive",
+            var f when string.Equals(f, "Alternatif", StringComparison.OrdinalIgnoreCase) => "Insurance",
+            _ => flow,
+        };
+        if (!Enum.TryParse<ContractFlow>(normalizedFlow, ignoreCase: true, out var parsedFlow))
+        {
+            throw new ArgumentException($"invalid flow: '{flow}' (Insurance|Automotive|Filo|Alternatif)", nameof(flow));
         }
         var (periodStart, periodEnd) = ParsePeriod(periodCode);
         var normalizedCode = productCode.Trim();
