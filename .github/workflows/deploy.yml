@@ -69,10 +69,13 @@ jobs:
         env:
           ConnectionStrings__Default: ${{ secrets.STAGING_CONN_STRING_SUPERUSER }}
         run: |
+          dotnet restore
+          dotnet build --configuration Release --no-restore
           dotnet tool install --global dotnet-ef
           dotnet ef database update \
             --project src/BudgetTracker.Infrastructure \
-            --startup-project src/BudgetTracker.Api
+            --startup-project src/BudgetTracker.Api \
+            --no-build --configuration Release
       - name: Rotate budget_app password (post-migration)
         env:
           DATABASE_URL: ${{ secrets.STAGING_CONN_STRING_SUPERUSER }}
@@ -106,10 +109,13 @@ jobs:
         env:
           ConnectionStrings__Default: ${{ secrets.PROD_CONN_STRING_SUPERUSER }}
         run: |
+          dotnet restore
+          dotnet build --configuration Release --no-restore
           dotnet tool install --global dotnet-ef
           dotnet ef database update \
             --project src/BudgetTracker.Infrastructure \
-            --startup-project src/BudgetTracker.Api
+            --startup-project src/BudgetTracker.Api \
+            --no-build --configuration Release
       - name: Rotate budget_app password
         env:
           DATABASE_URL: ${{ secrets.PROD_CONN_STRING_SUPERUSER }}
