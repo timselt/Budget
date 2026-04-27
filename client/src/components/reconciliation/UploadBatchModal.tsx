@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
@@ -7,6 +7,7 @@ import {
   type ReconciliationSourceType,
   type BatchDetail,
 } from './api'
+import { Modal } from '../../shared/ui/Modal'
 
 interface Props {
   defaultFlow?: ReconciliationFlow
@@ -57,13 +58,6 @@ export function UploadBatchModal({ defaultFlow, onClose, onSuccess }: Props) {
   )
   const [notes, setNotes] = useState<string>('')
   const [errors, setErrors] = useState<FormErrors>({})
-
-  // ESC ile kapatma
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
 
   // Flow değişiminde sourceType reset — useEffect yerine handler içinde
   // doğrudan setState (react-hooks/set-state-in-effect uyarısı). Kullanıcı
@@ -125,30 +119,39 @@ export function UploadBatchModal({ defaultFlow, onClose, onSuccess }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="card w-full max-w-xl"
-        style={{ padding: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant">
-          <h3 className="text-lg font-bold text-on-surface">
-            {t('reconciliation.upload.modalTitle')}
-          </h3>
+    <Modal
+      open
+      onClose={onClose}
+      title={t('reconciliation.upload.modalTitle')}
+      size="lg"
+      footer={
+        <>
           <button
             type="button"
-            className="p-1 text-on-surface-variant hover:text-primary transition-colors"
+            className="btn-secondary"
             onClick={onClose}
-            aria-label={t('reconciliation.upload.cancel')}
+            disabled={mutation.isPending}
           >
-            <span className="material-symbols-outlined">close</span>
+            {t('reconciliation.upload.cancel')}
           </button>
-        </div>
-
-        <form className="grid grid-cols-2 gap-4 px-6 py-5" onSubmit={handleSubmit}>
+          <button
+            type="submit"
+            form="upload-batch-form"
+            className="btn-primary"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending
+              ? t('reconciliation.upload.submitting')
+              : t('reconciliation.upload.submit')}
+          </button>
+        </>
+      }
+    >
+      <form
+        id="upload-batch-form"
+        className="grid grid-cols-2 gap-4"
+        onSubmit={handleSubmit}
+      >
           <label className="block">
             <span className="label-sm block mb-1.5">
               {t('reconciliation.upload.stepFlow')}
@@ -241,24 +244,7 @@ export function UploadBatchModal({ defaultFlow, onClose, onSuccess }: Props) {
               {errors.server}
             </p>
           )}
-
-          <div className="col-span-2 flex gap-2 justify-end mt-2">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={onClose}
-              disabled={mutation.isPending}
-            >
-              {t('reconciliation.upload.cancel')}
-            </button>
-            <button type="submit" className="btn-primary" disabled={mutation.isPending}>
-              {mutation.isPending
-                ? t('reconciliation.upload.submitting')
-                : t('reconciliation.upload.submit')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   )
 }

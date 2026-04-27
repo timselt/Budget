@@ -45,6 +45,29 @@
   --color-warning: #854d0e;
   --color-warning-container: #fef3c7;
 
+  /* Info — Sprint 1 redesign'da @theme'e eklendi (chip-info ile uyumlu).
+     ribbon/chip/alert-tile semantic family kullanır. */
+  --color-info: #005b9f;
+  --color-info-container: #d2e4ff;
+  --color-on-info: #ffffff;
+  --color-on-info-container: #002366;
+
+  /* Strong status varyantları — ribbon, chip ve segment dot kullanır.
+     Standart `--color-success` (#14532d) ile farklı bir doygunluktadır;
+     UI material spec'te "container'sız strong tone" olarak işlev görür. */
+  --color-success-strong: #006d3e;
+  --color-success-strong-container: #b8f2c6;
+  --color-warning-strong: #8a5300;
+  --color-warning-strong-container: #ffddb3;
+
+  /* Segment palette — BudgetTreePanel + segment dot utility'leri.
+     SGK_TESVIK rengi marka onayı bekler (placeholder). */
+  --color-segment-sigorta: var(--color-primary);
+  --color-segment-otomotiv: var(--color-secondary);
+  --color-segment-filo: var(--color-success-strong);
+  --color-segment-alternatif: var(--color-warning-strong);
+  --color-segment-sgk: #6f42c1;
+
   /* Outline — Kurumsal Gri */
   --color-outline: #4d4d4f;
   --color-outline-variant: #cbd5e1;

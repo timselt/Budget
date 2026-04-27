@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { translateApiError } from '../lib/api-error'
@@ -7,6 +7,7 @@ import { isEditableStatus, getStatusLabel } from '../components/budget-planning/
 import { Stepper } from '../components/budget-planning/Stepper'
 import { showToast } from '../components/shared/toast-bus'
 import { PageIntro } from '../components/shared/PageIntro'
+import { Modal } from '../shared/ui/Modal'
 
 interface BudgetYearRow {
   id: number
@@ -351,14 +352,6 @@ function ExpenseEntryModal({
   const currentStep =
     categoryId === '' ? 1 : !month ? 2 : Number(amount) <= 0 ? 3 : 4
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
   const mutation = useMutation({
     mutationFn: async () => {
       if (categoryId === '') throw new Error('Kategori seçiniz')
@@ -383,127 +376,117 @@ function ExpenseEntryModal({
   })
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="card w-full max-w-lg"
-        style={{ padding: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 pt-4 pb-2">
-          <h3 className="text-lg font-bold text-on-surface">
-            Yeni Gider ({entryType === 'BUDGET' ? 'Bütçe' : 'Gerçekleşen'})
-          </h3>
-          <button
-            type="button"
-            className="p-1 text-on-surface-variant hover:text-primary transition-colors"
-            onClick={onClose}
-          >
-            <span className="material-symbols-outlined">close</span>
+    <Modal
+      open
+      onClose={onClose}
+      title={`Yeni Gider (${entryType === 'BUDGET' ? 'Bütçe' : 'Gerçekleşen'})`}
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
           </button>
-        </div>
-        <div className="px-6 pb-2">
-          <Stepper
-            steps={[
-              { label: 'Kategori' },
-              { label: 'Ay' },
-              { label: 'Tutar' },
-              { label: 'Onay' },
-            ]}
-            current={currentStep}
-          />
-        </div>
-        <form
-          className="grid grid-cols-2 gap-4 px-6 pb-6"
-          onSubmit={(e) => {
-            e.preventDefault()
-            setError(null)
-            mutation.mutate()
-          }}
-        >
-          <label className="block col-span-2">
-            <span className="label-sm block mb-1.5">Gider Kategorisi</span>
-            <select
-              className="select w-full"
-              value={categoryId}
-              required
-              onChange={(e) =>
-                setCategoryId(e.target.value === '' ? '' : Number(e.target.value))
-              }
-            >
-              <option value="">—</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.code} — {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="label-sm block mb-1.5">Ay</span>
-            <select
-              className="select w-full"
-              value={month}
-              onChange={(e) => setMonth(Number(e.target.value))}
-            >
-              {MONTH_LABELS.map((m, i) => (
-                <option key={m} value={i + 1}>
-                  {i + 1} — {m}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            <span className="label-sm block mb-1.5">Para Birimi</span>
-            <select
-              className="select w-full"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-            >
-              {CURRENCIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block col-span-2">
-            <span className="label-sm block mb-1.5">Tutar (Orijinal Döviz)</span>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              className="input w-full"
-              value={amount}
-              required
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Ör: 12500.00"
-            />
-          </label>
-          <label className="block col-span-2">
-            <span className="label-sm block mb-1.5">Not (opsiyonel)</span>
-            <input
-              className="input w-full"
-              value={notes}
-              maxLength={500}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </label>
-
-          {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
-
-          <div className="col-span-2 flex gap-2 justify-end mt-2">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Vazgeç
-            </button>
-            <button type="submit" className="btn-primary" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
-            </button>
-          </div>
-        </form>
+          <button
+            type="submit"
+            form="expense-entry-form"
+            className="btn-primary"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+          </button>
+        </>
+      }
+    >
+      <div className="pb-2">
+        <Stepper
+          steps={[
+            { label: 'Kategori' },
+            { label: 'Ay' },
+            { label: 'Tutar' },
+            { label: 'Onay' },
+          ]}
+          current={currentStep}
+        />
       </div>
-    </div>
+      <form
+        id="expense-entry-form"
+        className="grid grid-cols-2 gap-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          setError(null)
+          mutation.mutate()
+        }}
+      >
+        <label className="block col-span-2">
+          <span className="label-sm block mb-1.5">Gider Kategorisi</span>
+          <select
+            className="select w-full"
+            value={categoryId}
+            required
+            onChange={(e) =>
+              setCategoryId(e.target.value === '' ? '' : Number(e.target.value))
+            }
+          >
+            <option value="">—</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.code} — {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="label-sm block mb-1.5">Ay</span>
+          <select
+            className="select w-full"
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+          >
+            {MONTH_LABELS.map((m, i) => (
+              <option key={m} value={i + 1}>
+                {i + 1} — {m}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="label-sm block mb-1.5">Para Birimi</span>
+          <select
+            className="select w-full"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block col-span-2">
+          <span className="label-sm block mb-1.5">Tutar (Orijinal Döviz)</span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            className="input w-full"
+            value={amount}
+            required
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Ör: 12500.00"
+          />
+        </label>
+        <label className="block col-span-2">
+          <span className="label-sm block mb-1.5">Not (opsiyonel)</span>
+          <input
+            className="input w-full"
+            value={notes}
+            maxLength={500}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </label>
+
+        {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
+      </form>
+    </Modal>
   )
 }

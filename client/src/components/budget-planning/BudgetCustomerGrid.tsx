@@ -67,7 +67,7 @@ export function BudgetCustomerGrid({
                   {m}
                 </th>
               ))}
-              <th className="text-right bg-[#1e293b] text-white">TOPLAM</th>
+              <th className="text-right tbl-total-cell">TOPLAM</th>
             </tr>
           </thead>
           <tbody>
@@ -223,7 +223,7 @@ function EditableContractRow({
     total += toNumber(values[cellKey({ contractId, kind, month: m })]?.amount ?? '')
   }
 
-  const color = kind === 'REVENUE' ? 'text-[#005b9f]' : 'text-[#8a5300]'
+  const color = kind === 'REVENUE' ? 'text-info' : 'text-warning-strong'
 
   return (
     <tr className="budget-item-row">

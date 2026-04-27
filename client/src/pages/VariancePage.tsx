@@ -114,7 +114,7 @@ export function VariancePage() {
   if (versionLoading) {
     return (
       <section>
-        <h2 className="text-3xl font-extrabold tracking-display text-[#002366] mb-6">
+        <h2 className="text-3xl font-extrabold tracking-display text-secondary mb-6">
           Sapma Analizi
         </h2>
         <div className="card p-6 text-sm text-on-surface-variant">Yükleniyor…</div>
@@ -125,7 +125,7 @@ export function VariancePage() {
   if (versionId === null) {
     return (
       <section>
-        <h2 className="text-3xl font-extrabold tracking-display text-[#002366] mb-6">
+        <h2 className="text-3xl font-extrabold tracking-display text-secondary mb-6">
           Sapma Analizi
         </h2>
         <div className="card p-6 text-sm text-on-surface-variant">
@@ -256,7 +256,7 @@ export function VariancePage() {
         </div>
         <div className="card">
           <span className="label-sm">Toplam Plan Gelir</span>
-          <p className="text-2xl font-black num mt-2 text-[#002366]">
+          <p className="text-2xl font-black num mt-2 text-secondary">
             {summary ? formatCompactAmount(summary.totalBudgetRevenue) : '—'}
           </p>
           <p className="text-xs text-on-surface-variant mt-1">

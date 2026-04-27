@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import type { BudgetYearRow } from './types'
 import { copyFromYear, growByPercent } from './api'
 import type { CopyFromYearResult, GrowByPercentResult } from './api'
+import { Modal } from '../../shared/ui/Modal'
 
 interface CommonProps {
   versionId: number
@@ -43,7 +44,28 @@ export function CopyFromYearModal({
   })
 
   return (
-    <ModalShell title="Geçen Yıl Kopyala" onClose={onClose}>
+    <Modal
+      open
+      onClose={onClose}
+      title="Geçen Yıl Kopyala"
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            {result ? 'Kapat' : 'Vazgeç'}
+          </button>
+          {!result ? (
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={sourceYearId == null || mutation.isPending}
+              onClick={() => mutation.mutate()}
+            >
+              {mutation.isPending ? 'Kopyalanıyor…' : 'Kopyala'}
+            </button>
+          ) : null}
+        </>
+      }
+    >
       <label className="label-sm">Kaynak Yıl</label>
       <select
         className="select w-full"
@@ -82,23 +104,7 @@ export function CopyFromYearModal({
           kopyalandı.
         </p>
       ) : null}
-
-      <div className="flex justify-end gap-2 mt-6">
-        <button type="button" className="btn-secondary" onClick={onClose}>
-          {result ? 'Kapat' : 'Vazgeç'}
-        </button>
-        {!result ? (
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={sourceYearId == null || mutation.isPending}
-            onClick={() => mutation.mutate()}
-          >
-            {mutation.isPending ? 'Kopyalanıyor…' : 'Kopyala'}
-          </button>
-        ) : null}
-      </div>
-    </ModalShell>
+    </Modal>
   )
 }
 
@@ -133,7 +139,28 @@ export function GrowByPercentModal({
   })
 
   return (
-    <ModalShell title="+%X Büyüt / Küçült" onClose={onClose}>
+    <Modal
+      open
+      onClose={onClose}
+      title="+%X Büyüt / Küçült"
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            {result ? 'Kapat' : 'Vazgeç'}
+          </button>
+          {!result ? (
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={mutation.isPending}
+              onClick={() => mutation.mutate()}
+            >
+              {mutation.isPending ? 'Uygulanıyor…' : 'Uygula'}
+            </button>
+          ) : null}
+        </>
+      }
+    >
       <label className="label-sm">Yüzde (negatif küçültür)</label>
       <div className="flex items-center gap-2">
         <input
@@ -167,65 +194,6 @@ export function GrowByPercentModal({
           {result.updatedEntryCount} satır güncellendi.
         </p>
       ) : null}
-
-      <div className="flex justify-end gap-2 mt-6">
-        <button type="button" className="btn-secondary" onClick={onClose}>
-          {result ? 'Kapat' : 'Vazgeç'}
-        </button>
-        {!result ? (
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={mutation.isPending}
-            onClick={() => mutation.mutate()}
-          >
-            {mutation.isPending ? 'Uygulanıyor…' : 'Uygula'}
-          </button>
-        ) : null}
-      </div>
-    </ModalShell>
-  )
-}
-
-function ModalShell({
-  title,
-  onClose,
-  children,
-}: {
-  title: string
-  onClose: () => void
-  children: React.ReactNode
-}) {
-  useEffect(() => {
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onEsc)
-    return () => window.removeEventListener('keydown', onEsc)
-  }, [onClose])
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-on-surface">{title}</h3>
-          <button
-            type="button"
-            className="text-on-surface-variant hover:text-on-surface"
-            onClick={onClose}
-            aria-label="Kapat"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
+    </Modal>
   )
 }

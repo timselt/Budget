@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { PageIntro } from '../components/shared/PageIntro'
 import { EmptyState } from '../components/shared/EmptyState'
 import { showToast } from '../components/shared/toast-bus'
+import { Modal } from '../shared/ui/Modal'
 import {
   getBatchById,
   deleteDraftBatch,
@@ -266,34 +267,37 @@ function LinkCustomerButton({
       <button type="button" className="btn-secondary btn-sm" onClick={() => setOpen(true)}>
         {t('reconciliation.unmatched.link')}
       </button>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
-             onClick={() => setOpen(false)}>
-          <div className="card w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-4">
-              {t('reconciliation.unmatched.modalTitle', { externalRef })}
-            </h3>
-            <label className="label-sm block mb-1.5">
-              {t('reconciliation.unmatched.customerIdLabel')}
-            </label>
-            <input
-              type="number"
-              className="input w-full mb-4"
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value === '' ? '' : Number(e.target.value))}
-              placeholder="123"
-            />
-            <div className="flex gap-2 justify-end">
-              <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
-                {t('app.cancel')}
-              </button>
-              <button type="button" className="btn-primary" disabled={linking || !customerId} onClick={submit}>
-                {linking ? t('app.loading') : t('reconciliation.unmatched.link')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        title={t('reconciliation.unmatched.modalTitle', { externalRef })}
+        footer={
+          <>
+            <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
+              {t('app.cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={linking || !customerId}
+              onClick={submit}
+            >
+              {linking ? t('app.loading') : t('reconciliation.unmatched.link')}
+            </button>
+          </>
+        }
+      >
+        <label className="label-sm block mb-1.5">
+          {t('reconciliation.unmatched.customerIdLabel')}
+        </label>
+        <input
+          type="number"
+          className="input w-full"
+          value={customerId}
+          onChange={(e) => setCustomerId(e.target.value === '' ? '' : Number(e.target.value))}
+          placeholder="123"
+        />
+      </Modal>
     </>
   )
 }

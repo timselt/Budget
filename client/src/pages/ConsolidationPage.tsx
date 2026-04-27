@@ -27,7 +27,7 @@ export function ConsolidationPage() {
       />
       <div className="flex justify-between items-end mb-8">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
+          <h2 className="text-3xl font-extrabold tracking-display text-secondary">
             Konsolidasyon
           </h2>
         </div>

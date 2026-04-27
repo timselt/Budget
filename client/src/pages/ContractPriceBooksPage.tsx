@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import api from '../lib/api'
+import { Modal } from '../shared/ui/Modal'
 
 /**
  * Bir sözleşmeye ait PriceBook sürümlerinin listesi (00b §4). Yeni Draft açma,
@@ -203,8 +204,28 @@ function CreateDraftModal({
   })
 
   return (
-    <ModalShell title="Yeni PriceBook Sürümü" onClose={onClose}>
+    <Modal
+      open
+      onClose={onClose}
+      title="Yeni PriceBook Sürümü"
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
+          </button>
+          <button
+            type="submit"
+            form="create-pricebook-form"
+            className="btn-primary"
+            disabled={createMutation.isPending}
+          >
+            {createMutation.isPending ? 'Oluşturuluyor…' : 'Oluştur'}
+          </button>
+        </>
+      }
+    >
       <form
+        id="create-pricebook-form"
         onSubmit={(e) => {
           e.preventDefault()
           setError(null)
@@ -247,56 +268,8 @@ function CreateDraftModal({
         </label>
 
         {error ? <p className="text-sm text-error">{error}</p> : null}
-
-        <div className="flex justify-end gap-2">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            Vazgeç
-          </button>
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={createMutation.isPending}
-          >
-            {createMutation.isPending ? 'Oluşturuluyor…' : 'Oluştur'}
-          </button>
-        </div>
       </form>
-    </ModalShell>
-  )
-}
-
-function ModalShell({
-  title,
-  onClose,
-  children,
-}: {
-  title: string
-  onClose: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-on-surface">{title}</h3>
-          <button
-            type="button"
-            className="text-on-surface-variant hover:text-on-surface"
-            onClick={onClose}
-            aria-label="Kapat"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
+    </Modal>
   )
 }
 

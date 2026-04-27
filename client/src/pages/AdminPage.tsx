@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { resetOnboardingTour } from '../components/shared/onboarding-storage'
 import { PageIntro } from '../components/shared/PageIntro'
+import { Modal } from '../shared/ui/Modal'
 
 type Tab = 'users' | 'companies'
 
@@ -322,66 +323,59 @@ function CreateCompanyModal({
   })
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="card w-full max-w-md"
-        style={{ padding: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4">
-          <h3 className="text-lg font-bold text-on-surface">Yeni Şirket</h3>
-          <button
-            type="button"
-            className="p-1 text-on-surface-variant hover:text-primary"
-            onClick={onClose}
-          >
-            <span className="material-symbols-outlined">close</span>
+    <Modal
+      open
+      onClose={onClose}
+      title="Yeni Şirket"
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
           </button>
-        </div>
-        <form
-          className="grid gap-4 px-6 pb-6"
-          onSubmit={(e) => {
-            e.preventDefault()
-            setError(null)
-            mutation.mutate()
-          }}
-        >
-          <label className="block">
-            <span className="label-sm block mb-1.5">Şirket Adı</span>
-            <input
-              className="input w-full"
-              value={name}
-              required
-              maxLength={200}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </label>
-          <label className="block">
-            <span className="label-sm block mb-1.5">Vergi Kimlik No (VKN)</span>
-            <input
-              className="input w-full"
-              value={taxId}
-              required
-              maxLength={32}
-              onChange={(e) => setTaxId(e.target.value)}
-              placeholder="1234567890"
-            />
-          </label>
-          {error ? <p className="text-sm text-error">{error}</p> : null}
-          <div className="flex gap-2 justify-end">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Vazgeç
-            </button>
-            <button type="submit" className="btn-primary" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Oluşturuluyor…' : 'Oluştur'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          <button
+            type="submit"
+            form="create-company-form"
+            className="btn-primary"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? 'Oluşturuluyor…' : 'Oluştur'}
+          </button>
+        </>
+      }
+    >
+      <form
+        id="create-company-form"
+        className="grid gap-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          setError(null)
+          mutation.mutate()
+        }}
+      >
+        <label className="block">
+          <span className="label-sm block mb-1.5">Şirket Adı</span>
+          <input
+            className="input w-full"
+            value={name}
+            required
+            maxLength={200}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </label>
+        <label className="block">
+          <span className="label-sm block mb-1.5">Vergi Kimlik No (VKN)</span>
+          <input
+            className="input w-full"
+            value={taxId}
+            required
+            maxLength={32}
+            onChange={(e) => setTaxId(e.target.value)}
+            placeholder="1234567890"
+          />
+        </label>
+        {error ? <p className="text-sm text-error">{error}</p> : null}
+      </form>
+    </Modal>
   )
 }
 
