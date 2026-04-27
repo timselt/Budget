@@ -766,6 +766,11 @@ details[open] .chev {
   font-weight: 700;
 }
 
+/* ---------- Row selected — tablo satırı seçili durumu (info tonu) ---------- */
+.row-selected {
+  background: color-mix(in srgb, var(--color-info-container) 30%, var(--color-surface-bright));
+}
+
 /* ---------- Segment dot — BudgetTreePanel sidebar segment göstergesi ---------- */
 .segment-dot { width: .5rem; height: .5rem; border-radius: var(--radius-full); display: inline-block; flex: 0 0 auto; }
 .segment-dot-sigorta    { background: var(--color-segment-sigorta); }

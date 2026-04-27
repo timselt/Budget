@@ -223,7 +223,7 @@ function EditableContractRow({
     total += toNumber(values[cellKey({ contractId, kind, month: m })]?.amount ?? '')
   }
 
-  const color = kind === 'REVENUE' ? 'text-[#005b9f]' : 'text-[#8a5300]'
+  const color = kind === 'REVENUE' ? 'text-info' : 'text-warning-strong'
 
   return (
     <tr className="budget-item-row">
