@@ -301,7 +301,7 @@ export function ActualsPage() {
                       {m}
                     </th>
                   ))}
-                  <th className="text-right bg-[#1e293b] text-white">Gerçek</th>
+                  <th className="text-right tbl-total-cell">Gerçek</th>
                   {view === 'comparison' && <th className="text-right">Bütçe</th>}
                   {view === 'comparison' && <th className="text-right">Kullanım</th>}
                 </tr>

@@ -3,11 +3,11 @@ import type { BudgetTree, TreeSelection } from './types'
 import { formatCompact } from './utils'
 
 const SEGMENT_COLOR: Record<string, string> = {
-  SIGORTA: 'bg-[#DA291C]',
-  OTOMOTIV: 'bg-[#002366]',
-  FILO: 'bg-[#006d3e]',
-  ALTERNATIF: 'bg-[#8a5300]',
-  SGK_TESVIK: 'bg-[#6f42c1]',
+  SIGORTA: 'segment-dot-sigorta',
+  OTOMOTIV: 'segment-dot-otomotiv',
+  FILO: 'segment-dot-filo',
+  ALTERNATIF: 'segment-dot-alternatif',
+  SGK_TESVIK: 'segment-dot-sgk',
 }
 
 interface Props {
