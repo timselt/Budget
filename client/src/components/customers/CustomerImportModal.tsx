@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import api from '../../lib/api'
 import { showToast } from '../shared/toast-bus'
+import { Modal } from '../../shared/ui/Modal'
 
 interface Props {
   onClose: () => void
@@ -87,40 +88,44 @@ export function CustomerImportModal({ onClose, onSuccess }: Props) {
     URL.revokeObjectURL(url)
   }
 
+  const canCommit =
+    !!file &&
+    !!preview &&
+    preview.validRows > 0 &&
+    preview.errorRows === 0 &&
+    !commitMutation.isPending
+
   return (
-    <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+    <Modal
+      open
+      onClose={onClose}
+      title="Müşteri Excel İçe Aktar"
+      description="Excel'de en az şu kolonlar olmalı: Kod, Firma Adi, Kategori. Kategori değerleri: Sigorta, Otomotiv, Filo, Alternatif."
+      size="lg"
+      headerActions={
+        <button type="button" className="btn-secondary" onClick={downloadTemplate}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            download
+          </span>
+          Şablon İndir
+        </button>
+      }
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!canCommit}
+            onClick={() => commitMutation.mutate()}
+          >
+            {commitMutation.isPending ? 'İçe aktarılıyor…' : 'Müşterileri İçe Aktar'}
+          </button>
+        </>
+      }
     >
-      <div
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-on-surface">Müşteri Excel İçe Aktar</h3>
-          <div className="flex items-center gap-2">
-            <button type="button" className="btn-secondary" onClick={downloadTemplate}>
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                download
-              </span>
-              Şablon İndir
-            </button>
-            <button
-              type="button"
-              className="text-on-surface-variant hover:text-on-surface"
-              onClick={onClose}
-              aria-label="Kapat"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          </div>
-        </div>
-
-        <p className="text-xs text-on-surface-variant mb-4">
-          Excel&apos;de en az şu kolonlar olmalı: <strong>Kod</strong>, <strong>Firma Adi</strong>, <strong>Kategori</strong>.
-          Kategori değerleri: Sigorta, Otomotiv, Filo, Alternatif.
-        </p>
-
         <input
           ref={inputRef}
           type="file"
@@ -200,29 +205,9 @@ export function CustomerImportModal({ onClose, onSuccess }: Props) {
             ) : null}
 
             {error ? <p className="text-sm text-error">{error}</p> : null}
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button type="button" className="btn-secondary" onClick={onClose}>
-                Vazgeç
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
-                disabled={
-                  !preview ||
-                  preview.validRows === 0 ||
-                  preview.errorRows > 0 ||
-                  commitMutation.isPending
-                }
-                onClick={() => commitMutation.mutate()}
-              >
-                {commitMutation.isPending ? 'İçe aktarılıyor…' : 'Müşterileri İçe Aktar'}
-              </button>
-            </div>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   )
 }
 
