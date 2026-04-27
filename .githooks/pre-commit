@@ -1,0 +1,17 @@
+#!/bin/sh
+# Hardcoded hex Tailwind class taraması.
+# Plan: docs/plans/2026-04-27-ui-token-migration-plan.md (PR #5).
+# Aktif etmek için: git config core.hooksPath .githooks
+set -eu
+
+if git diff --cached --name-only | grep -qE '^client/src/.*\.(tsx?|jsx?)$'; then
+  if [ -f client/scripts/lint-colors.mjs ]; then
+    (cd client && node scripts/lint-colors.mjs) || {
+      echo "pre-commit: hardcoded hex Tailwind class bulundu (yukarıda)."
+      echo "@theme token veya finopstur.css utility kullanın."
+      exit 1
+    }
+  fi
+fi
+
+exit 0
