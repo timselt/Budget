@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import api from '../lib/api'
@@ -11,6 +11,7 @@ import {
   IN_PROGRESS_STATUSES,
   type BudgetVersionStatus,
 } from '../components/budget-planning/types'
+import { Modal } from '../shared/ui/Modal'
 
 interface BudgetYearRow {
   id: number
@@ -341,14 +342,6 @@ function YearModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
   const [year, setYear] = useState<number>(new Date().getFullYear())
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
   const mutation = useMutation({
     mutationFn: async () => {
       await api.post('/budget/years', { year })
@@ -361,8 +354,28 @@ function YearModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
   })
 
   return (
-    <Modal title="Yeni Bütçe Yılı" onClose={onClose}>
+    <Modal
+      open
+      onClose={onClose}
+      title="Yeni Bütçe Yılı"
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
+          </button>
+          <button
+            type="submit"
+            form="budget-year-form"
+            className="btn-primary"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? 'Oluşturuluyor…' : 'Oluştur'}
+          </button>
+        </>
+      }
+    >
       <form
+        id="budget-year-form"
         onSubmit={(e) => {
           e.preventDefault()
           setError(null)
@@ -382,14 +395,6 @@ function YearModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
           />
         </label>
         {error ? <p className="text-sm text-error mt-3">{error}</p> : null}
-        <div className="flex gap-2 justify-end mt-4">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            Vazgeç
-          </button>
-          <button type="submit" className="btn-primary" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Oluşturuluyor…' : 'Oluştur'}
-          </button>
-        </div>
       </form>
     </Modal>
   )
@@ -407,14 +412,6 @@ function VersionModal({
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
   const mutation = useMutation({
     mutationFn: async () => {
       await api.post(`/budget/years/${yearId}/versions`, { name })
@@ -424,8 +421,28 @@ function VersionModal({
   })
 
   return (
-    <Modal title="Yeni Versiyon (DRAFT)" onClose={onClose}>
+    <Modal
+      open
+      onClose={onClose}
+      title="Yeni Versiyon (DRAFT)"
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
+          </button>
+          <button
+            type="submit"
+            form="budget-version-form"
+            className="btn-primary"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? 'Oluşturuluyor…' : 'Taslak Oluştur'}
+          </button>
+        </>
+      }
+    >
       <form
+        id="budget-version-form"
         onSubmit={(e) => {
           e.preventDefault()
           setError(null)
@@ -445,14 +462,6 @@ function VersionModal({
           />
         </label>
         {error ? <p className="text-sm text-error mt-3">{error}</p> : null}
-        <div className="flex gap-2 justify-end mt-4">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            Vazgeç
-          </button>
-          <button type="submit" className="btn-primary" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Oluşturuluyor…' : 'Taslak Oluştur'}
-          </button>
-        </div>
       </form>
     </Modal>
   )
@@ -470,14 +479,6 @@ function RejectModal({
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
   const mutation = useMutation({
     mutationFn: async () => {
       await api.post(`/budget/versions/${versionId}/reject`, { reason })
@@ -487,8 +488,28 @@ function RejectModal({
   })
 
   return (
-    <Modal title="Versiyonu Reddet" onClose={onClose}>
+    <Modal
+      open
+      onClose={onClose}
+      title="Versiyonu Reddet"
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
+          </button>
+          <button
+            type="submit"
+            form="budget-reject-form"
+            className="btn-primary"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? 'Reddediliyor…' : 'Reddet'}
+          </button>
+        </>
+      }
+    >
       <form
+        id="budget-reject-form"
         onSubmit={(e) => {
           e.preventDefault()
           setError(null)
@@ -507,50 +528,8 @@ function RejectModal({
           />
         </label>
         {error ? <p className="text-sm text-error mt-3">{error}</p> : null}
-        <div className="flex gap-2 justify-end mt-4">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            Vazgeç
-          </button>
-          <button type="submit" className="btn-primary" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Reddediliyor…' : 'Reddet'}
-          </button>
-        </div>
       </form>
     </Modal>
   )
 }
 
-function Modal({
-  title,
-  onClose,
-  children,
-}: {
-  title: string
-  onClose: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="card w-full max-w-lg"
-        style={{ padding: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4">
-          <h3 className="text-lg font-bold text-on-surface">{title}</h3>
-          <button
-            type="button"
-            className="p-1 text-on-surface-variant hover:text-primary transition-colors"
-            onClick={onClose}
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        <div className="px-6 pb-6">{children}</div>
-      </div>
-    </div>
-  )
-}

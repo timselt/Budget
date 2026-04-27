@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { formatAmount } from '../lib/number-format'
 import { METRIC_LABELS } from '../lib/metric-labels'
 import { PageIntro } from '../components/shared/PageIntro'
+import { Modal } from '../shared/ui/Modal'
 
 interface BudgetYearRow {
   id: number
@@ -292,14 +293,6 @@ function SpecialItemModal({
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
   const activeTypeDef = ITEM_TYPES.find((t) => t.value === itemType)
 
   const mutation = useMutation({
@@ -319,33 +312,35 @@ function SpecialItemModal({
   })
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="card w-full max-w-lg"
-        style={{ padding: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4">
-          <h3 className="text-lg font-bold text-on-surface">Yeni Özel Kalem</h3>
-          <button
-            type="button"
-            className="p-1 text-on-surface-variant hover:text-primary transition-colors"
-            onClick={onClose}
-          >
-            <span className="material-symbols-outlined">close</span>
+    <Modal
+      open
+      onClose={onClose}
+      title="Yeni Özel Kalem"
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
           </button>
-        </div>
-        <form
-          className="grid grid-cols-2 gap-4 px-6 pb-6"
-          onSubmit={(e) => {
-            e.preventDefault()
-            setError(null)
-            mutation.mutate()
-          }}
-        >
+          <button
+            type="submit"
+            form="special-item-form"
+            className="btn-primary"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+          </button>
+        </>
+      }
+    >
+      <form
+        id="special-item-form"
+        className="grid grid-cols-2 gap-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          setError(null)
+          mutation.mutate()
+        }}
+      >
           <label className="block col-span-2">
             <span className="label-sm block mb-1.5">Kalem Tipi</span>
             <select
@@ -417,17 +412,7 @@ function SpecialItemModal({
           </label>
 
           {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
-
-          <div className="col-span-2 flex gap-2 justify-end mt-2">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Vazgeç
-            </button>
-            <button type="submit" className="btn-primary" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   )
 }

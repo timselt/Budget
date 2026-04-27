@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { PageIntro } from '../components/shared/PageIntro'
+import { Modal } from '../shared/ui/Modal'
 
 interface ProductCategoryRow {
   id: number
@@ -371,8 +372,50 @@ function CategoryModal({
   })
 
   return (
-    <Modal title={mode === 'create' ? 'Yeni Kategori' : `Kategori: ${category?.name}`} onClose={onClose}>
+    <Modal
+      open
+      onClose={onClose}
+      title={mode === 'create' ? 'Yeni Kategori' : `Kategori: ${category?.name}`}
+      size="lg"
+      footer={
+        <div className="flex items-center justify-between gap-2 w-full">
+          {mode === 'edit' ? (
+            <button
+              type="button"
+              className="btn-tertiary"
+              onClick={() => {
+                if (confirm('Bu kategori pasifleştirilecek (soft delete). Emin misiniz?')) {
+                  deleteMutation.mutate()
+                }
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                delete
+              </span>
+              Pasifleştir
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Vazgeç
+            </button>
+            <button
+              type="submit"
+              form="product-category-form"
+              className="btn-primary"
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+            </button>
+          </div>
+        </div>
+      }
+    >
       <form
+        id="product-category-form"
         className="grid grid-cols-2 gap-4"
         onSubmit={(e) => {
           e.preventDefault()
@@ -446,36 +489,6 @@ function CategoryModal({
         {error ? (
           <p className="col-span-2 text-sm text-error">{error}</p>
         ) : null}
-
-        <div className="col-span-2 flex items-center justify-between gap-2 mt-2">
-          {mode === 'edit' ? (
-            <button
-              type="button"
-              className="btn-tertiary"
-              onClick={() => {
-                if (confirm('Bu kategori pasifleştirilecek (soft delete). Emin misiniz?')) {
-                  deleteMutation.mutate()
-                }
-              }}
-              disabled={deleteMutation.isPending}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                delete
-              </span>
-              Pasifleştir
-            </button>
-          ) : (
-            <span />
-          )}
-          <div className="flex gap-2">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Vazgeç
-            </button>
-            <button type="submit" className="btn-primary" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
-            </button>
-          </div>
-        </div>
       </form>
     </Modal>
   )
@@ -630,8 +643,50 @@ function ProductModal({
   })
 
   return (
-    <Modal title={mode === 'create' ? 'Yeni Ürün' : `Ürün: ${product?.name}`} onClose={onClose}>
+    <Modal
+      open
+      onClose={onClose}
+      title={mode === 'create' ? 'Yeni Ürün' : `Ürün: ${product?.name}`}
+      size="lg"
+      footer={
+        <div className="flex items-center justify-between gap-2 w-full">
+          {mode === 'edit' ? (
+            <button
+              type="button"
+              className="btn-tertiary"
+              onClick={() => {
+                if (confirm('Bu ürün pasifleştirilecek (soft delete). Emin misiniz?')) {
+                  deleteMutation.mutate()
+                }
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                delete
+              </span>
+              Pasifleştir
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Vazgeç
+            </button>
+            <button
+              type="submit"
+              form="product-form"
+              className="btn-primary"
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+            </button>
+          </div>
+        </div>
+      }
+    >
       <form
+        id="product-form"
         className="grid grid-cols-2 gap-4"
         onSubmit={(e) => {
           e.preventDefault()
@@ -793,87 +848,14 @@ function ProductModal({
         </div>
 
         {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
-
-        <div className="col-span-2 flex items-center justify-between gap-2 mt-2">
-          {mode === 'edit' ? (
-            <button
-              type="button"
-              className="btn-tertiary"
-              onClick={() => {
-                if (confirm('Bu ürün pasifleştirilecek (soft delete). Emin misiniz?')) {
-                  deleteMutation.mutate()
-                }
-              }}
-              disabled={deleteMutation.isPending}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                delete
-              </span>
-              Pasifleştir
-            </button>
-          ) : (
-            <span />
-          )}
-          <div className="flex gap-2">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Vazgeç
-            </button>
-            <button type="submit" className="btn-primary" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
-            </button>
-          </div>
-        </div>
       </form>
     </Modal>
   )
 }
 
 /* =====================================================================
-   Generic Modal + Field
+   Field
    ===================================================================== */
-function Modal({
-  title,
-  onClose,
-  children,
-}: {
-  title: string
-  onClose: () => void
-  children: React.ReactNode
-}) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="card w-full max-w-2xl"
-        style={{ padding: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4">
-          <h3 className="text-lg font-bold text-on-surface">{title}</h3>
-          <button
-            type="button"
-            className="p-1 text-on-surface-variant hover:text-primary transition-colors"
-            onClick={onClose}
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        <div className="px-6 pb-6">{children}</div>
-      </div>
-    </div>
-  )
-}
-
 function Field({
   label,
   className,

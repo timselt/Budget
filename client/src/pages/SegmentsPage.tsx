@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { PageIntro } from '../components/shared/PageIntro'
 import { EmptyState } from '../components/shared/EmptyState'
+import { Modal } from '../shared/ui/Modal'
 
 interface SegmentRow {
   id: number
@@ -191,38 +192,51 @@ function SegmentModal({
     onError: (e: unknown) => setError(e instanceof Error ? e.message : 'Silme başarısız'),
   })
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="card w-full max-w-lg"
-        style={{ padding: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4">
-          <h3 className="text-lg font-bold text-on-surface">
-            {mode === 'create' ? 'Yeni Kategori' : `Kategori: ${segment?.name}`}
-          </h3>
-          <button
-            type="button"
-            className="p-1 text-on-surface-variant hover:text-primary transition-colors"
-            onClick={onClose}
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
+    <Modal
+      open
+      onClose={onClose}
+      title={mode === 'create' ? 'Yeni Kategori' : `Kategori: ${segment?.name}`}
+      footer={
+        <div className="flex items-center justify-between gap-2 w-full">
+          {mode === 'edit' ? (
+            <button
+              type="button"
+              className="btn-tertiary"
+              onClick={() => {
+                if (confirm('Bu kategori pasifleştirilecek. Emin misiniz?')) {
+                  deleteMutation.mutate()
+                }
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                delete
+              </span>
+              Pasifleştir
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Vazgeç
+            </button>
+            <button
+              type="submit"
+              form="segment-form"
+              className="btn-primary"
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+            </button>
+          </div>
         </div>
+      }
+    >
         <form
-          className="grid grid-cols-2 gap-4 px-6 pb-6"
+          id="segment-form"
+          className="grid grid-cols-2 gap-4"
           onSubmit={(e) => {
             e.preventDefault()
             setError(null)
@@ -271,39 +285,8 @@ function SegmentModal({
           ) : null}
 
           {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
-
-          <div className="col-span-2 flex items-center justify-between gap-2 mt-2">
-            {mode === 'edit' ? (
-              <button
-                type="button"
-                className="btn-tertiary"
-                onClick={() => {
-                  if (confirm('Bu kategori pasifleştirilecek. Emin misiniz?')) {
-                    deleteMutation.mutate()
-                  }
-                }}
-                disabled={deleteMutation.isPending}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                  delete
-                </span>
-                Pasifleştir
-              </button>
-            ) : (
-              <span />
-            )}
-            <div className="flex gap-2">
-              <button type="button" className="btn-secondary" onClick={onClose}>
-                Vazgeç
-              </button>
-              <button type="submit" className="btn-primary" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
-              </button>
-            </div>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   )
 }
 

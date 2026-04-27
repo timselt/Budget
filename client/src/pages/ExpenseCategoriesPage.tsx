@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import { PageIntro } from '../components/shared/PageIntro'
 import { EmptyState } from '../components/shared/EmptyState'
+import { Modal } from '../shared/ui/Modal'
 
 type Classification = 'Technical' | 'General' | 'Financial' | 'Extraordinary'
 
@@ -196,14 +197,6 @@ function CategoryModal({
   })
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -235,119 +228,114 @@ function CategoryModal({
   })
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div className="card w-full max-w-xl" style={{ padding: 0 }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4">
-          <h3 className="text-lg font-bold text-on-surface">
-            {mode === 'create' ? 'Yeni Gider Kategorisi' : `Kategori: ${category?.name}`}
-          </h3>
-          <button
-            type="button"
-            className="p-1 text-on-surface-variant hover:text-primary transition-colors"
-            onClick={onClose}
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        <form
-          className="grid grid-cols-2 gap-4 px-6 pb-6"
-          onSubmit={(e) => {
-            e.preventDefault()
-            setError(null)
-            saveMutation.mutate()
-          }}
-        >
-          <Field label="Kod (benzersiz, max 32)">
-            <input
-              className="input w-full"
-              value={form.code}
-              maxLength={32}
-              required
-              disabled={mode === 'edit'}
-              onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
-            />
-          </Field>
-          <Field label="Sıra">
-            <input
-              type="number"
-              className="input w-full"
-              min={0}
-              value={form.displayOrder}
-              onChange={(e) => setForm({ ...form, displayOrder: Number(e.target.value) })}
-            />
-          </Field>
-          <Field label="Ad (max 128)" className="col-span-2">
-            <input
-              className="input w-full"
-              value={form.name}
-              maxLength={128}
-              required
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </Field>
-          <Field label="Sınıflandırma" className="col-span-2">
-            <select
-              className="select w-full"
-              value={form.classification}
-              onChange={(e) => setForm({ ...form, classification: e.target.value as Classification })}
-            >
-              {CLASSIFICATIONS.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </Field>
+    <Modal
+      open
+      onClose={onClose}
+      title={mode === 'create' ? 'Yeni Gider Kategorisi' : `Kategori: ${category?.name}`}
+      size="lg"
+      footer={
+        <div className="flex items-center justify-between gap-2 w-full">
           {mode === 'edit' ? (
-            <Field label="Durum" className="col-span-2">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={form.isActive}
-                  onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                />
-                Aktif
-              </label>
-            </Field>
-          ) : null}
-
-          {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
-
-          <div className="col-span-2 flex items-center justify-between gap-2 mt-2">
-            {mode === 'edit' ? (
-              <button
-                type="button"
-                className="btn-tertiary"
-                onClick={() => {
-                  if (confirm('Bu kategori pasifleştirilecek. Emin misiniz?')) {
-                    deleteMutation.mutate()
-                  }
-                }}
-                disabled={deleteMutation.isPending}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
-                  delete
-                </span>
-                Pasifleştir
-              </button>
-            ) : (
-              <span />
-            )}
-            <div className="flex gap-2">
-              <button type="button" className="btn-secondary" onClick={onClose}>
-                Vazgeç
-              </button>
-              <button type="submit" className="btn-primary" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
-              </button>
-            </div>
+            <button
+              type="button"
+              className="btn-tertiary"
+              onClick={() => {
+                if (confirm('Bu kategori pasifleştirilecek. Emin misiniz?')) {
+                  deleteMutation.mutate()
+                }
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                delete
+              </span>
+              Pasifleştir
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2">
+            <button type="button" className="btn-secondary" onClick={onClose}>
+              Vazgeç
+            </button>
+            <button
+              type="submit"
+              form="expense-category-form"
+              className="btn-primary"
+              disabled={saveMutation.isPending}
+            >
+              {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+            </button>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      }
+    >
+      <form
+        id="expense-category-form"
+        className="grid grid-cols-2 gap-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          setError(null)
+          saveMutation.mutate()
+        }}
+      >
+        <Field label="Kod (benzersiz, max 32)">
+          <input
+            className="input w-full"
+            value={form.code}
+            maxLength={32}
+            required
+            disabled={mode === 'edit'}
+            onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+          />
+        </Field>
+        <Field label="Sıra">
+          <input
+            type="number"
+            className="input w-full"
+            min={0}
+            value={form.displayOrder}
+            onChange={(e) => setForm({ ...form, displayOrder: Number(e.target.value) })}
+          />
+        </Field>
+        <Field label="Ad (max 128)" className="col-span-2">
+          <input
+            className="input w-full"
+            value={form.name}
+            maxLength={128}
+            required
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+        </Field>
+        <Field label="Sınıflandırma" className="col-span-2">
+          <select
+            className="select w-full"
+            value={form.classification}
+            onChange={(e) => setForm({ ...form, classification: e.target.value as Classification })}
+          >
+            {CLASSIFICATIONS.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {mode === 'edit' ? (
+          <Field label="Durum" className="col-span-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.isActive}
+                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+              />
+              Aktif
+            </label>
+          </Field>
+        ) : null}
+
+        {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
+      </form>
+    </Modal>
   )
 }
 
