@@ -207,12 +207,14 @@ function ProductRowGroup({
   return (
     <>
       <tr className="budget-item-row">
-        <td rowSpan={2} className="align-top">
+        {/* a11y: rowSpan'd product header is the row-group header for the
+            following Gelir + Hasar pair — screen readers announce it as such. */}
+        <th scope="rowgroup" rowSpan={2} className="align-top">
           <div className="font-semibold">{productName}</div>
           <div className="font-mono text-[11px] text-on-surface-variant">
             {contractCode}
           </div>
-        </td>
+        </th>
         <td>
           <RoleBadge kind="revenue">Gelir</RoleBadge>
         </td>
