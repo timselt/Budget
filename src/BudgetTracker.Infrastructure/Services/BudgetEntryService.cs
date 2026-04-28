@@ -37,7 +37,7 @@ public sealed class BudgetEntryService : IBudgetEntryService
                 e.Month, e.EntryType.ToString().ToUpperInvariant(),
                 e.AmountOriginal, e.CurrencyCode,
                 e.AmountTryFixed, e.AmountTrySpot,
-                e.ContractId, e.ProductId))
+                e.ContractId, e.ProductId, e.Quantity))
             .ToListAsync(cancellationToken);
     }
 

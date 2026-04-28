@@ -63,6 +63,43 @@ public sealed class BudgetEntryRoundtripTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetByVersion_ReturnsQuantityFromBulkUpsert()
+    {
+        // Task 1.3 — guards the GET projection that the bulk endpoint round-trips
+        // through. Before Step 7, BudgetEntryService.GetByVersionAsync constructed
+        // BudgetEntryDto with 12 positional args and silently dropped Quantity
+        // (defaulted to null), so persisted-but-unreturned. This pins it.
+        var seed = await SeedDraftBudgetAsync();
+
+        await using var ctx = _fixture.CreateSuperuserContext(
+            new TestTenantContext(seed.CompanyId));
+        var service = BuildService(ctx, seed.CompanyId);
+
+        var request = new BulkUpdateBudgetEntriesRequest(new[]
+        {
+            new BudgetEntryUpsert(
+                Id: null,
+                CustomerId: seed.CustomerId,
+                Month: 1,
+                EntryType: "REVENUE",
+                AmountOriginal: 5500m,
+                CurrencyCode: "TRY",
+                ContractId: seed.ContractId,
+                ProductId: null,
+                Quantity: 10),
+        });
+
+        await service.BulkUpsertAsync(seed.VersionId, request, actorUserId: 1, default);
+
+        var entries = await service.GetByVersionAsync(seed.VersionId, default);
+
+        entries.Should().HaveCount(1);
+        var entry = entries.Single(e => e.CustomerId == seed.CustomerId && e.Month == 1);
+        entry.Quantity.Should().Be(10);
+        entry.AmountOriginal.Should().Be(5500m);
+    }
+
+    [Fact]
     public async Task BulkUpsertWithoutQuantity_PersistsAsNull()
     {
         var seed = await SeedDraftBudgetAsync();
