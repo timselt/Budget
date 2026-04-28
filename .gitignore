@@ -101,3 +101,6 @@ local/
 client/test-results/
 client/playwright-report/
 client/e2e-results/
+
+# Superpowers brainstorm session content
+.superpowers/
