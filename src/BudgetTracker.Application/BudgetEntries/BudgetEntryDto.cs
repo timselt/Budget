@@ -12,4 +12,5 @@ public sealed record BudgetEntryDto(
     decimal AmountTryFixed,
     decimal AmountTrySpot,
     int? ContractId = null,
-    int? ProductId = null);
+    int? ProductId = null,
+    int? Quantity = null);

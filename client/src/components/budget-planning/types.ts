@@ -43,6 +43,8 @@ export interface BudgetEntryRow {
   amountTrySpot: number
   contractId: number | null
   productId: number | null
+  /** Adet (REVENUE rows only). Backend `int?` — integer-or-null. */
+  quantity: number | null
 }
 
 export interface BudgetEntryUpsert {
@@ -54,6 +56,8 @@ export interface BudgetEntryUpsert {
   currencyCode: string
   contractId?: number | null
   productId?: number | null
+  /** Adet — only meaningful on REVENUE rows. Integer or null. */
+  quantity?: number | null
 }
 
 export interface BudgetTreeCustomer {
@@ -116,8 +120,10 @@ export type TreeSelection =
 
 export type BudgetMode = 'tree' | 'customer' | 'versions'
 
-export type CellValue = { id: number | null; amount: string }
-export type RowValues = Record<number, CellValue>
+// NOTE: Earlier versions of this file declared `CellValue` (without quantity)
+// and `RowValues`. The canonical `CellValue` (now with `quantity`) lives in
+// `budget-grid-types.ts`; the legacy declarations were removed in Task 4.1
+// follow-up B to avoid two competing types with the same name.
 
 export const MONTHS = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara']
 export const CURRENCIES = ['TRY', 'USD', 'EUR', 'GBP'] as const

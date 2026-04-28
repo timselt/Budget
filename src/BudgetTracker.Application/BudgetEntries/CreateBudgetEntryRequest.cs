@@ -5,4 +5,5 @@ public sealed record CreateBudgetEntryRequest(
     int Month,
     string EntryType,
     decimal AmountOriginal,
-    string CurrencyCode);
+    string CurrencyCode,
+    int? Quantity = null);
