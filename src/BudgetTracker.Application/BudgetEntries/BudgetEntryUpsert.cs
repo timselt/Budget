@@ -8,4 +8,5 @@ public sealed record BudgetEntryUpsert(
     decimal AmountOriginal,
     string CurrencyCode,
     int? ContractId = null,
-    int? ProductId = null);
+    int? ProductId = null,
+    int? Quantity = null);

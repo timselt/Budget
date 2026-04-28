@@ -255,7 +255,11 @@ export function BudgetEntryPage() {
           kind: e.entryType,
           month: e.month,
         })
-        next[key] = { id: e.id, amount: e.amountOriginal.toString() }
+        next[key] = {
+          id: e.id,
+          amount: e.amountOriginal.toString(),
+          quantity: e.quantity ?? null,
+        }
       }
       setValues(next)
       setCustomerDrafts((prev) => ({ ...prev, [selectedCustomerId]: next }))
@@ -385,7 +389,7 @@ export function BudgetEntryPage() {
           const cell = draft[key]
           const [rawContractId, kind, monthStr] = key.split(':')
           const amount = toNumber(cell.amount)
-          const hasContent = cell.amount.trim() !== ''
+          const hasContent = cell.amount.trim() !== '' || cell.quantity != null
           if (!hasContent && cell.id === null) continue
 
           const contractId =
@@ -401,6 +405,9 @@ export function BudgetEntryPage() {
             amountOriginal: amount,
             currencyCode: currency,
             contractId,
+            // Quantity only relevant on REVENUE rows; CLAIM rows always send null.
+            quantity:
+              (kind as 'REVENUE' | 'CLAIM') === 'REVENUE' ? cell.quantity : null,
           })
         }
       }
@@ -502,7 +509,10 @@ export function BudgetEntryPage() {
     }
   }
 
-  const updateCell = (cell: CellId, amount: string) => {
+  const updateCell = (
+    cell: CellId,
+    value: { amount: string; quantity: number | null },
+  ) => {
     if (selectedCustomerId === null) return
     setValues((prev) => {
       const key = cellKey(cell)
@@ -511,7 +521,8 @@ export function BudgetEntryPage() {
         ...prev,
         [key]: {
           id: existing?.id ?? null,
-          amount,
+          amount: value.amount,
+          quantity: value.quantity,
         },
       }
       setCustomerDrafts((drafts) => ({
@@ -534,7 +545,7 @@ export function BudgetEntryPage() {
         const key = cellKey(cell)
         const next = {
           ...prev,
-          [key]: { id: null, amount: '' },
+          [key]: { id: null, amount: '', quantity: null },
         }
         setCustomerDrafts((drafts) => ({
           ...drafts,
@@ -866,11 +877,17 @@ export function BudgetEntryPage() {
                     })
                   }
                   onGoToCustomerMode={(customerId) => {
+                    // Atomically pre-select the customer in customer-focused
+                    // mode (segment + customer ids set BEFORE mode switch) so
+                    // the matrix opens directly — no extra "pick a customer"
+                    // step. "Müşteri Değiştir" lets the user back out.
                     setSelection({
                       kind: 'customer',
                       customerId,
                       segmentId: activeSegmentData.segmentId,
                     })
+                    setCustomerModeSegmentId(activeSegmentData.segmentId)
+                    setCustomerModeCustomerId(customerId)
                     setMode('customer')
                   }}
                 />
@@ -966,13 +983,34 @@ export function BudgetEntryPage() {
           </div>
 
           {customerModeCustomerId !== null ? (
-            <BudgetCustomerGrid
-              contracts={gridContracts}
-              values={values}
-              disabled={!isEditable}
-              onCellChange={updateCell}
-              onCellDelete={deleteCellHandler}
-            />
+            <>
+              <div className="mb-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    // Reset both ids so the FilteredCustomersTable (the
+                    // "pick a customer" step) renders again. Useful when
+                    // the page was opened with a pre-selected customer
+                    // and the user wants to switch.
+                    setCustomerModeCustomerId(null)
+                    setCustomerModeSegmentId(null)
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+                    arrow_back
+                  </span>
+                  Müşteri Değiştir
+                </button>
+              </div>
+              <BudgetCustomerGrid
+                contracts={gridContracts}
+                values={values}
+                disabled={!isEditable}
+                onCellChange={updateCell}
+                onCellDelete={deleteCellHandler}
+              />
+            </>
           ) : (
             <FilteredCustomersTable
               customers={customers.filter((c) =>
