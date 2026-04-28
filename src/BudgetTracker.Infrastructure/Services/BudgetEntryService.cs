@@ -82,7 +82,7 @@ public sealed class BudgetEntryService : IBudgetEntryService
         var version = await GetEditableVersionAsync(versionId, cancellationToken);
         var now = _clock.UtcNow;
         var companyId = _tenant.CurrentCompanyId!.Value;
-        var results = new List<BudgetEntryDto>(request.Entries.Count);
+        var tracked = new List<BudgetEntry>(request.Entries.Count);
 
         foreach (var upsert in request.Entries)
         {
@@ -102,9 +102,10 @@ public sealed class BudgetEntryService : IBudgetEntryService
                 existing.UpdateAmount(
                     upsert.AmountOriginal, upsert.CurrencyCode,
                     fxResult.AmountTryFixed, fxResult.AmountTrySpot,
-                    actorUserId, now);
+                    actorUserId, now,
+                    quantity: upsert.Quantity);
 
-                results.Add(ToDto(existing));
+                tracked.Add(existing);
             }
             else
             {
@@ -114,15 +115,16 @@ public sealed class BudgetEntryService : IBudgetEntryService
                     fxResult.AmountTryFixed, fxResult.AmountTrySpot,
                     actorUserId, now,
                     productId: upsert.ProductId,
+                    quantity: upsert.Quantity,
                     contractId: upsert.ContractId);
 
                 _db.BudgetEntries.Add(entry);
-                results.Add(ToDto(entry));
+                tracked.Add(entry);
             }
         }
 
         await _db.SaveChangesAsync(cancellationToken);
-        return results;
+        return tracked.Select(ToDto).ToList();
     }
 
     public async Task DeleteAsync(
@@ -175,7 +177,8 @@ public sealed class BudgetEntryService : IBudgetEntryService
             e.AmountOriginal, e.CurrencyCode,
             e.AmountTryFixed, e.AmountTrySpot,
             ContractId: e.ContractId,
-            ProductId: e.ProductId);
+            ProductId: e.ProductId,
+            Quantity: e.Quantity);
 
     private sealed record VersionInfo(BudgetVersionStatus Status, int BudgetYearId)
     {
