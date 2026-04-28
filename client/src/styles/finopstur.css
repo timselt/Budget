@@ -30,7 +30,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #4d4d4f;
+  color: var(--color-on-surface-variant);
 }
 
 /* Sayfa H2 başlığının altına ekran-bağlamı veren 1 cümle. */
@@ -171,8 +171,8 @@ body {
 }
 .ribbon-primary { background: var(--color-primary); }
 .ribbon-tertiary { background: var(--color-secondary); }
-.ribbon-success { background: #006d3e; }
-.ribbon-warning { background: #8a5300; }
+.ribbon-success { background: var(--color-success-strong); }
+.ribbon-warning { background: var(--color-warning-strong); }
 
 /* ---------- Glass panel (intelligence pane right side) ---------- */
 .glass-panel {
@@ -264,12 +264,12 @@ body {
   font-size: .7rem;
   font-weight: 700;
 }
-.chip-success { background: #b8f2c6; color: #006d3e; }
-.chip-warning { background: #ffddb3; color: #8a5300; }
-.chip-error   { background: #ffdad6; color: #93000a; }
-.chip-info    { background: #d2e4ff; color: #002366; }
-.chip-neutral { background: var(--color-surface-container-low); color: #4d4d4f; }
-.chip-anchor  { background: var(--color-secondary); color: #ffffff; }
+.chip-success { background: var(--color-success-strong-container); color: var(--color-success-strong); }
+.chip-warning { background: var(--color-warning-strong-container); color: var(--color-warning-strong); }
+.chip-error   { background: var(--color-error-container); color: var(--color-on-error-container); }
+.chip-info    { background: var(--color-info-container); color: var(--color-on-info-container); }
+.chip-neutral { background: var(--color-surface-container-low); color: var(--color-on-surface-variant); }
+.chip-anchor  { background: var(--color-secondary); color: var(--color-on-secondary); }
 
 /* ---------- Inputs / Selects (No-Line Rule — focus uses inset ring) ---------- */
 .input {
@@ -355,12 +355,12 @@ body {
   font-weight: 600;
 }
 .tbl .total-row td {
-  background: #1e293b;
-  color: #ffffff;
+  background: var(--color-inverse-surface);
+  color: var(--color-inverse-on-surface);
   font-weight: 700;
   font-size: .85rem;
 }
-.tbl .total-row:hover td { background: #1e293b; }
+.tbl .total-row:hover td { background: var(--color-inverse-surface); }
 
 .band-gelir,
 .band-hasar,
@@ -383,8 +383,8 @@ body {
 }
 
 .row-total td {
-  background: #1e293b !important;
-  color: #ffffff !important;
+  background: var(--color-inverse-surface) !important;
+  color: var(--color-inverse-on-surface) !important;
   font-weight: 700;
   font-size: .85rem;
 }
@@ -442,7 +442,7 @@ body {
 
 /* Loss Ratio üstündeki koyu separator */
 .budget-separator-bar td {
-  background: #1e293b !important;
+  background: var(--color-inverse-surface) !important;
   padding: 0 !important;
   height: .5rem;
 }
@@ -733,4 +733,54 @@ details[open] .chev {
   border-left: 2px solid #4d4d4f !important;
 }
 .pnl-neg { color: var(--color-primary); }
-.pnl-pos { color: #1f7a3e; }
+.pnl-pos { color: var(--color-success-strong); }
+
+/* ---------- Alert tiles — info/error/warning semantic family
+   Sayfa içi vurgu blokları (ör. validation hint, "yeni revizyon" notu).
+   Tile rengi container'ın daha açık tonu olarak color-mix ile türetilir. */
+.alert-tile {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  padding: .75rem 1rem;
+  border-radius: .5rem;
+  border: 1px solid transparent;
+  font-size: .8125rem;
+}
+.alert-tile-info {
+  background: color-mix(in srgb, var(--color-info-container) 55%, var(--color-surface-bright));
+  border-color: var(--color-info-container);
+  color: var(--color-on-info-container);
+}
+.alert-tile-error {
+  background: color-mix(in srgb, var(--color-error-container) 35%, var(--color-surface-bright));
+  border-color: color-mix(in srgb, var(--color-error-container) 80%, var(--color-error));
+  color: var(--color-on-error-container);
+}
+.alert-tile-warning {
+  background: color-mix(in srgb, var(--color-warning-strong-container) 45%, var(--color-surface-bright));
+  border-color: var(--color-warning-strong-container);
+  color: var(--color-warning-strong);
+}
+
+/* ---------- Table total cell — `<th>` veya `<td>` ile kullanılabilir
+   (`tbl .total-row td` zaten `<tr>` seviyesinde renkleri set ediyor;
+   bu utility tek hücreyi vurgulamak için.) */
+.tbl-total-cell {
+  background: var(--color-inverse-surface);
+  color: var(--color-inverse-on-surface);
+  font-weight: 700;
+}
+
+/* ---------- Row selected — tablo satırı seçili durumu (info tonu) ---------- */
+.row-selected {
+  background: color-mix(in srgb, var(--color-info-container) 30%, var(--color-surface-bright));
+}
+
+/* ---------- Segment dot — BudgetTreePanel sidebar segment göstergesi ---------- */
+.segment-dot { width: .5rem; height: .5rem; border-radius: var(--radius-full); display: inline-block; flex: 0 0 auto; }
+.segment-dot-sigorta    { background: var(--color-segment-sigorta); }
+.segment-dot-otomotiv   { background: var(--color-segment-otomotiv); }
+.segment-dot-filo       { background: var(--color-segment-filo); }
+.segment-dot-alternatif { background: var(--color-segment-alternatif); }
+.segment-dot-sgk        { background: var(--color-segment-sgk); }

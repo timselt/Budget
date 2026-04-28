@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import api from '../../lib/api'
 import { showToast } from '../shared/toast-bus'
+import { Modal } from '../../shared/ui/Modal'
 
 interface Props {
   versionId: number
@@ -144,39 +145,37 @@ export function ExcelImportModal({ versionId, onClose, onSuccess }: Props) {
   })
 
   return (
-    <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
+    <Modal
+      open
+      onClose={onClose}
+      title="Excel İçe Aktar"
+      description="İlk sütunda müşteri adı, ikinci sütunda serbest not alanı, sonraki sütunlarda Ocak-Aralık tutarları olmalı."
+      size="lg"
+      headerActions={
+        <button type="button" className="btn-secondary" onClick={downloadTemplate}>
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+            download
+          </span>
+          Şablon İndir
+        </button>
+      }
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={!preview || preview.validRows === 0 || commitMutation.isPending}
+            onClick={() => commitMutation.mutate()}
+          >
+            {commitMutation.isPending ? 'Aktarılıyor…' : 'İçe Aktar'}
+          </button>
+        </>
+      }
     >
-      <div
-        className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-on-surface">Excel İçe Aktar</h3>
-          <div className="flex items-center gap-2">
-            <button type="button" className="btn-secondary" onClick={downloadTemplate}>
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
-                download
-              </span>
-              Şablon İndir
-            </button>
-            <button
-              type="button"
-              className="text-on-surface-variant hover:text-on-surface"
-              onClick={onClose}
-              aria-label="Kapat"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-          </div>
-        </div>
-
-        <p className="text-xs text-on-surface-variant mb-4">
-          İlk sütunda müşteri adı, ikinci sütunda serbest not alanı, sonraki sütunlarda Ocak-Aralık tutarları olmalı.
-        </p>
-
-        <input
+      <input
           ref={inputRef}
           type="file"
           accept=".xlsx,.xls"
@@ -289,22 +288,7 @@ export function ExcelImportModal({ versionId, onClose, onSuccess }: Props) {
           </div>
         )}
 
-        {error ? <p className="text-sm text-error mt-4">{error}</p> : null}
-
-        <div className="flex justify-end gap-2 mt-6">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            Vazgeç
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={!preview || preview.validRows === 0 || commitMutation.isPending}
-            onClick={() => commitMutation.mutate()}
-          >
-            {commitMutation.isPending ? 'Aktarılıyor…' : 'İçe Aktar'}
-          </button>
-        </div>
-      </div>
-    </div>
+      {error ? <p className="text-sm text-error mt-4">{error}</p> : null}
+    </Modal>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../lib/api'
 import {
@@ -9,6 +9,7 @@ import {
 } from '../lib/number-format'
 import { METRIC_LABELS } from '../lib/metric-labels'
 import { PageIntro } from '../components/shared/PageIntro'
+import { Modal } from '../shared/ui/Modal'
 
 interface BudgetYearRow {
   id: number
@@ -826,14 +827,6 @@ function ScenarioModal({
   // delta, pp cinsinden). Gerçek backend sonucu /scenarios/{id}/pnl'den.
   const netImpactPp = revenue - claims - expense
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [onClose])
-
   const mutation = useMutation({
     mutationFn: async () => {
       await api.post('/scenarios', {
@@ -851,33 +844,35 @@ function ScenarioModal({
   })
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-on-surface/40 backdrop-blur-sm p-4"
-      onClick={onClose}
-    >
-      <div
-        className="card w-full max-w-lg"
-        style={{ padding: 0 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4">
-          <h3 className="text-lg font-bold text-on-surface">Yeni Senaryo</h3>
-          <button
-            type="button"
-            className="p-1 text-on-surface-variant hover:text-primary transition-colors"
-            onClick={onClose}
-          >
-            <span className="material-symbols-outlined">close</span>
+    <Modal
+      open
+      onClose={onClose}
+      title="Yeni Senaryo"
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
           </button>
-        </div>
-        <form
-          className="grid grid-cols-3 gap-4 px-6 pb-6"
-          onSubmit={(e) => {
-            e.preventDefault()
-            setError(null)
-            mutation.mutate()
-          }}
-        >
+          <button
+            type="submit"
+            form="scenario-form"
+            className="btn-primary"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? 'Oluşturuluyor…' : 'Oluştur'}
+          </button>
+        </>
+      }
+    >
+      <form
+        id="scenario-form"
+        className="grid grid-cols-3 gap-4"
+        onSubmit={(e) => {
+          e.preventDefault()
+          setError(null)
+          mutation.mutate()
+        }}
+      >
           <div className="col-span-3 rounded-xl border border-outline-variant/60 bg-surface-container-low p-3 text-sm text-on-surface-variant">
             Bu ekran baz bütçeyi değiştirmez. Girdiğiniz yüzdeler, seçili versiyonun
             KPI ve P&amp;L sonuçlarına alternatif görünüm olarak uygulanır.
@@ -986,17 +981,7 @@ function ScenarioModal({
           </div>
 
           {error ? <p className="col-span-3 text-sm text-error">{error}</p> : null}
-
-          <div className="col-span-3 flex gap-2 justify-end mt-2">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Vazgeç
-            </button>
-            <button type="submit" className="btn-primary" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Oluşturuluyor…' : 'Oluştur'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   )
 }

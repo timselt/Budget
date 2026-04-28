@@ -1083,9 +1083,9 @@ function KpiCard({
 }) {
   const toneClass =
     tone === 'category'
-      ? 'border border-[#f5c7c3] bg-[#fff7f5]'
+      ? 'alert-tile-error'
       : tone === 'customer'
-        ? 'border border-[#c9d8ff] bg-[#f5f8ff]'
+        ? 'alert-tile-info'
         : ''
 
   return (
@@ -1325,7 +1325,7 @@ function SegmentCustomersTable({
               return (
                 <tr
                   key={c.customerId}
-                  className={isSelected ? 'bg-[#f5f8ff]' : undefined}
+                  className={isSelected ? 'row-selected' : undefined}
                 >
                   <td>
                     <button

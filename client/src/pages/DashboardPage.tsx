@@ -232,7 +232,7 @@ export function DashboardPage() {
   if (versionLoading) {
     return (
       <section>
-        <h2 className="text-3xl font-extrabold tracking-display text-[#002366] mb-6">
+        <h2 className="text-3xl font-extrabold tracking-display text-secondary mb-6">
           Yönetici Paneli
         </h2>
         <div className="card p-6 text-sm text-on-surface-variant">Yükleniyor…</div>
@@ -243,7 +243,7 @@ export function DashboardPage() {
   if (versionId === null) {
     return (
       <section>
-        <h2 className="text-3xl font-extrabold tracking-display text-[#002366] mb-6">
+        <h2 className="text-3xl font-extrabold tracking-display text-secondary mb-6">
           Yönetici Paneli
         </h2>
         <div className="card p-8 text-center">
@@ -273,7 +273,7 @@ export function DashboardPage() {
       <div className="card mb-6">
         <div className="grid grid-cols-12 gap-6 items-start">
           <div className="col-span-12 xl:col-span-4">
-            <h2 className="text-3xl font-extrabold tracking-display text-[#002366]">
+            <h2 className="text-3xl font-extrabold tracking-display text-secondary">
               Yönetici Paneli
             </h2>
             <p className="text-sm text-on-surface-variant mt-2">
@@ -299,7 +299,7 @@ export function DashboardPage() {
         <div className="col-span-12 lg:col-span-3 card-tonal">
           <span className="label-sm block mb-4">{METRIC_LABELS.revenue}</span>
           <div className="flex items-baseline gap-2">
-            <span className="text-[3.2rem] font-extrabold tracking-display leading-none text-[#002366] num">
+            <span className="text-[3.2rem] font-extrabold tracking-display leading-none text-secondary num">
               {kpis ? formatCompactAmount(kpis.totalRevenue) : '—'}
             </span>
             <span className="text-sm font-bold text-on-surface-variant">TL</span>
@@ -314,7 +314,7 @@ export function DashboardPage() {
         <div className="col-span-12 lg:col-span-3 card-tonal">
           <span className="label-sm block mb-4">{METRIC_LABELS.claims}</span>
           <div className="flex items-baseline gap-2">
-            <span className="text-[3.2rem] font-extrabold tracking-display leading-none text-[#002366] num">
+            <span className="text-[3.2rem] font-extrabold tracking-display leading-none text-secondary num">
               {kpis ? formatCompactAmount(kpis.totalClaims) : '—'}
             </span>
             <span className="text-sm font-bold text-on-surface-variant">TL</span>
@@ -331,7 +331,7 @@ export function DashboardPage() {
             {METRIC_LABELS.technicalMargin}
             <HelpHint text="Teknik Marj = Prim Geliri − Hasar Maliyeti. Reasürans öncesi sigortacılık karlılığı." />
           </span>
-          <p className="text-[3.2rem] font-extrabold tracking-display num mt-4 text-[#002366]">
+          <p className="text-[3.2rem] font-extrabold tracking-display num mt-4 text-secondary">
             {kpis ? formatCompactAmount(kpis.technicalMargin) : '—'}
           </p>
           <p className="text-sm text-success font-bold mt-4">
@@ -344,7 +344,7 @@ export function DashboardPage() {
             {METRIC_LABELS.ebitda}
             <HelpHint text="EBITDA = Faiz, Vergi, Amortisman ve İtfa öncesi kar. Operasyonel performans göstergesi." />
           </span>
-          <p className="text-[3.2rem] font-extrabold tracking-display num mt-4 text-[#002366]">
+          <p className="text-[3.2rem] font-extrabold tracking-display num mt-4 text-secondary">
             {kpis ? formatCompactAmount(kpis.ebitda) : '—'}
           </p>
           <p className="text-sm text-primary font-bold mt-4">
@@ -364,7 +364,7 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-12 gap-6 mb-6">
         <div className="col-span-12 lg:col-span-4 card">
-          <h3 className="text-base font-bold tracking-tight text-[#002366] mb-3">EBITDA Köprüsü</h3>
+          <h3 className="text-base font-bold tracking-tight text-secondary mb-3">EBITDA Köprüsü</h3>
           <div style={{ height: 220 }}>
             {ebitdaBridge ? (
               <EbitdaBridgeChart labels={ebitdaBridge.labels} values={ebitdaBridge.values} />
@@ -377,7 +377,7 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-12 lg:col-span-4 card">
-          <h3 className="text-base font-bold tracking-tight text-[#002366] mb-3">Loss Ratio (Aylık)</h3>
+          <h3 className="text-base font-bold tracking-tight text-secondary mb-3">Loss Ratio (Aylık)</h3>
           <div style={{ height: 220 }}>
             {varianceSummaryQuery.isLoading ? (
               <div className="h-full flex items-center justify-center text-sm text-on-surface-variant">
@@ -393,7 +393,7 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-12 lg:col-span-4 card">
-          <h3 className="text-base font-bold tracking-tight text-[#002366] mb-3">Konsantrasyon Özeti</h3>
+          <h3 className="text-base font-bold tracking-tight text-secondary mb-3">Konsantrasyon Özeti</h3>
           {topCustomers.length === 0 ? (
             <p className="text-xs text-on-surface-variant">Henüz veri yok.</p>
           ) : (
@@ -420,7 +420,7 @@ export function DashboardPage() {
       <div className="grid grid-cols-12 gap-6 mb-6">
         <div className="col-span-12 lg:col-span-8 card">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold tracking-tight text-[#002366]">
+            <h3 className="text-lg font-bold tracking-tight text-secondary">
               Aylık Trend
             </h3>
           </div>
@@ -440,7 +440,7 @@ export function DashboardPage() {
         </div>
 
         <div className="col-span-12 lg:col-span-4 card">
-          <h3 className="text-lg font-bold tracking-tight text-[#002366] mb-4">
+          <h3 className="text-lg font-bold tracking-tight text-secondary mb-4">
             Segment Dağılımı
           </h3>
           {segmentDistribution.length === 0 ? (
@@ -455,7 +455,7 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-12 gap-6 mb-6">
         <div className="col-span-12 lg:col-span-7 card overflow-hidden">
-          <h3 className="text-lg font-bold tracking-tight text-[#002366] mb-4">
+          <h3 className="text-lg font-bold tracking-tight text-secondary mb-4">
             Top 10 Müşteri (Yıllık Gelir)
           </h3>
           <div className="overflow-x-auto">
@@ -490,7 +490,7 @@ export function DashboardPage() {
 
         <div className="col-span-12 lg:col-span-5 card">
           <div className="flex justify-between items-center mb-3">
-            <h3 className="text-base font-bold tracking-tight text-[#002366]">Gider Kırılımı (Yıllık)</h3>
+            <h3 className="text-base font-bold tracking-tight text-secondary">Gider Kırılımı (Yıllık)</h3>
           </div>
           <div style={{ height: 420 }}>
             {opexBreakdownQuery.isLoading ? (
@@ -513,7 +513,7 @@ function MiniKpiCard({ title, value }: { title: string; value: string }) {
   return (
     <div className="col-span-12 sm:col-span-6 lg:col-span-2 card text-center">
       <p className="label-sm uppercase">{title}</p>
-      <p className="text-2xl font-extrabold tracking-display num mt-4 text-[#002366]">
+      <p className="text-2xl font-extrabold tracking-display num mt-4 text-secondary">
         {value}
       </p>
     </div>

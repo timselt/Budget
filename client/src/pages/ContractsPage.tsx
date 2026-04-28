@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import api from '../lib/api'
 import { formatPrice } from '../lib/number-format'
 import { PageIntro } from '../components/shared/PageIntro'
+import { Modal } from '../shared/ui/Modal'
 
 /**
  * Sözleşme (Contract) yönetimi — ADR-0014.
@@ -497,14 +498,6 @@ function ContractModal({
   // gösterilmiyor).
   const [showAdvanced, setShowAdvanced] = useState(false)
 
-  useEffect(() => {
-    const esc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', esc)
-    return () => window.removeEventListener('keydown', esc)
-  }, [onClose])
-
   const previewMutation = useMutation({
     mutationFn: async () => {
       if (form.customerId === '' || form.productId === '')
@@ -577,12 +570,29 @@ function ContractModal({
   })
 
   return (
-    <ModalShell
-      title={mode === 'create' ? 'Yeni Sözleşme' : `Sözleşme: ${contract?.contractCode}`}
+    <Modal
+      open
       onClose={onClose}
-      wide
+      title={mode === 'create' ? 'Yeni Sözleşme' : `Sözleşme: ${contract?.contractCode}`}
+      size="lg"
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
+          </button>
+          <button
+            type="submit"
+            form="contract-form"
+            className="btn-primary"
+            disabled={saveMutation.isPending}
+          >
+            {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+          </button>
+        </>
+      }
     >
       <form
+        id="contract-form"
         onSubmit={(e) => {
           e.preventDefault()
           setError(null)
@@ -789,21 +799,8 @@ function ContractModal({
         ) : null}
 
         {error ? <p className="col-span-2 text-sm text-error">{error}</p> : null}
-
-        <div className="col-span-2 flex justify-end gap-2 pt-2">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            Vazgeç
-          </button>
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={saveMutation.isPending}
-          >
-            {saveMutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
-          </button>
-        </div>
       </form>
-    </ModalShell>
+    </Modal>
   )
 }
 
@@ -842,7 +839,29 @@ function ReviseModal({
   const needsPrice = changeType === 'PriceChange' || changeType === 'LimitAndPrice'
 
   return (
-    <ModalShell title={`Revizyon: ${contract.contractCode}`} onClose={onClose}>
+    <Modal
+      open
+      onClose={onClose}
+      title={`Revizyon: ${contract.contractCode}`}
+      footer={
+        <>
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Vazgeç
+          </button>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={reviseMutation.isPending}
+            onClick={() => {
+              setError(null)
+              reviseMutation.mutate()
+            }}
+          >
+            {reviseMutation.isPending ? 'Uygulanıyor…' : 'Revize Et'}
+          </button>
+        </>
+      }
+    >
       <div className="space-y-4">
         <Field label="Değişiklik Türü">
           <select
@@ -884,25 +903,8 @@ function ReviseModal({
         </div>
 
         {error ? <p className="text-sm text-error">{error}</p> : null}
-
-        <div className="flex justify-end gap-2">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            Vazgeç
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={reviseMutation.isPending}
-            onClick={() => {
-              setError(null)
-              reviseMutation.mutate()
-            }}
-          >
-            {reviseMutation.isPending ? 'Uygulanıyor…' : 'Revize Et'}
-          </button>
-        </div>
       </div>
-    </ModalShell>
+    </Modal>
   )
 }
 
@@ -947,7 +949,16 @@ function ParseModal({ onClose }: { onClose: () => void }) {
   })
 
   return (
-    <ModalShell title="Kontrat Kodu Çözümleme" onClose={onClose}>
+    <Modal
+      open
+      onClose={onClose}
+      title="Kontrat Kodu Çözümleme"
+      footer={
+        <button type="button" className="btn-secondary" onClick={onClose}>
+          Kapat
+        </button>
+      }
+    >
       <div className="space-y-4">
         <Field label="14-segment Kod">
           <div className="flex gap-2">
@@ -987,14 +998,8 @@ function ParseModal({ onClose }: { onClose: () => void }) {
             <BreakdownRow label="Versiyon" value={`V${result.version}`} />
           </div>
         ) : null}
-
-        <div className="flex justify-end">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            Kapat
-          </button>
-        </div>
       </div>
-    </ModalShell>
+    </Modal>
   )
 }
 
@@ -1010,51 +1015,6 @@ function BreakdownRow({ label, value }: { label: string; value: string }) {
 /* =====================================================================
    Shared
    ===================================================================== */
-function ModalShell({
-  title,
-  onClose,
-  children,
-  wide = false,
-}: {
-  title: string
-  onClose: () => void
-  children: React.ReactNode
-  wide?: boolean
-}) {
-  useEffect(() => {
-    const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onEsc)
-    return () => window.removeEventListener('keydown', onEsc)
-  }, [onClose])
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto"
-      onClick={onClose}
-    >
-      <div
-        className={`bg-white rounded-lg shadow-xl w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} p-6`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-on-surface">{title}</h3>
-          <button
-            type="button"
-            className="text-on-surface-variant hover:text-on-surface"
-            onClick={onClose}
-            aria-label="Kapat"
-          >
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  )
-}
-
 function Field({
   label,
   children,
