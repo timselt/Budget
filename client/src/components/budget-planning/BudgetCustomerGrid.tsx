@@ -76,7 +76,7 @@ export function BudgetCustomerGrid({
                   {m}
                 </th>
               ))}
-              <th className="text-right bg-[#1e293b] text-white">TOPLAM</th>
+              <th className="text-right bg-on-surface text-white">TOPLAM</th>
             </tr>
           </thead>
           <tbody>
