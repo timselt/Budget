@@ -35,11 +35,14 @@ export function BudgetCellInputs({
       onChange({ quantity: null, amount })
       return
     }
+    // Backend column is `int?` — only accept whole-number input. Decimals
+    // ("15.5") and non-numeric input are silently ignored (no onChange) so
+    // the parent state stays clean. The user sees the field reject the
+    // keystroke (no commit) without an explicit error UI.
     const parsed = Number(raw)
-    if (Number.isFinite(parsed)) {
+    if (Number.isFinite(parsed) && Number.isInteger(parsed)) {
       onChange({ quantity: parsed, amount })
     }
-    // ignore invalid numeric input (do not call onChange)
   }
 
   const handleAmount = (e: ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +57,7 @@ export function BudgetCellInputs({
             type="text"
             inputMode="numeric"
             placeholder="Adet"
+            aria-label="Adet"
             value={quantity ?? ''}
             onChange={handleQuantity}
             disabled={disabled}
@@ -69,6 +73,7 @@ export function BudgetCellInputs({
           type="text"
           inputMode="decimal"
           placeholder="Tutar"
+          aria-label="Tutar"
           value={amount}
           onChange={handleAmount}
           disabled={disabled}

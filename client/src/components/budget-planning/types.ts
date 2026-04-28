@@ -43,6 +43,8 @@ export interface BudgetEntryRow {
   amountTrySpot: number
   contractId: number | null
   productId: number | null
+  /** Adet (REVENUE rows only). Backend `int?` — integer-or-null. */
+  quantity: number | null
 }
 
 export interface BudgetEntryUpsert {
@@ -54,6 +56,8 @@ export interface BudgetEntryUpsert {
   currencyCode: string
   contractId?: number | null
   productId?: number | null
+  /** Adet — only meaningful on REVENUE rows. Integer or null. */
+  quantity?: number | null
 }
 
 export interface BudgetTreeCustomer {

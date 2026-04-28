@@ -82,4 +82,47 @@ describe('BudgetCellInputs', () => {
     fireEvent.change(screen.getByDisplayValue('10'), { target: { value: '' } })
     expect(onChange).toHaveBeenCalledWith({ quantity: null, amount: '5500' })
   })
+
+  it('forwards disabled prop to both inputs', () => {
+    render(
+      <BudgetCellInputs
+        quantity={10}
+        amount="5500"
+        onChange={vi.fn()}
+        showQuantity={true}
+        disabled={true}
+      />,
+    )
+    expect(screen.getByDisplayValue('10')).toBeDisabled()
+    expect(screen.getByDisplayValue('5500')).toBeDisabled()
+  })
+
+  it('exposes aria-label on both inputs (a11y)', () => {
+    render(
+      <BudgetCellInputs
+        quantity={null}
+        amount=""
+        onChange={vi.fn()}
+        showQuantity={true}
+      />,
+    )
+    expect(screen.getByLabelText('Adet')).toBeInTheDocument()
+    expect(screen.getByLabelText('Tutar')).toBeInTheDocument()
+  })
+
+  it('ignores decimal input on quantity (backend is int?)', () => {
+    const onChange = vi.fn()
+    render(
+      <BudgetCellInputs
+        quantity={null}
+        amount=""
+        onChange={onChange}
+        showQuantity={true}
+      />,
+    )
+    fireEvent.change(screen.getByPlaceholderText('Adet'), {
+      target: { value: '15.5' },
+    })
+    expect(onChange).not.toHaveBeenCalled()
+  })
 })

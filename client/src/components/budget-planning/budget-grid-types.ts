@@ -15,6 +15,12 @@ export interface CellId {
 export interface CellValue {
   id: number | null // BudgetEntry.Id (mevcut kayıt için)
   amount: string
+  /**
+   * Adet — only used on REVENUE rows; null on CLAIM rows. Integer when set.
+   * Carried alongside `amount` so quantity can flow through the upsert path
+   * without inventing a parallel state container.
+   */
+  quantity: number | null
 }
 
 export interface ContractRow {
