@@ -1,22 +1,30 @@
 using System.Security.Cryptography.X509Certificates;
 using BudgetTracker.Core.Identity;
-using BudgetTracker.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using OpenIddict.Abstractions;
-using OpenIddict.Server.AspNetCore;
-using OpenIddict.Validation.AspNetCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace BudgetTracker.Infrastructure.Authentication;
 
 public static class AuthenticationExtensions
 {
     /// <summary>
-    /// Registers OpenIddict server + validation. When <paramref name="encryptionCertificate"/>
-    /// and <paramref name="signingCertificate"/> are supplied (production) the certs are used;
-    /// otherwise ephemeral development certificates are generated.
+    /// Faz 1.5 — FinOps Tur, TAG Portal OIDC server'ının client'ı oldu. OpenIddict
+    /// server burada artık kurulmaz; password grant kapalıdır. Login akışı:
+    /// Cookie auth + OIDC handler (Authorization Code + PKCE) → TAG Portal'a redirect.
+    ///
+    /// Cert parametreleri eski OpenIddict server için tutuluyordu; Faz 1.5'te artık
+    /// kullanılmıyor (FinOps Tur token üretmez). Geriye dönük binary uyumluluk
+    /// için signature korundu; cleanup Faz G'de yapılır (ProductionCertificateLoader
+    /// + OpenIddictCertificateOptions + ProductionOidcClientSeeder dosyaları silinir).
+    ///
+    /// 16 authorization policy korundu — TAG Portal'dan gelen `tag_portal_roles`
+    /// claim'i RoleMapper (Faz D, T15) ile lokal Identity rollerine senkronize
+    /// edildikten sonra policy.RequireRole(...) çalışır.
     /// </summary>
     public static IServiceCollection AddBudgetTrackerAuthentication(
         this IServiceCollection services,
@@ -24,90 +32,86 @@ public static class AuthenticationExtensions
         X509Certificate2? signingCertificate = null,
         bool disableTransportSecurity = false)
     {
-        services.AddOpenIddict()
-            .AddCore(options =>
-            {
-                options.UseEntityFrameworkCore()
-                    .UseDbContext<ApplicationDbContext>();
-            })
-            .AddServer(options =>
-            {
-                options.SetTokenEndpointUris("connect/token")
-                    .SetAuthorizationEndpointUris("connect/authorize")
-                    .SetIntrospectionEndpointUris("connect/introspect")
-                    .SetUserInfoEndpointUris("connect/userinfo")
-                    .SetEndSessionEndpointUris("connect/logout");
-
-                options.AllowPasswordFlow()
-                    .AllowRefreshTokenFlow()
-                    .AllowAuthorizationCodeFlow()
-                    .RequireProofKeyForCodeExchange();
-
-                options.RegisterScopes(
-                    OpenIddictConstants.Scopes.Email,
-                    OpenIddictConstants.Scopes.Profile,
-                    OpenIddictConstants.Scopes.Roles,
-                    OpenIddictConstants.Scopes.OfflineAccess,
-                    "api");
-
-                // Certificates: production supplies X509 via Railway volume mount; development
-                // falls back to ephemeral in-memory certs regenerated each start.
-                if (encryptionCertificate is not null && signingCertificate is not null)
-                {
-                    options.AddEncryptionCertificate(encryptionCertificate)
-                        .AddSigningCertificate(signingCertificate);
-                }
-                else
-                {
-                    options.AddDevelopmentEncryptionCertificate()
-                        .AddDevelopmentSigningCertificate();
-                }
-
-                options.SetAccessTokenLifetime(TimeSpan.FromMinutes(30))
-                    .SetRefreshTokenLifetime(TimeSpan.FromDays(14));
-
-                var aspNetCore = options.UseAspNetCore()
-                    .EnableTokenEndpointPassthrough()
-                    .EnableAuthorizationEndpointPassthrough()
-                    .EnableEndSessionEndpointPassthrough()
-                    .EnableUserInfoEndpointPassthrough();
-
-                // HTTPS is enforced in production; local dev runs over plain HTTP.
-                if (disableTransportSecurity)
-                {
-                    aspNetCore.DisableTransportSecurityRequirement();
-                }
-            })
-            .AddValidation(options =>
-            {
-                options.UseLocalServer();
-                options.UseAspNetCore();
-                options.AddAudiences("budget-tracker-api");
-            });
+        // Faz 1.5: OpenIddict server zinciri kaldırıldı. Cert parametreleri kullanılmıyor;
+        // Program.cs cleanup'ı (cert yükleme bloğu) Faz G'de yapılır.
+        _ = encryptionCertificate;
+        _ = signingCertificate;
 
         services.AddAuthentication(options =>
         {
-            options.DefaultScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+            options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = OpenIdConnectDefaults.AuthenticationScheme;
+            options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
         })
         .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
             options.Cookie.HttpOnly = true;
             options.Cookie.SameSite = SameSiteMode.Lax;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SecurePolicy = disableTransportSecurity
+                ? CookieSecurePolicy.SameAsRequest
+                : CookieSecurePolicy.Always;
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
             options.SlidingExpiration = true;
-            options.LoginPath = "/connect/authorize";
+            options.LoginPath = "/api/auth/login";
+            options.LogoutPath = "/api/auth/logout";
+            options.AccessDeniedPath = "/api/auth/forbidden";
+        })
+        .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
+        {
+            // Configuration is read from a delayed accessor below; this lambda is invoked
+            // by Configure<OpenIdConnectOptions>(...) registered after the chain.
         });
+
+        services.AddOptions<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme)
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                options.Authority = configuration["TagPortal:Authority"]
+                    ?? throw new InvalidOperationException(
+                        "TagPortal:Authority is required for OIDC client (set via appsettings or env).");
+                options.ClientId = configuration["TagPortal:ClientId"] ?? "finopstur";
+                options.ClientSecret = configuration["TagPortal:ClientSecret"]
+                    ?? throw new InvalidOperationException(
+                        "TagPortal:ClientSecret is required (confidential client).");
+
+                options.ResponseType = "code";
+                options.UsePkce = true;
+                options.SaveTokens = true;
+                options.GetClaimsFromUserInfoEndpoint = false; // tag_portal_* claim'ler id_token'da
+                options.MapInboundClaims = false;              // raw claim type'larını koru
+
+                options.Scope.Clear();
+                options.Scope.Add("openid");
+                options.Scope.Add("profile");
+                options.Scope.Add("email");
+                options.Scope.Add("api");
+                options.Scope.Add("offline_access");
+
+                options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.SignedOutRedirectUri = "/";
+                options.CallbackPath = "/signin-oidc";
+                options.SignedOutCallbackPath = "/signout-callback-oidc";
+
+                // Dev'de http://localhost authority kullanılır; HTTPS metadata zorunluluğunu kaldır.
+                if (disableTransportSecurity)
+                {
+                    options.RequireHttpsMetadata = false;
+                }
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    NameClaimType = "name",
+                    // RoleMapper (Faz D T15) tag_portal_roles claim'ini lokal Identity rollerine
+                    // senkronize ediyor; ASP.NET RoleClaimType lokal "role" claim'i okur.
+                    RoleClaimType = System.Security.Claims.ClaimTypes.Role,
+                };
+            });
 
         services.AddAuthorization(options =>
         {
             options.AddPolicy("Admin", p => p.RequireRole(RoleNames.Admin));
             options.AddPolicy("CFO", p => p.RequireRole(RoleNames.Cfo, RoleNames.Admin));
-            // Controllers "Cfo" (PascalCase) ismini de kullanıyor — alias.
             options.AddPolicy("Cfo", p => p.RequireRole(RoleNames.Cfo, RoleNames.Admin));
             options.AddPolicy("Finance", p => p.RequireRole(RoleNames.FinanceManager, RoleNames.Admin));
-            // Controllers `RequireFinanceRole` ve `FinanceManager` isimlerini de kullanıyor — alias.
             options.AddPolicy("RequireFinanceRole", p => p.RequireRole(RoleNames.FinanceManager, RoleNames.Admin));
             options.AddPolicy("FinanceManager", p => p.RequireRole(RoleNames.FinanceManager, RoleNames.Admin));
             options.AddPolicy("DepartmentHead", p =>
@@ -119,10 +123,7 @@ public static class AuthenticationExtensions
                 RoleNames.DepartmentHead,
                 RoleNames.Viewer));
 
-            // Mutabakat önkoşul #3 (00c) — Reconciliation + PriceBook policy'leri.
-            // Spec: docs/Mutabakat_Modulu/docs/specs/00c_prereq_recon_agent_role.md §4.
-            // Muhasebe export/ack yetkisi bilinçli olarak ReconAgent'tan tutulmadı
-            // (segregation of duties — ReconAgent case işler, Finance muhasebeye aktarır).
+            // Mutabakat / Reconciliation policy'leri (00c §4 — segregation of duties)
             options.AddPolicy("Reconciliation.Import", p => p.RequireRole(
                 RoleNames.Admin, RoleNames.FinanceManager, RoleNames.ReconAgent));
             options.AddPolicy("Reconciliation.Manage", p => p.RequireRole(
@@ -137,17 +138,13 @@ public static class AuthenticationExtensions
                 RoleNames.Admin, RoleNames.Cfo));
             options.AddPolicy("Reconciliation.ViewReports", p => p.RequireAuthenticatedUser());
 
-            // PriceBook policy'leri — 00b PriceBook entity'si merge edildikten sonra
-            // controller'larda kullanılacak. Tanımlar burada hazır bekler.
+            // PriceBook policy'leri (00b)
             options.AddPolicy("PriceBook.Edit", p => p.RequireRole(
                 RoleNames.Admin, RoleNames.FinanceManager, RoleNames.ReconAgent));
             options.AddPolicy("PriceBook.Approve", p => p.RequireRole(
                 RoleNames.Admin, RoleNames.Cfo));
 
-            // Contract yaşam döngüsü (Activate / Terminate) — iş kararı 2026-04-21:
-            // Finans müdürü de sözleşme aktivasyon/sonlandırma yapabilmeli.
-            // Spec 00c §3 matrix'teki "onay Admin+Cfo" yorumu daraltılmış;
-            // gerçekte FinanceManager da yetkili.
+            // Contract yaşam döngüsü
             options.AddPolicy("Contract.Manage", p => p.RequireRole(
                 RoleNames.Admin, RoleNames.Cfo, RoleNames.FinanceManager));
         });
