@@ -130,6 +130,15 @@ try
         return;
     }
 
+    // Faz 1.5 — Identity reset: TAG Portal SSO geçişi için bir defaya mahsus.
+    // Dev/staging'de seed yenileme; prod'da explicit --force-reset gerektirir.
+    if (args.Contains("--reset-identity-for-sso"))
+    {
+        var force = args.Contains("--force-reset");
+        await IdentityResetForSso.ResetAsync(app.Services, forceInProduction: force);
+        return;
+    }
+
     // Bootstrap admin seed (one-shot). Creates the first Admin user on a
     // fresh staging/production DB so that /api/v1/account/register (which
     // requires Admin policy) is reachable. Reads BOOTSTRAP_ADMIN_EMAIL +
