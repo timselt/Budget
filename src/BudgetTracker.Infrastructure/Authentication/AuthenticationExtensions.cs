@@ -1,11 +1,13 @@
 using System.Security.Cryptography.X509Certificates;
 using BudgetTracker.Core.Identity;
+using BudgetTracker.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 
 namespace BudgetTracker.Infrastructure.Authentication;
@@ -104,7 +106,39 @@ public static class AuthenticationExtensions
                     // senkronize ediyor; ASP.NET RoleClaimType lokal "role" claim'i okur.
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role,
                 };
+
+                // Faz 1.5 — OnTokenValidated: JIT provisioning + role + company sync.
+                // OIDC handler token'ı doğruladıktan sonra cookie sign-in'den ÖNCE çalışır.
+                options.Events = new OpenIdConnectEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        if (context.Principal is null) return;
+
+                        var sp = context.HttpContext.RequestServices;
+                        var jit = sp.GetRequiredService<JitProvisioner>();
+                        var roleMapper = sp.GetRequiredService<RoleMapper>();
+                        var companySync = sp.GetRequiredService<CompanySync>();
+
+                        var user = await jit.EnsureUserAsync(
+                            context.Principal, context.HttpContext.RequestAborted);
+
+                        var tagPortalRoles = context.Principal.FindAll("tag_portal_roles")
+                            .Select(c => c.Value);
+                        await roleMapper.SyncRolesAsync(user, tagPortalRoles);
+
+                        var tagPortalCompanies = context.Principal.FindAll("tag_portal_companies")
+                            .Select(c => c.Value);
+                        await companySync.SyncCompaniesAsync(
+                            user, tagPortalCompanies, context.HttpContext.RequestAborted);
+                    },
+                };
             });
+
+        // Faz 1.5 — JIT/RoleMapper/CompanySync DI registration.
+        services.AddScoped<JitProvisioner>();
+        services.AddScoped<RoleMapper>();
+        services.AddScoped<CompanySync>();
 
         services.AddAuthorization(options =>
         {
