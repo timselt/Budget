@@ -17,7 +17,7 @@ function getInitials(name: string | undefined): string {
 export function Sidebar() {
   const { user, logout } = useAuthStore()
   const roleLine = user?.roles?.[0] ?? 'CEO • Tur Assist'
-  const displayName = user?.displayName ?? 'Timur Turan'
+  const displayName = user?.name ?? user?.email ?? 'Timur Turan'
 
   // Rol filtresi — pilot/role-gated item'ları yetkisiz kullanıcıdan gizler.
   // Section'ın tüm item'ları gizlendiyse section da kaldırılır (boş header
@@ -72,7 +72,7 @@ export function Sidebar() {
           </div>
           <button
             type="button"
-            onClick={logout}
+            onClick={() => logout()}
             className="p-1.5 text-white/70 hover:text-white transition-colors rounded-md"
             title="Çıkış"
           >

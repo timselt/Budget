@@ -1,24 +1,22 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useAuthStore } from '../stores/auth'
 
+/**
+ * Faz 1.5 — TAG Portal SSO.
+ * Eski email+password formu kaldırıldı. Sayfa render olunca otomatik olarak
+ * TAG Portal /connect/authorize'a yönlendirir. Kullanıcı manuel butona da
+ * basabilir (otomatik redirect başarısız olursa).
+ *
+ * Bu sayfa pratikte sadece "fallback" — AuthGuard zaten authenticated olmayan
+ * kullanıcıyı doğrudan TAG Portal'a gönderiyor.
+ */
 export function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
   const { login, isLoading } = useAuthStore()
-  const navigate = useNavigate()
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    try {
-      await login(email, password)
-      navigate('/', { replace: true })
-    } catch {
-      setError('Geçersiz e-posta veya şifre')
-    }
-  }
+  useEffect(() => {
+    // Otomatik yönlendirme — kullanıcı bekletmeyelim.
+    login('/')
+  }, [login])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface">
@@ -36,42 +34,17 @@ export function LoginPage() {
           </div>
           <p className="label-sm mb-8 block">Bütçe &amp; Performans Platformu</p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="email" className="label-sm mb-2 block">
-                E-posta
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input w-full"
-                placeholder="admin@tag.local"
-              />
-            </div>
+          <p className="text-sm text-on-surface-variant mb-6">
+            TAG Portal hesabınızla giriş yapacaksınız. Otomatik yönlendiriliyorsunuz...
+          </p>
 
-            <div>
-              <label htmlFor="password" className="label-sm mb-2 block">
-                Şifre
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input w-full"
-              />
-            </div>
-
-            {error && <p className="text-sm text-error">{error}</p>}
-
-            <button type="submit" disabled={isLoading} className="btn-primary w-full justify-center">
-              {isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
-            </button>
-          </form>
+          <button
+            onClick={() => login('/')}
+            disabled={isLoading}
+            className="btn-primary w-full justify-center"
+          >
+            {isLoading ? 'Yönlendiriliyor...' : 'TAG Portal ile Giriş Yap'}
+          </button>
         </div>
       </div>
     </div>

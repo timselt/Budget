@@ -1,83 +1,69 @@
 import { create } from 'zustand'
 import axios from 'axios'
 
+// Faz 1.5 — TAG Portal SSO
+// FinOps Tur artık OIDC client; auth state'i cookie üzerinden yönetilir,
+// localStorage'da token YOK. Login/logout server-side redirect ile çalışır.
+
 interface UserInfo {
-  id: number
+  subject: string
   email: string
-  displayName: string
+  name: string
   roles: string[]
-  activeCompanyId: number
+  tagPortalRoles: string[]
+  tagPortalCompanies: string[]
+  clearanceLevel: string | null
+  departments: string[]
 }
 
 interface AuthState {
   user: UserInfo | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  /** Sunucuya redirect → TAG Portal /connect/authorize. Async değil. */
+  login: (returnUrl?: string) => void
+  /** Sunucuya redirect → cookie clear + TAG Portal /connect/logout. */
+  logout: (returnUrl?: string) => void
+  /** GET /api/auth/me — cookie ile claim/rol bilgisi. AuthGuard çağırır. */
   fetchUser: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isAuthenticated: !!localStorage.getItem('access_token'),
+  isAuthenticated: false,
   isLoading: false,
 
-  login: async (email, password) => {
-    set({ isLoading: true })
-    try {
-      const { data } = await axios.post('/connect/token', new URLSearchParams({
-        grant_type: 'password',
-        username: email,
-        password,
-        client_id: 'budget-tracker-dev',
-        scope: 'openid profile email roles offline_access api',
-      }), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      })
-
-      localStorage.setItem('access_token', data.access_token)
-      if (data.refresh_token) {
-        localStorage.setItem('refresh_token', data.refresh_token)
-      }
-      set({ isAuthenticated: true })
-    } finally {
-      set({ isLoading: false })
-    }
+  login: (returnUrl = '/') => {
+    const url = `/api/auth/login?returnUrl=${encodeURIComponent(returnUrl)}`
+    window.location.href = url
   },
 
-  logout: () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    set({ user: null, isAuthenticated: false })
+  logout: (returnUrl = '/') => {
+    const url = `/api/auth/logout?returnUrl=${encodeURIComponent(returnUrl)}`
+    window.location.href = url
   },
 
   fetchUser: async () => {
+    set({ isLoading: true })
     try {
-      const token = localStorage.getItem('access_token')
-      const { data } = await axios.get('/connect/userinfo', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      // Backend `/connect/userinfo` plural `roles` döndürüyor (eski tek-rol
-      // tasarımı `data.role`'dan migrate edildi). Her iki field'ı da kabul et.
-      const rawRoles = data.roles ?? data.role
-      const rolesArray = Array.isArray(rawRoles) ? rawRoles : rawRoles ? [rawRoles] : []
+      const { data } = await axios.get('/api/auth/me', { withCredentials: true })
       set({
         user: {
-          id: data.sub ?? data.id,
+          subject: data.subject ?? '',
           email: data.email ?? '',
-          displayName: data.name ?? data.displayName ?? data.email ?? '',
-          roles: rolesArray,
-          activeCompanyId:
-            data.activeCompanyId !== undefined
-              ? Number(data.activeCompanyId)
-              : data.company_id ?? 0,
+          name: data.name ?? '',
+          roles: Array.isArray(data.roles) ? data.roles : [],
+          tagPortalRoles: Array.isArray(data.tagPortalRoles) ? data.tagPortalRoles : [],
+          tagPortalCompanies: Array.isArray(data.tagPortalCompanies) ? data.tagPortalCompanies : [],
+          clearanceLevel: data.clearanceLevel ?? null,
+          departments: Array.isArray(data.departments) ? data.departments : [],
         },
+        isAuthenticated: true,
       })
     } catch {
       set({ user: null, isAuthenticated: false })
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
+    } finally {
+      set({ isLoading: false })
     }
   },
 }))
