@@ -25,8 +25,14 @@
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.6" />
 
     <!-- OpenIddict 7.x — MIT, ASP.NET Core 10 uyumlu -->
+    <!-- Faz 1.5: OpenIddict server FinOps Tur'dan kaldırıldı; sadece OIDC client kalır
+         (TAG Portal server'ından token alır). OpenIddict.* paketleri Faz 2'den sonra
+         AuthenticationExtensions cleanup'ında temizlenir, şu an geçişi yumuşak tutar. -->
     <PackageVersion Include="OpenIddict.AspNetCore" Version="7.4.0" />
     <PackageVersion Include="OpenIddict.EntityFrameworkCore" Version="7.4.0" />
+
+    <!-- OIDC client (Faz 1.5 — TAG Portal SSO) -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.6" />
 
     <!-- Validation -->
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
