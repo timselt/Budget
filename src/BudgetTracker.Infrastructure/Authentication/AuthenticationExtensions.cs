@@ -109,6 +109,8 @@ public static class AuthenticationExtensions
 
                 // Faz 1.5 — OnTokenValidated: JIT provisioning + role + company sync.
                 // OIDC handler token'ı doğruladıktan sonra cookie sign-in'den ÖNCE çalışır.
+                // Faz E (T18): SSO audit log event'leri (Serilog) — login.success,
+                // login.failure, logout. PII redact: sadece sub + email loglanır.
                 options.Events = new OpenIdConnectEvents
                 {
                     OnTokenValidated = async context =>
@@ -119,18 +121,56 @@ public static class AuthenticationExtensions
                         var jit = sp.GetRequiredService<JitProvisioner>();
                         var roleMapper = sp.GetRequiredService<RoleMapper>();
                         var companySync = sp.GetRequiredService<CompanySync>();
+                        var auditLogger = sp.GetRequiredService<ILogger<JitProvisioner>>();
 
-                        var user = await jit.EnsureUserAsync(
-                            context.Principal, context.HttpContext.RequestAborted);
+                        try
+                        {
+                            var user = await jit.EnsureUserAsync(
+                                context.Principal, context.HttpContext.RequestAborted);
 
-                        var tagPortalRoles = context.Principal.FindAll("tag_portal_roles")
-                            .Select(c => c.Value);
-                        await roleMapper.SyncRolesAsync(user, tagPortalRoles);
+                            var tagPortalRoles = context.Principal.FindAll("tag_portal_roles")
+                                .Select(c => c.Value).ToArray();
+                            await roleMapper.SyncRolesAsync(user, tagPortalRoles);
 
-                        var tagPortalCompanies = context.Principal.FindAll("tag_portal_companies")
-                            .Select(c => c.Value);
-                        await companySync.SyncCompaniesAsync(
-                            user, tagPortalCompanies, context.HttpContext.RequestAborted);
+                            var tagPortalCompanies = context.Principal.FindAll("tag_portal_companies")
+                                .Select(c => c.Value).ToArray();
+                            await companySync.SyncCompaniesAsync(
+                                user, tagPortalCompanies, context.HttpContext.RequestAborted);
+
+                            auditLogger.LogInformation(
+                                "auth.sso.login.success — sub={Sub}, email={Email}, " +
+                                "roles=[{Roles}], companies=[{Companies}]",
+                                user.ExternalSubjectId, user.Email,
+                                string.Join(",", tagPortalRoles),
+                                string.Join(",", tagPortalCompanies));
+                        }
+                        catch (Exception ex)
+                        {
+                            var sub = context.Principal.FindFirst("sub")?.Value
+                                ?? context.Principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                            auditLogger.LogError(ex,
+                                "auth.sso.login.failure — sub={Sub}, reason=jit_or_sync_exception",
+                                sub ?? "<unknown>");
+                            throw;
+                        }
+                    },
+                    OnAuthenticationFailed = context =>
+                    {
+                        var auditLogger = context.HttpContext.RequestServices
+                            .GetRequiredService<ILogger<JitProvisioner>>();
+                        auditLogger.LogWarning(context.Exception,
+                            "auth.sso.login.failure — reason=oidc_handshake_failed");
+                        return Task.CompletedTask;
+                    },
+                    OnSignedOutCallbackRedirect = context =>
+                    {
+                        var auditLogger = context.HttpContext.RequestServices
+                            .GetRequiredService<ILogger<JitProvisioner>>();
+                        var sub = context.HttpContext.User.FindFirst("sub")?.Value
+                            ?? context.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                        auditLogger.LogInformation(
+                            "auth.sso.logout — sub={Sub}", sub ?? "<unauthenticated>");
+                        return Task.CompletedTask;
                     },
                 };
             });
